@@ -1,13 +1,13 @@
-name: LIMS Adapter CI
+name: ADTS UI CI
 
 on:
   pull_request:
     branches:
       - main
     paths:
-      - "services/lims-adapter/**"
+      - "services/adts-ui/**"
       - "shared/**"
-      - ".github/workflows/lims-adapter_build.yml"
+      - ".github/workflows/adts-ui_build.yml"
       - ".github/workflows/_validation.yml"
       - ".github/workflows/_container_build.yml"
 
@@ -15,16 +15,16 @@ on:
     branches:
       - main
     paths:
-      - "services/lims-adapter/**"
+      - "services/adts-ui/**"
       - "shared/**"
-      - ".github/workflows/lims-adapter_build.yml"
+      - ".github/workflows/adts-ui_build.yml"
       - ".github/workflows/_validation.yml"
       - ".github/workflows/_container_build.yml"
 
   workflow_dispatch:
 
 concurrency:
-  group: lims-adapter-ci-${{ github.ref }}
+  group: adts-ui-ci-${{ github.ref }}
   cancel-in-progress: true
 
 permissions: {}
@@ -39,8 +39,8 @@ jobs:
       contents: read
 
     with:
-      service-name: lims-adapter
-      service-directory: services/lims-adapter
+      service-name: adts-ui
+      service-directory: services/adts-ui
       node-version: "24"
       run-audit: false
       run-lint: false
@@ -65,9 +65,9 @@ jobs:
 #      id-token: write
 #
 #    with:
-#      service-name: lims-adapter
-#      service-directory: services/lims-adapter
-#      dockerfile: services/lims-adapter/Dockerfile
+#      service-name: adts-ui
+#      service-directory: services/adts-ui
+#      dockerfile: services/adts-ui/Dockerfile
 #      aws-region: ${{ vars.AWS_REGION }}
 #      ecr-repository: ${{ vars.SERVICE_ECR_REPOSITORY }}
 #      aws-role-arn: ${{ vars.AWS_GITHUB_ACTIONS_ROLE_ARN }}

@@ -4,6 +4,8 @@ name: adts-ui-build
 on:
   push:
 
+permissions: {}
+
 jobs:
   test:
     runs-on: ubuntu-latest

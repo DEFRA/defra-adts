@@ -4,6 +4,8 @@ name: lims-adaptor-build
 on:
   push:
 
+permissions: {}
+
 jobs:
   test:
     runs-on: ubuntu-latest

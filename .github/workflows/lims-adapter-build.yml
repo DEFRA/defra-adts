@@ -1,5 +1,5 @@
 #
-name: CI-init
+name: lims-adaptor-build
 
 on:
   push:

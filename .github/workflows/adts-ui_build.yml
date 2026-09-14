@@ -47,6 +47,7 @@ jobs:
       run-format-check: false
       run-tests: false
       test-command: npm test -- --ci --coverage
+      build-command: npm --version
 #      build-command: npm run build
 #
 #  container:

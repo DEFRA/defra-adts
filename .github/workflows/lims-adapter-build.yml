@@ -1,16 +1,16 @@
 name: LIMS Adapter CI
 
 on:
-  pull_request:
-    branches:
-      - main
-    paths:
-      - "services/lims-adapter/**"
-      - "shared/**"
-      - ".github/workflows/lims-adapter_build.yml"
-      - ".github/workflows/_validation.yml"
-      - ".github/workflows/_container_build.yml"
-
+#  pull_request:
+#    branches:
+#      - main
+#    paths:
+#      - "services/lims-adapter/**"
+#      - "shared/**"
+#      - ".github/workflows/lims-adapter_build.yml"
+#      - ".github/workflows/_validation.yml"
+#      - ".github/workflows/_container_build.yml"
+#
   push:
     branches:
       - main

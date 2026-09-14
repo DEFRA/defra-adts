@@ -18,17 +18,12 @@ on:
         required: true
         type: string
 
-      aws-region:
-        description: AWS region containing the ECR repository
-        required: true
-        type: string
-
       ecr-repository:
         description: Name of the ECR repository
         required: true
         type: string
 
-      aws-role-arn:
+      aws-role:
         description: IAM role to assume using GitHub OIDC
         required: true
         type: string
@@ -104,8 +99,8 @@ jobs:
       - name: Configure AWS credentials using OIDC
         uses: aws-actions/configure-aws-credentials@v6
         with:
-          role-to-assume: ${{ inputs.aws-role-arn }}
-          aws-region: ${{ inputs.aws-region }}
+          role-to-assume: arn:aws:iam::${{ env.AWS_ACCOUNT_ID }}:role/${{ inputs.aws-role }}
+          aws-region: ${{ env.AWS_REGION }}
           role-session-name: github-actions-${{ github.run_id }}
           mask-aws-account-id: true
 

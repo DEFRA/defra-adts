@@ -27,6 +27,10 @@ concurrency:
   group: adts-ui-ci-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  AWS_REGION: eu-west-2
+  AWS_ACCOUNT_ID: "783559591987"
+
 permissions: {}
 
 jobs:
@@ -47,29 +51,29 @@ jobs:
       run-format-check: false
       run-tests: false
       test-command: npm test -- --ci --coverage
-      build-command: npm run build
+      build-command: npm --version
+#      build-command: npm run build
 #
-#  container:
-#    name: Build and publish image
-#
-#    needs:
-#      - validate
-#
-#    # Pull requests validate the service but do not publish images.
-#    if: ${{ github.event_name != 'pull_request' }}
-#
-#    uses: ./.github/workflows/_container_build.yml
-#
-#    permissions:
-#      contents: read
-#      id-token: write
-#
-#    with:
-#      service-name: adts-ui
-#      service-directory: services/adts-ui
-#      dockerfile: services/adts-ui/Dockerfile
-#      aws-region: ${{ vars.AWS_REGION }}
-#      ecr-repository: ${{ vars.SERVICE_ECR_REPOSITORY }}
-#      aws-role-arn: ${{ vars.AWS_GITHUB_ACTIONS_ROLE_ARN }}
-#      platforms: linux/amd64
-#      push-main-tag: true
+  container:
+    name: Build and publish image
+
+    needs:
+      - validate
+
+    # Pull requests validate the service but do not publish images.
+    if: ${{ github.event_name != 'pull_request' }}
+
+    uses: ./.github/workflows/_container_build.yml
+
+    permissions:
+      contents: read
+      id-token: write
+
+    with:
+      service-name: adts-ui
+      service-directory: services/adts-ui
+      dockerfile: services/adts-ui/Dockerfile
+      ecr-repository: apha/ui
+      aws-role: github_actions_pipeline_ecr_role
+      platforms: linux/amd64
+      push-main-tag: false

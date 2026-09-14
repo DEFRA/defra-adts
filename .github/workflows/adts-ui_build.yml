@@ -27,10 +27,6 @@ concurrency:
   group: adts-ui-ci-${{ github.ref }}
   cancel-in-progress: true
 
-env:
-  AWS_REGION: eu-west-2
-  AWS_ACCOUNT_ID: "783559591987"
-
 permissions: {}
 
 jobs:
@@ -74,6 +70,8 @@ jobs:
       service-directory: services/adts-ui
       dockerfile: services/adts-ui/Dockerfile
       ecr-repository: apha/ui
+      aws-account-id: 783559591987
+      aws-region: eu-west-2
       aws-role: github_actions_pipeline_ecr_role
       platforms: linux/amd64
       push-main-tag: false

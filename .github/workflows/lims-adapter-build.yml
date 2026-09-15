@@ -45,6 +45,8 @@ jobs:
       run-format-check: false
       run-tests: false
       test-command: npm test -- --ci --coverage
+      build-command: npm --version
+# TODO: Replace build-command with the correct command
 #      build-command: npm run build
 
   container:

@@ -27,7 +27,9 @@ concurrency:
   group: adts-ui-ci-${{ github.ref }}
   cancel-in-progress: true
 
-#permissions: {}
+permissions:
+  contents: read
+  id-token: write
 
 jobs:
   validate:
@@ -35,9 +37,9 @@ jobs:
 
     uses: ./.github/workflows/_validation.yml
 
-    permissions:
-      contents: read
-
+#    permissions:
+#      contents: read
+#
     with:
       service-name: adts-ui
       service-directory: services/adts-ui
@@ -60,10 +62,6 @@ jobs:
 #    if: ${{ github.event_name != 'pull_request' }}
 
     uses: ./.github/workflows/_container_build.yml
-
-    permissions:
-      contents: read
-      id-token: write
 
     with:
       service-name: adts-ui

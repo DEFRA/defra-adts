@@ -102,26 +102,20 @@ jobs:
             exit 1
           fi
 
-      - name: Check Credential Details
-        run: |
-          echo arn:aws:iam::${{ inputs.aws-account-id }}:role/${{ inputs.aws-role }}
-          echo ${{ inputs.aws-region }}
-          echo github-actions-${{ github.run_id }}
-
       - name: Configure AWS credentials using OIDC
         uses: aws-actions/configure-aws-credentials@v6
         with:
           role-to-assume: arn:aws:iam::${{ inputs.aws-account-id }}:role/${{ inputs.aws-role }}
           aws-region: ${{ inputs.aws-region }}
-#          role-session-name: github-actions-${{ github.run_id }}
-#          mask-aws-account-id: true
+          role-session-name: github-actions-${{ github.run_id }}
+          mask-aws-account-id: true
 
-#      - name: Sign in to Amazon ECR
-#        id: ecr-login
-#        uses: aws-actions/amazon-ecr-login@v2
-#        with:
-#          mask-password: true
-#
+      - name: Sign in to Amazon ECR
+        id: ecr-login
+        uses: aws-actions/amazon-ecr-login@v2
+        with:
+          mask-password: true
+
 #      - name: Set image repository
 #        id: image
 #        shell: bash

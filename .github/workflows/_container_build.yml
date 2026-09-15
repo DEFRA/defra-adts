@@ -160,33 +160,33 @@ jobs:
           file: ${{ inputs.dockerfile }}
           call: check
 
-      - name: Build and push container image
-        id: build
-        uses: docker/build-push-action@v7
-        with:
-          context: ${{ inputs.service-directory }}
-          file: ${{ inputs.dockerfile }}
-          platforms: ${{ inputs.platforms }}
-          push: true
-          tags: ${{ steps.metadata.outputs.tags }}
-          labels: ${{ steps.metadata.outputs.labels }}
-          cache-from: type=gha,scope=${{ inputs.service-name }}
-          cache-to: type=gha,mode=max,scope=${{ inputs.service-name }}
-          provenance: mode=max
-          sbom: true
-
-      - name: Set immutable image reference
-        id: result
-        shell: bash
-        env:
-          IMAGE_URI: ${{ steps.image.outputs.image-uri }}
-          IMAGE_DIGEST: ${{ steps.build.outputs.digest }}
-        run: |
-          set -euo pipefail
-
-          image_reference="${IMAGE_URI}@${IMAGE_DIGEST}"
-
-          echo "image-reference=${image_reference}" >> "${GITHUB_OUTPUT}"
+#      - name: Build and push container image
+#        id: build
+#        uses: docker/build-push-action@v7
+#        with:
+#          context: ${{ inputs.service-directory }}
+#          file: ${{ inputs.dockerfile }}
+#          platforms: ${{ inputs.platforms }}
+#          push: true
+#          tags: ${{ steps.metadata.outputs.tags }}
+#          labels: ${{ steps.metadata.outputs.labels }}
+#          cache-from: type=gha,scope=${{ inputs.service-name }}
+#          cache-to: type=gha,mode=max,scope=${{ inputs.service-name }}
+#          provenance: mode=max
+#          sbom: true
+#
+#      - name: Set immutable image reference
+#        id: result
+#        shell: bash
+#        env:
+#          IMAGE_URI: ${{ steps.image.outputs.image-uri }}
+#          IMAGE_DIGEST: ${{ steps.build.outputs.digest }}
+#        run: |
+#          set -euo pipefail
+#
+#          image_reference="${IMAGE_URI}@${IMAGE_DIGEST}"
+#
+#          echo "image-reference=${image_reference}" >> "${GITHUB_OUTPUT}"
 
       - name: Write container build summary
         shell: bash

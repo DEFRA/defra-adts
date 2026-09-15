@@ -23,6 +23,8 @@ on:
 
   workflow_dispatch:
 
+permissions: {}
+
 concurrency:
   group: adts-ui-ci-${{ github.ref }}
   cancel-in-progress: true
@@ -42,9 +44,8 @@ jobs:
       run-format-check: false
       run-tests: false
       test-command: npm test -- --ci --coverage
-      build-command: npm --version
 #      build-command: npm run build
-#
+
   container:
     name: Build and publish image
 
@@ -52,7 +53,7 @@ jobs:
       - validate
 
     # Pull requests validate the service but do not publish images.
-#    if: ${{ github.event_name != 'pull_request' }}
+    if: ${{ github.event_name != 'pull_request' }}
 
     uses: ./.github/workflows/_container_build.yml
 
@@ -60,9 +61,9 @@ jobs:
       service-name: adts-ui
       service-directory: services/adts-ui
       dockerfile: services/adts-ui/Dockerfile
-      ecr-repository: apha/ui
-      aws-account-id: 783559591987
-      aws-region: eu-west-2
-      aws-role: github_actions_pipeline_ecr_role
+      aws-region: ${{ vars.AWS_REGION }}
+      ecr-repository: ${{ vars.ADTS_UI_ECR }}
+      aws-account-id: ${{ vars.AWS_ECR_ROLE_ACCOUNT_ID }}
+      aws-role: ${{ vars.AWS_ECR_ROLE_NAME }}
       platforms: linux/amd64
-      push-main-tag: false
+      push-main-tag: true

@@ -1,16 +1,16 @@
 name: LIMS Adapter CI
 
 on:
-#  pull_request:
-#    branches:
-#      - main
-#    paths:
-#      - "services/lims-adapter/**"
-#      - "shared/**"
-#      - ".github/workflows/lims-adapter_build.yml"
-#      - ".github/workflows/_validation.yml"
-#      - ".github/workflows/_container_build.yml"
-#
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "services/lims-adapter/**"
+      - "shared/**"
+      - ".github/workflows/lims-adapter_build.yml"
+      - ".github/workflows/_validation.yml"
+      - ".github/workflows/_container_build.yml"
+
   push:
     branches:
       - main
@@ -23,20 +23,17 @@ on:
 
   workflow_dispatch:
 
+permissions: {}
+
 concurrency:
   group: lims-adapter-ci-${{ github.ref }}
   cancel-in-progress: true
-
-permissions: {}
 
 jobs:
   validate:
     name: Validate service
 
     uses: ./.github/workflows/_validation.yml
-
-    permissions:
-      contents: read
 
     with:
       service-name: lims-adapter
@@ -48,28 +45,25 @@ jobs:
       run-tests: false
       test-command: npm test -- --ci --coverage
 #      build-command: npm run build
-#
-#  container:
-#    name: Build and publish image
-#
-#    needs:
-#      - validate
-#
-#    # Pull requests validate the service but do not publish images.
-#    if: ${{ github.event_name != 'pull_request' }}
-#
-#    uses: ./.github/workflows/_container_build.yml
-#
-#    permissions:
-#      contents: read
-#      id-token: write
-#
-#    with:
-#      service-name: lims-adapter
-#      service-directory: services/lims-adapter
-#      dockerfile: services/lims-adapter/Dockerfile
-#      aws-region: ${{ vars.AWS_REGION }}
-#      ecr-repository: ${{ vars.SERVICE_ECR_REPOSITORY }}
-#      aws-role-arn: ${{ vars.AWS_GITHUB_ACTIONS_ROLE_ARN }}
-#      platforms: linux/amd64
-#      push-main-tag: true
+
+  container:
+    name: Build and publish image
+
+    needs:
+      - validate
+
+    # Pull requests validate the service but do not publish images.
+    if: ${{ github.event_name != 'pull_request' }}
+
+    uses: ./.github/workflows/_container_build.yml
+
+    with:
+      service-name: lims-adapter
+      service-directory: services/lims-adapter
+      dockerfile: services/lims-adapter/Dockerfile
+      aws-region: ${{ vars.AWS_REGION }}
+      ecr-repository: ${{ vars.ADTS_LIMS_ADAPTER_ECR }}
+      aws-account-id: ${{ vars.AWS_ECR_ROLE_ACCOUNT_ID }}
+      aws-role: ${{ vars.AWS_ECR_ROLE_NAME }}
+      platforms: linux/amd64
+      push-main-tag: true

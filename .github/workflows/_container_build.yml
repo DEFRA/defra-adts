@@ -65,6 +65,10 @@ on:
 
   workflow_dispatch:
 
+permissions:
+  contents: read
+  id-token: write
+
 jobs:
   container:
     name: Containerise ${{ inputs.service-name }}
@@ -72,10 +76,6 @@ jobs:
     runs-on: ubuntu-latest
 
     timeout-minutes: 30
-
-    permissions:
-      contents: read
-      id-token: write
 
     outputs:
       image-uri: ${{ steps.image.outputs.image-uri }}
@@ -107,12 +107,12 @@ jobs:
           fi
 
       - name: Configure AWS credentials using OIDC
-        uses: aws-actions/configure-aws-credentials@v6
+        uses: aws-actions/configure-aws-credentials@v6.3.0
         with:
           role-to-assume: arn:aws:iam::${{ inputs.aws-account-id }}:role/${{ inputs.aws-role }}
           aws-region: ${{ inputs.aws-region }}
-#          role-session-name: github-actions-${{ github.run_id }}
-#          mask-aws-account-id: true
+          role-session-name: github-actions-${{ github.run_id }}
+          mask-aws-account-id: true
 
       - name: Sign in to Amazon ECR
         id: ecr-login

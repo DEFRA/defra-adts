@@ -27,7 +27,7 @@ concurrency:
   group: adts-ui-ci-${{ github.ref }}
   cancel-in-progress: true
 
-permissions: {}
+#permissions: {}
 
 jobs:
   validate:

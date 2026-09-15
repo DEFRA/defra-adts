@@ -146,15 +146,15 @@ jobs:
             org.opencontainers.image.revision=${{ github.sha }}
             org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
 
-#      - name: Set up Docker Buildx
-#        uses: docker/setup-buildx-action@v4
-#
-#      - name: Validate Docker build configuration
-#        uses: docker/build-push-action@v7
-#        with:
-#          context: ${{ inputs.service-directory }}
-#          file: ${{ inputs.dockerfile }}
-#          call: check
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Validate Docker build configuration
+        uses: docker/build-push-action@v7
+        with:
+          context: ${{ inputs.service-directory }}
+          file: ${{ inputs.dockerfile }}
+          call: check
 
 #      - name: Build and push container image
 #        id: build

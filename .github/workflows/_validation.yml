@@ -43,6 +43,12 @@ on:
         default: true
         type: boolean
 
+      run-sonarqube-scan:
+        description: Run a SonarQube scan
+        required: false
+        default: true
+        type: boolean
+
       test-command:
         description: Command used to run tests
         required: false
@@ -131,6 +137,12 @@ jobs:
         run: |
           set -euo pipefail
           eval "${BUILD_COMMAND}"
+
+      - name: SonarQube Scan
+        if: ${{ inputs.run-sonarqube-scan }}
+        uses: sonarSource/sonarqube-scan-action@v8.2.1
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
       - name: Write validation summary
         env:

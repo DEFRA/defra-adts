@@ -44,6 +44,7 @@ jobs:
       run-lint: false
       run-format-check: false
       run-tests: false
+      run-sonarqube-scan: false
       test-command: npm test -- --ci --coverage
       build-command: npm --version
 # TODO: Replace build-command with the correct command

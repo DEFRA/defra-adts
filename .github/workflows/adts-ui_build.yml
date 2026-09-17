@@ -1,0 +1,77 @@
+name: ADTS UI CI
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "services/adts-ui/**"
+      - "shared/**"
+      - ".github/workflows/adts-ui_build.yml"
+      - ".github/workflows/_validation.yml"
+      - ".github/workflows/_container_build.yml"
+
+  push:
+    branches:
+      - main
+    paths:
+      - "services/adts-ui/**"
+      - "shared/**"
+      - ".github/workflows/adts-ui_build.yml"
+      - ".github/workflows/_validation.yml"
+      - ".github/workflows/_container_build.yml"
+
+  workflow_dispatch:
+
+concurrency:
+  group: adts-ui-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: Validate service
+
+    uses: ./.github/workflows/_validation.yml
+
+    permissions:
+      contents: read
+
+    with:
+      service-name: adts-ui
+      service-directory: services/adts-ui
+      node-version: "24"
+      run-audit: false
+      run-lint: false
+      run-format-check: false
+      run-tests: false
+      run-sonarqube-scan: false
+      test-command: npm test -- --ci --coverage
+      build-command: npm --version
+# TODO: Replace build-command with the correct command
+#      build-command: npm run build
+
+  container:
+    name: Build and publish image
+
+    needs:
+      - validate
+
+    # Pull requests validate the service but do not publish images.
+    if: ${{ github.event_name != 'pull_request' }}
+
+    uses: ./.github/workflows/_container_build.yml
+
+    permissions:
+      contents: read
+      id-token: write
+
+    with:
+      service-name: adts-ui
+      service-directory: services/adts-ui
+      dockerfile: services/adts-ui/Dockerfile
+      aws-region: ${{ vars.AWS_REGION }}
+      ecr-repository: ${{ vars.ADTS_UI_ECR }}
+      aws-account-id: ${{ vars.AWS_ECR_ROLE_ACCOUNT_ID }}
+      aws-role: ${{ vars.AWS_ECR_ROLE_NAME }}
+      platforms: linux/amd64
+      push-main-tag: true

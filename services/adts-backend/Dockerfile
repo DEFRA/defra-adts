@@ -7,7 +7,7 @@ ENV TZ="Europe/London"
 
 ARG PORT
 ENV PORT=${PORT}
-EXPOSE ${PORT} 9229
+EXPOSE ${PORT} 9182
 
 COPY --chown=node:node package*.json ./
 RUN npm ci --ignore-scripts

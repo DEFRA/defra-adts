@@ -109,7 +109,7 @@ jobs:
           fi
 
       - name: Install dependencies
-        run: npm ci
+        run: npm --ignore-scripts ci
 
       - name: Audit production dependencies
         if: ${{ inputs.run-audit }}
@@ -140,7 +140,8 @@ jobs:
 
       - name: SonarQube Scan
         if: ${{ inputs.run-sonarqube-scan }}
-        uses: sonarSource/sonarqube-scan-action@v8.2.1
+#        uses: sonarSource/sonarqube-scan-action@ba9859eae8dd6bd29e412f25ddbbef3d032000f4  # v8.2.2
+        uses: sonarSource/sonarqube-scan-action@713881670b6b3676cda39549040e2d88c70d582e  # v8.2.0
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 

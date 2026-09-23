@@ -27,6 +27,7 @@ FROM defradigital/node:$PARENT_VERSION AS production
 ENV TZ="Europe/London"
 
 ARG PORT
+ENV PORT=${PORT}
 EXPOSE ${PORT}
 
 # Switch to root temporarily to install production dependencies and lock down file permissions.
@@ -38,6 +39,10 @@ COPY --from=production-build --chown=root:root /home/node/src/ ./src/
 
 # Install node modules, remove write permissions, then drop back to the unprivileged user.
 RUN npm ci --ignore-scripts --omit=dev && chmod -R a-w /home/node
+
+USER node
+CMD [ "npm", "run", "start" ]
+
 USER node
 
 # This is the command that is run for the production service. The parent image has an ENTRYPOINT that uses a lightweight

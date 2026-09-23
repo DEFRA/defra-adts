@@ -43,14 +43,12 @@ jobs:
       service-directory: services/adts-ui
       node-version: "24"
       run-audit: false
-      run-lint: false
+      run-lint: true
       run-format-check: false
       run-tests: false
       run-sonarqube-scan: false
       test-command: npm test -- --ci --coverage
-      build-command: npm --version
-# TODO: Replace build-command with the correct command
-#      build-command: npm run build
+      build-command: npm run build
 
   container:
     name: Build and publish image

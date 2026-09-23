@@ -9,7 +9,7 @@
     "build:css": "sass src/assets/scss/application.scss src/public/css/application.css --load-path=node_modules --style=compressed",
     "build:js": "esbuild src/client/all.js --bundle --minify --outfile=src/public/js/all.js",
     "start": "node src/index.js",
-    "start:watch": "nodemon --watch src/views --ignore src/public src/index.js",
+    "start:watch": "nodemon --watch src/views --ignore src/public --ext njk --signal SIGTERM src/index.js",
     "kill": "sh -c 'pids=$(lsof -tiTCP:3000 -sTCP:LISTEN); [ -z \"$pids\" ] || kill $pids'",
     "lint": "eslint ."
   },

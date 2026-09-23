@@ -1,2 +1,34 @@
 {
+  "name": "adts-backend",
+  "version": "1.0.0",
+  "description": "The backend service for the ADTS application.",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "nodemon src/index.js",
+    "build": "bin/build",
+    "start": "node dist/index.js",
+    "test": "npm run unit-test"
+  },
+  "keywords": [
+    "nodejs",
+    "adts",
+    "package"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/DEFRA/defra-adts"
+  },
+  "author": "Department for Environment, Food and Rural Affairs <https://www.gov.uk/government/organisations/department-for-environment-food-rural-affairs>.",
+  "license": "SEE LICENSE IN LICENSE",
+  "dependencies": {
+    "express": "^4.19.2"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "nodemon": "^3.1.0"
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  }
 }

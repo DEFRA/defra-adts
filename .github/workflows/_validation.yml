@@ -1,0 +1,162 @@
+name: JavaScript validation
+
+on:
+  workflow_call:
+    inputs:
+      service-name:
+        description: Name of the service being validated
+        required: true
+        type: string
+
+      service-directory:
+        description: Repository-relative path containing package.json
+        required: true
+        type: string
+
+      node-version:
+        description: Node.js version to use
+        required: false
+        default: "24"
+        type: string
+
+      run-audit:
+        description: Run npm audit against production dependencies
+        required: false
+        default: true
+        type: boolean
+
+      run-lint:
+        description: Run the npm lint script
+        required: false
+        default: true
+        type: boolean
+
+      run-format-check:
+        description: Run the npm format:check script
+        required: false
+        default: true
+        type: boolean
+
+      run-tests:
+        description: Run the npm test script
+        required: false
+        default: true
+        type: boolean
+
+      run-sonarqube-scan:
+        description: Run a SonarQube scan
+        required: false
+        default: true
+        type: boolean
+
+      test-command:
+        description: Command used to run tests
+        required: false
+        default: "npm test -- --ci --coverage"
+        type: string
+
+      build-command:
+        description: Command used to build the service
+        required: false
+        default: "npm run build"
+        type: string
+
+jobs:
+  validate:
+    name: Validate ${{ inputs.service-name }}
+
+    runs-on: ubuntu-latest
+
+    timeout-minutes: 15
+
+    permissions:
+      contents: read
+
+    defaults:
+      run:
+        shell: bash
+        working-directory: ${{ inputs.service-directory }}
+
+    steps:
+      - name: Check out source code
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: ${{ inputs.node-version }}
+          cache: npm
+          cache-dependency-path: |
+            ${{ inputs.service-directory }}/package-lock.json
+
+      - name: Validate required files
+        env:
+          SERVICE_DIRECTORY: ${{ inputs.service-directory }}
+        working-directory: .
+        run: |
+          set -euo pipefail
+
+          if [[ ! -f "${SERVICE_DIRECTORY}/package.json" ]]; then
+            echo "::error::package.json was not found under ${SERVICE_DIRECTORY}"
+            exit 1
+          fi
+
+          if [[ ! -f "${SERVICE_DIRECTORY}/package-lock.json" ]]; then
+            echo "::error::package-lock.json was not found under ${SERVICE_DIRECTORY}"
+            exit 1
+          fi
+
+      - name: Install dependencies
+        run: npm --ignore-scripts ci
+
+      - name: Audit production dependencies
+        if: ${{ inputs.run-audit }}
+        run: npm audit --omit=dev --audit-level=high
+
+      - name: Run static analysis
+        if: ${{ inputs.run-lint }}
+        run: npm run lint
+
+      - name: Check formatting
+        if: ${{ inputs.run-format-check }}
+        run: npm run format:check
+
+      - name: Run unit tests
+        if: ${{ inputs.run-tests }}
+        env:
+          TEST_COMMAND: ${{ inputs.test-command }}
+        run: |
+          set -euo pipefail
+          eval "${TEST_COMMAND}"
+
+      - name: Build service
+        env:
+          BUILD_COMMAND: ${{ inputs.build-command }}
+        run: |
+          set -euo pipefail
+          eval "${BUILD_COMMAND}"
+
+      - name: SonarQube Scan
+        if: ${{ inputs.run-sonarqube-scan }}
+        uses: sonarSource/sonarqube-scan-action@ba9859eae8dd6bd29e412f25ddbbef3d032000f4  # v8.2.2
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+      - name: Write validation summary
+        env:
+          SERVICE_NAME: ${{ inputs.service-name }}
+          SERVICE_DIRECTORY: ${{ inputs.service-directory }}
+          NODE_VERSION: ${{ inputs.node-version }}
+        run: |
+          {
+            echo "## Service validation completed"
+            echo
+            echo "| Property | Value |"
+            echo "|---|---|"
+            echo "| Service | \`${SERVICE_NAME}\` |"
+            echo "| Directory | \`${SERVICE_DIRECTORY}\` |"
+            echo "| Node.js version | \`${NODE_VERSION}\` |"
+            echo "| Commit | \`${GITHUB_SHA}\` |"
+          } >> "${GITHUB_STEP_SUMMARY}"

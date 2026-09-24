@@ -1,0 +1,8 @@
+@use "govuk-frontend/dist/govuk" as *;
+
+.app-submission-filters {
+	.govuk-select,
+	.govuk-input {
+		border-radius: 0;
+	}
+}

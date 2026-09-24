@@ -1,0 +1,118 @@
+{% extends "govuk/template.njk" %}
+
+{% from "govuk/components/button/macro.njk" import govukButton %}
+{% from "govuk/components/header/macro.njk" import govukHeader %}
+{% from "govuk/components/input/macro.njk" import govukInput %}
+{% from "govuk/components/select/macro.njk" import govukSelect %}
+
+{% block pageTitle %}Home – ADTS{% endblock %}
+
+{% block header %}
+  {{ govukHeader({
+    serviceName: "Animal Disease Testing Service",
+    serviceUrl: "/",
+    navigation: [
+      {
+        text: "My Account",
+        href: "/",
+        active: true
+      },
+      {
+        text: "Sign out",
+        href: "/",
+        active: true
+      }
+    ]
+  }) }}
+{% endblock %}
+
+{% block head %}
+  <link rel="stylesheet" href="/assets/css/application.css">
+{% endblock %}
+
+{% block content %}
+  <div class="govuk-grid-row">
+    <div class="govuk-grid-column-full">
+      <p class="govuk-body">Signed in as Test User 2</p>
+      <h1 class="govuk-heading-l">New submission</h1>
+      <p class="govuk-body">Start a new sick animal submission or healthy animal submission.</p>
+      {{ govukButton({
+        text: "Sick animal submission",
+        href: "#",
+        isStartButton: true
+      }) }}
+      {{ govukButton({
+        text: "Healthy animal submission",
+        href: "#",
+        isStartButton: true
+      }) }}
+
+      <hr class="govuk-section-break govuk-section-break--m govuk-section-break--visible">
+
+      <h2 class="govuk-heading-l">View completed submissions or edit draft submissions</h2>
+      <form method="get" action="#">
+        <h3 class="govuk-heading-m">Filter submissions by</h3>
+        <div class="govuk-grid-row app-submission-filters">
+          <div class="govuk-grid-column-one-quarter">
+          </div>
+          <div class="govuk-grid-column-one-quarter">
+            {{ govukInput({
+              id: "client",
+              name: "client",
+              label: {
+                text: "Client"
+              }
+            }) }}
+          </div>
+          <div class="govuk-grid-column-one-quarter">
+            {{ govukInput({
+              id: "clinician",
+              name: "clinician",
+              label: {
+                text: "Clinician"
+              }
+            }) }}
+          </div>
+          <div class="govuk-grid-column-one-quarter">
+            {{ govukSelect({
+              id: "status",
+              name: "status",
+              label: {
+                text: "Status"
+              },
+              items: [
+                {
+                  value: "draft",
+                  text: "Draft",
+                  selected: true
+                },
+                {
+                  value: "completed",
+                  text: "Completed"
+                }
+              ]
+            }) }}
+          </div>
+          <div class="govuk-grid-column-one-quarter">
+            {{ govukInput({
+              id: "submitted-date",
+              name: "submitted-date",
+              type: "date",
+              label: {
+                text: "Submitted date"
+              }
+            }) }}
+          </div>
+        </div>
+        {{ govukButton({
+          text: "Search",
+          type: "submit"
+        }) }}
+      </form>
+    </div>
+  </div>
+{% endblock %}
+
+{% block bodyEnd %}
+  <script type="module" src="/assets/js/all.js"></script>
+{% endblock %}

@@ -41,11 +41,8 @@ COPY --from=production-build --chown=root:root /home/node/src/ ./src/
 RUN npm ci --ignore-scripts --omit=dev && chmod -R a-w /home/node
 
 USER node
-CMD [ "npm", "run", "start" ]
-
-USER node
 
 # This is the command that is run for the production service. The parent image has an ENTRYPOINT that uses a lightweight
 #   init program "tini" that handles signals. As long as we don't override the ENTRYPOINT the "tini" routine will handle signals and
 #   orphaned processes
-CMD [ "node", "src/index" ]
+CMD [ "node", "src/index.js" ]

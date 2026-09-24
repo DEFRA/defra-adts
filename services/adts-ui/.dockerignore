@@ -2,3 +2,5 @@ node_modules
 Dockerfile
 LICENCE
 README.md
+src/public/css/*
+src/public/js/*

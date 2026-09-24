@@ -22,8 +22,8 @@
 //   // assert confirmation
 // })
 
-describe('Sick submission journey placeholder', () => {
-  test('placeholder journey test', () => {
-    expect(true).toBe(true)
-  })
-})
+// describe('Sick submission journey placeholder', () => {
+//   test('placeholder journey test', () => {
+//     expect(true).toBe(true)
+//   })
+// })

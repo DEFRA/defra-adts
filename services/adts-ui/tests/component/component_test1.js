@@ -9,8 +9,8 @@
  * @acs TBD
  */
 
-describe('ADTS UI component tests', () => {
-  test('placeholder component test', () => {
-    expect(true).toBe(true)
-  })
-})
+// describe('ADTS UI component tests', () => {
+//   test('placeholder component test', () => {
+//     expect(true).toBe(true)
+//   })
+// })

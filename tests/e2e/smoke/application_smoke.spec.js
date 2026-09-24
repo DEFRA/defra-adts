@@ -22,8 +22,8 @@
 //   await expect(page.locator('body')).toBeVisible()
 // })
 
-describe('Application smoke placeholder', () => {
-  test('placeholder application smoke test', () => {
-    expect(true).toBe(true)
-  })
-})
+// describe('Application smoke placeholder', () => {
+//   test('placeholder application smoke test', () => {
+//     expect(true).toBe(true)
+//   })
+// })

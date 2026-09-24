@@ -9,8 +9,8 @@
  * @acs TBD
  */
 
-describe('ADTS backend contract tests', () => {
-  test('placeholder contract test', () => {
-    expect(true).toBe(true)
-  })
-})
+// describe('ADTS backend contract tests', () => {
+//   test('placeholder contract test', () => {
+//     expect(true).toBe(true)
+//   })
+// })

@@ -9,8 +9,8 @@
  * @acs TBD
  */
 
-describe('API smoke tests', () => {
-  test('placeholder API test', () => {
-    expect(true).toBe(true)
-  })
-})
+// describe('API smoke tests', () => {
+//   test('placeholder API test', () => {
+//     expect(true).toBe(true)
+//   })
+// })

@@ -1,16 +1,9 @@
 /**
- * Placeholder component test for ADTS UI.
+ * Placeholder component test area for ADTS UI.
  *
  * Purpose:
- * - Validate UI components and GOV.UK Design System behaviour.
- * - Accessibility checks can also sit alongside component tests using *.accessibility.test.js.
+ * - Validate UI component behaviour.
+ * - Future tests may include component rendering and accessibility checks.
  *
- * @story TBD
- * @acs TBD
+ * Test framework and package scripts will be added in a follow-up PR.
  */
-
-// describe('ADTS UI component tests', () => {
-//   test('placeholder component test', () => {
-//     expect(true).toBe(true)
-//   })
-// })

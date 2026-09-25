@@ -1,29 +1,14 @@
 /**
- * Placeholder Playwright E2E journey test.
+ * Placeholder Playwright E2E journey test area.
  *
  * Purpose:
- * - Validate a full ADTS user journey across UI and backend.
- * - This is not intended to run as a lightweight PR smoke test.
- * - Full journey tests should run on main, nightly, or pre-release once stable.
+ * - Validate full ADTS user journeys across UI and backend.
+ * - Cover critical flows such as sick animal submission once Playwright is installed.
+ * - Run full journey tests on main, nightly, or pre-release once stable.
+ *
+ * Test framework, environment URL, authentication approach and package scripts
+ * will be added in a follow-up PR.
  *
  * @story SUB-00
  * @acs TBD
  */
-
-// Example only. Replace once Playwright is installed and test environment is confirmed.
-// import { test, expect } from '@playwright/test'
-
-// test('user can complete a sick animal submission journey', async ({ page }) => {
-//   await page.goto(process.env.BASE_URL || 'http://localhost:3000')
-//   // login / mock auth
-//   // start sick submission
-//   // complete steps
-//   // review and submit
-//   // assert confirmation
-// })
-
-// describe('Sick submission journey placeholder', () => {
-//   test('placeholder journey test', () => {
-//     expect(true).toBe(true)
-//   })
-// })

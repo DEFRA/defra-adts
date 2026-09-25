@@ -1,16 +1,9 @@
 /**
- * Placeholder contract test for ADTS backend.
+ * Placeholder contract test area for ADTS backend.
  *
  * Purpose:
  * - Validate backend API contracts and schemas.
- * - Replace this with real OpenAPI, Pact, or schema validation tests.
+ * - Future tests may use OpenAPI, Pact, or schema validation tooling.
  *
- * @story TBD
- * @acs TBD
+ * Test framework and package scripts will be added in a follow-up PR.
  */
-
-// describe('ADTS backend contract tests', () => {
-//   test('placeholder contract test', () => {
-//     expect(true).toBe(true)
-//   })
-// })

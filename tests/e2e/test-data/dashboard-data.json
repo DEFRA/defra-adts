@@ -1,0 +1,4 @@
+{
+  "description": "Placeholder dashboard E2E test data",
+  "submissionStatuses": ["Draft", "In progress", "Submitted"]
+}

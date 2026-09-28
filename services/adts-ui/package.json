@@ -9,6 +9,8 @@
     "build:css": "sass src/assets/scss/application.scss src/public/css/application.css --load-path=node_modules --style=compressed",
     "build:js": "esbuild src/client/all.js --bundle --minify --outfile=src/public/js/all.js",
     "start": "node src/index.js",
+    "test": "node --test \"tests/**/*.test.js\" \"!tests/routes/*.test.js\"",
+    "test:lab": "lab -v tests/routes/*.test.js",
     "start:watch": "nodemon --watch src/views --ignore src/public --ext njk --signal SIGTERM src/index.js",
     "kill": "sh -c 'pids=$(lsof -tiTCP:3000 -sTCP:LISTEN); [ -z \"$pids\" ] || kill $pids'",
     "lint": "eslint ."
@@ -17,7 +19,9 @@
     "@hapi/hapi": "21.4.10",
     "@hapi/inert": "7.1.2",
     "@hapi/vision": "7.0.3",
+    "@hapi/yar": "11.0.3",
     "govuk-frontend": "5.14.0",
+    "joi": "^18.2.9",
     "nunjucks": "3.2.4"
   },
   "devDependencies": {

@@ -22,13 +22,13 @@ export const createTestServer = async (options = {}) => {
 
 export const getCookieHeader = (response) => {
   const rawCookies = response.headers['set-cookie']
-  
+
   if (!rawCookies) {
     return ''
   }
 
   // Handle both a single string cookie or an array of cookies returned by Hapi
   const cookieArray = Array.isArray(rawCookies) ? rawCookies : [rawCookies]
-  
+
   return cookieArray.map((cookie) => cookie.split(';', 1)[0]).join('; ')
 }

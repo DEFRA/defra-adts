@@ -8,7 +8,6 @@
 {% block pageTitle %}Search Results – ADTS{% endblock %}
 
 {% block head %}
-  <!-- CRITICAL: Bring back your local application stylesheet reference -->
   <link rel="stylesheet" href="/assets/css/application.css">
 {% endblock %}
 
@@ -82,7 +81,7 @@
 
       <!-- Dynamic Cards Container Grid -->
       <div id="submission-results-container" class="govuk-!-margin-top-6">
-        <p class="govuk-body govuk-!-font-weight-bold">{{ totalCount }} Submissions matching criteria</p>
+        <p class="govuk-body govuk-!-font-weight-bold">{{ totalCount }} submissions matching criteria</p>
 
         <!-- Inside results.njk inside your loop container -->
 {% for submission in results %}

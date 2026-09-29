@@ -77,53 +77,38 @@ const createServer = async () => {
     method: 'GET',
     path: '/results',
     handler: async (request, h) => {
-        // Mock data now contains an array of status tags and dynamic tests data
-        const mockSubmissions = [
-            {
-                id: "4458",
-                statuses: ["Draft"],
-                samplesTo: "—",
-                client: "—",
-                clientFarm: "—",
-                species: "—",
-                clinician: "—",
-                orderSubmitted: "—",
-                hasTests: false,
-                tests: []
-            },
-            {
-                id: "14-M0002-02-26",
-                statuses: ["Submitted", "Samples overdue"],
-                samplesTo: "APHA Carmarthen",
-                client: "OLD MCDONALD",
-                clientFarm: "ANIMAL FARM",
-                species: "Goat",
-                clinician: "Dave Simonds",
-                orderSubmitted: "12/Feb/2026",
-                hasTests: true,
-                tests: [
-                    {
-                        name: "Worm egg and/or Cocc. Oocyst Count (TC0060)",
-                        type: "McMaster method",
-                        sampleType: "Caecal Contents",
-                        qty: "1"
-                    }
-                ]
-            }
-        ];
+        // 1. Forward the frontend's search criteria query parameters to the backend
+        const queryParams = new URLSearchParams(request.query).toString();
+        const backendUrl = `http://localhost:3100/submissions?${queryParams}`;
 
-        return h.view('results', {
-            results: mockSubmissions,
-            totalCount: mockSubmissions.length,
-            filteredValues: {
-                client: request.query.client || '',
-                clinician: request.query.clinician || '',
-                status: request.query.status || 'draft',
-                submitted_date: request.query['submitted-date'] || ''
+        try {
+            // 2. Fetch the JSON data from your Port 3100 mock server
+            const response = await fetch(backendUrl);
+
+            if (!response.ok) {
+                throw new Error(`Backend responded with status: ${response.status}`);
             }
-        });
+
+            const payload = await response.json();
+
+            return h.view('results.njk', {
+                results: payload.results,
+                totalCount: payload.totalCount
+            });
+
+        } catch (error) {
+            console.error('Error contacting backend server:', error.message);
+
+            // Graceful fallback UI states in case your backend server is offline
+            return h.view('results.njk', {
+                results: [],
+                totalCount: 0,
+                error: 'Unable to load submissions at this time.',
+                filteredValues: request.query
+            });
+        }
     }
-});
+  });
   return server
 }
 

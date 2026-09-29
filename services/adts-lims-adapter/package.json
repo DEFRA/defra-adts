@@ -1,0 +1,24 @@
+{
+  "name": "adts-lims-adapter",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "build": "esbuild src/client/all.js --bundle --minify --outfile=src/public/js/all.js",
+    "start": "node src/index.js",
+    "start:watch": "nodemon --ext njk --signal SIGTERM src/app.js",
+    "kill": "sh -c 'pids=$(lsof -tiTCP:3000 -sTCP:LISTEN); [ -z \"$pids\" ] || kill $pids'",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "@hapi/hapi": "21.4.10",
+    "@hapi/inert": "7.1.2"
+  },
+  "devDependencies": {
+    "esbuild": "0.24.2",
+    "eslint": "9.39.5",
+    "neostandard": "0.13.0",
+    "nodemon": "3.1.14"
+  }
+}

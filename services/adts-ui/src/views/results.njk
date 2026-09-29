@@ -1,0 +1,205 @@
+{% extends "govuk/template.njk" %}
+
+{% from "govuk/components/button/macro.njk" import govukButton %}
+{% from "govuk/components/header/macro.njk" import govukHeader %}
+{% from "govuk/components/input/macro.njk" import govukInput %}
+{% from "govuk/components/select/macro.njk" import govukSelect %}
+
+{% block pageTitle %}Search Results – ADTS{% endblock %}
+
+{% block head %}
+  <!-- CRITICAL: Bring back your local application stylesheet reference -->
+  <link rel="stylesheet" href="/assets/css/application.css">
+{% endblock %}
+
+{% block header %}
+  {{ govukHeader({
+    serviceName: "Animal Disease Testing Service",
+    serviceUrl: "/",
+    navigation: [
+      { text: "My Account", href: "/" },
+      { text: "Sign out", href: "/" }
+    ]
+  }) }}
+{% endblock %}
+
+{% block content %}
+  <div class="govuk-grid-row">
+    <div class="govuk-grid-column-full">
+      
+      <a href="/" class="govuk-back-link">Back to home dashboard</a>
+
+      <h1 class="govuk-heading-l govuk-!-margin-top-4">Submission search results</h1>
+
+      <!-- Filter Form UI -->
+      <form method="get" action="/results">
+        <h3 class="govuk-heading-m">Filter submissions by</h3>
+        <div class="govuk-grid-row app-submission-filters">
+          <div class="govuk-grid-column-one-quarter">
+            {{ govukInput({
+              id: "client",
+              name: "client",
+              value: filteredValues.client,
+              label: { text: "Client" }
+            }) }}
+          </div>
+          <div class="govuk-grid-column-one-quarter">
+            {{ govukInput({
+              id: "clinician",
+              name: "clinician",
+              value: filteredValues.clinician,
+              label: { text: "Clinician" }
+            }) }}
+          </div>
+          <div class="govuk-grid-column-one-quarter">
+            {{ govukSelect({
+              id: "status",
+              name: "status",
+              label: { text: "Status" },
+              items: [
+                { value: "draft", text: "Draft", selected: filteredValues.status == 'draft' },
+                { value: "completed", text: "Completed", selected: filteredValues.status == 'completed' }
+              ]
+            }) }}
+          </div>
+          <div class="govuk-grid-column-one-quarter">
+            {{ govukInput({
+              id: "submitted-date",
+              name: "submitted-date",
+              type: "date",
+              value: filteredValues.submitted_date,
+              label: { text: "Submitted date" }
+            }) }}
+          </div>
+        </div>
+        {{ govukButton({
+          text: "Search again",
+          type: "submit"
+        }) }}
+      </form>
+
+      <hr class="govuk-section-break govuk-section-break--m govuk-section-break--visible">
+
+      <!-- Dynamic Cards Container Grid -->
+      <div id="submission-results-container" class="govuk-!-margin-top-6">
+        <p class="govuk-body govuk-!-font-weight-bold">{{ totalCount }} Submissions matching criteria</p>
+
+        <!-- Inside results.njk inside your loop container -->
+{% for submission in results %}
+  <div class="app-result-card govuk-!-padding-4 govuk-!-margin-bottom-4" style="border: 1px solid #b1b4b6; background: #fff; box-sizing: border-box;">
+    
+    <!-- 1. Header Flex Row: Handles multiple stacked tags dynamically -->
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #b1b4b6; padding-bottom: 10px; margin-bottom: 15px;">
+      <h3 class="govuk-heading-m govuk-!-margin-bottom-0">
+        {# If it's a draft, show 'Draft Id:', otherwise display the raw reference ID #}
+        {% if 'Draft' in submission.statuses %}Draft Id: {% endif %}{{ submission.id }}
+      </h3>
+      
+      <!-- Loop to render each status tag nicely stacked on top of each other -->
+      <div style="display: flex; flex-direction: column; gap: 5px; align-items: flex-end;">
+        {% for tag in submission.statuses %}
+
+            {% set marginClass = "" %}
+            {% if not loop.last %}
+                {% set marginClass = "govuk-!-margin-bottom-1" %}
+            {% endif %}
+
+          {% if tag | lower == 'draft' %}
+            <strong class="govuk-tag govuk-tag--orange {{ marginClass }}">Draft</strong>
+          {% elif tag | lower == 'submitted' %}
+            <!-- Matching yellow/gold tone style for submitted -->
+            <strong class="govuk-tag {{ marginClass }}" style="background-color: #ffbf47; color: #0b0c0c;">Submitted</strong>
+          {% elif tag | lower == 'samples overdue' %}
+            <!-- Matching deep pink/magenta tone style for sample overdue status -->
+            <strong class="govuk-tag {{ marginClass }}" style="background-color: #c0226c; color: #fff;">Samples overdue</strong>
+          {% else %}
+            <strong class="govuk-tag govuk-tag--blue {{ marginClass }}">{{ tag }}</strong>
+          {% endif %}
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- 2. Main Six-Column Metadata Grid -->
+    <div class="govuk-grid-row govuk-body-s" style="margin-left: 0; margin-right: 0; border-bottom: {% if submission.hasTests %}1px solid #b1b4b6{% else %}none{% endif %}; padding-bottom: 15px;">
+      <div style="width: 16.66%; float: left; box-sizing: border-box; padding-right: 10px;">
+        <span class="govuk-!-font-weight-bold" style="display: block; margin-bottom: 5px; color: #505a5f;">Samples to</span>
+        <span style="color: #0b0c0c;">{{ submission.samplesTo }}</span>
+      </div>
+      <div style="width: 16.66%; float: left; box-sizing: border-box; padding-right: 10px;">
+        <span class="govuk-!-font-weight-bold" style="display: block; margin-bottom: 5px; color: #505a5f;">Client</span>
+        <span style="color: #0b0c0c;">{{ submission.client }}</span>
+      </div>
+      <div style="width: 16.66%; float: left; box-sizing: border-box; padding-right: 10px;">
+        <span class="govuk-!-font-weight-bold" style="display: block; margin-bottom: 5px; color: #505a5f;">Client farm</span>
+        <span style="color: #0b0c0c;">{{ submission.clientFarm }}</span>
+      </div>
+      <div style="width: 16.66%; float: left; box-sizing: border-box; padding-right: 10px;">
+        <span class="govuk-!-font-weight-bold" style="display: block; margin-bottom: 5px; color: #505a5f;">Species</span>
+        <span style="color: #0b0c0c;">{{ submission.species }}</span>
+      </div>
+      <div style="width: 16.66%; float: left; box-sizing: border-box; padding-right: 10px;">
+        <span class="govuk-!-font-weight-bold" style="display: block; margin-bottom: 5px; color: #505a5f;">Clinician</span>
+        <span style="color: #0b0c0c;">{{ submission.clinician }}</span>
+      </div>
+      <div style="width: 16.66%; float: left; box-sizing: border-box; padding-right: 10px;">
+        <span class="govuk-!-font-weight-bold" style="display: block; margin-bottom: 5px; color: #505a5f;">Order submitted</span>
+        <span style="color: #0b0c0c;">{{ submission.orderSubmitted }}</span>
+      </div>
+      <div style="clear: both;"></div>
+    </div>
+
+    <!-- 3. Conditional Content Blocks: Empty notice OR tests grid breakdown -->
+    {% if not submission.hasTests %}
+      <p class="govuk-body govuk-!-margin-top-4 govuk-!-margin-bottom-4" style="color: #0b0c0c;">Submission contains no tests.</p>
+    {% else %}
+      <!-- Tests Data Grid (Matches header alignments from your specification image) -->
+      <div class="govuk-!-margin-top-3 govuk-body-s" style="color: #0b0c0c;">
+        {% for test in submission.tests %}
+          <div class="govuk-grid-row" style="margin-left: 0; margin-right: 0; padding-top: 10px; padding-bottom: 10px;">
+            <div style="width: 50%; float: left; box-sizing: border-box; padding-right: 10px;">
+              <span class="govuk-!-font-weight-bold" style="display: block; margin-bottom: 8px; color: #0b0c0c;">Test name</span>
+              <span>{{ test.name }}</span>
+            </div>
+            <div style="width: 20%; float: left; box-sizing: border-box; padding-right: 10px;">
+              <span class="govuk-!-font-weight-bold" style="display: block; margin-bottom: 8px; color: #0b0c0c;">Test type</span>
+              <span>{{ test.type }}</span>
+            </div>
+            <div style="width: 20%; float: left; box-sizing: border-box; padding-right: 10px;">
+              <span class="govuk-!-font-weight-bold" style="display: block; margin-bottom: 8px; color: #0b0c0c;">Sample type</span>
+              <span>{{ test.sampleType }}</span>
+            </div>
+            <div style="width: 10%; float: left; box-sizing: border-box; text-align: center;">
+              <span class="govuk-!-font-weight-bold" style="display: block; margin-bottom: 8px; color: #0b0c0c;">Qty</span>
+              <span>{{ test.qty }}</span>
+            </div>
+            <div style="clear: both;"></div>
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    <!-- 4. Dynamic Action Footer Links based on Status types -->
+    <div style="text-align: right; margin-top: 15px;">
+      <p class="govuk-body-s govuk-!-margin-bottom-0">
+        {% if 'Draft' in submission.statuses %}
+          <a href="/submissions/{{ submission.id }}/continue" class="govuk-link" style="font-weight: bold;">Continue draft {{ submission.id }}</a>
+          <br><br>
+          <a href="/submissions/{{ submission.id }}/cancel" class="govuk-link govuk-link--no-visited-state" style="color: #d4351c;">Cancel draft {{ submission.id }}</a>
+        {% else %}
+          <a href="/submissions/{{ submission.id }}/view" class="govuk-link" style="font-weight: bold;">View submission {{ submission.id }}</a>
+        {% endif %}
+      </p>
+    </div>
+
+  </div>
+{% endfor %}
+
+      </div>
+
+    </div>
+  </div>
+{% endblock %}
+
+{% block bodyEnd %}
+  <script type="module" src="/assets/js/all.js"></script>
+{% endblock %}

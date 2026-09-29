@@ -5,4 +5,5 @@ services/adts-ui/src/public/css/*
 services/adts-ui/src/public/js/*
 
 explainer.md
+.env
 

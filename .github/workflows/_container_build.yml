@@ -206,10 +206,10 @@ jobs:
 #      - name: Login to Amazon ECR
 #        uses: aws-actions/amazon-ecr-login@v2
 
-      # Push only if scan passed
-      - name: Push container image
-        run: |
-          docker push ${{ fromJson(steps.metadata.outputs.json).tags[0] }}
+#      # TODO: Push only if scan passed
+#      - name: Push container image
+#        run: |
+#          docker push ${{ fromJson(steps.metadata.outputs.json).tags[0] }}
 
 #      - name: Build and push container image
 #        id: build

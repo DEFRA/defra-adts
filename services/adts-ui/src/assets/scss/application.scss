@@ -6,3 +6,47 @@
 		border-radius: 0;
 	}
 }
+
+// ==========================================================================
+// ADTS Custom Search Results Styles
+// ==========================================================================
+
+.app-result-card {
+  border: 1px solid $govuk-border-colour;
+  background-color: govuk-colour("white");
+  box-sizing: border-box;
+}
+
+.app-result-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  border-bottom: 2px solid $govuk-border-colour;
+}
+
+.app-result-card__tags {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  align-items: flex-end;
+}
+
+.app-result-card__meta-row {
+  margin-left: 0;
+  margin-right: 0;
+
+  &--has-tests {
+    border-bottom: 1px solid $govuk-border-colour;
+  }
+}
+
+// Custom status color variations satisfying design specs
+.app-tag--submitted {
+  background-color: govuk-colour("yellow");
+  color: $govuk-text-colour;
+}
+
+.app-tag--overdue {
+  background-color: govuk-colour("pink");
+  color: govuk-colour("white");
+}

@@ -75,9 +75,8 @@ lab.experiment('UI Results Card Rendering Integration Pipeline', () => {
     expect(htmlOutput).to.contain('14-M0002-02-26')
 
     // 6. Assert dynamic status color coding elements render cleanly
-    expect(htmlOutput).to.contain('background-color: #ffbf47') // Submitted tag tone
-    expect(htmlOutput).to.contain('background-color: #c0226c') // Samples overdue tag tone
-
+    expect(htmlOutput).to.contain('app-tag--submitted')
+    expect(htmlOutput).to.contain('app-tag--overdue')
     // 7. Assert multi-column core grid data cells map cleanly
     expect(htmlOutput).to.contain('APHA Carmarthen')
     expect(htmlOutput).to.contain('OLD MCDONALD')

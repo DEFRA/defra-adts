@@ -84,28 +84,24 @@
         <p class="govuk-body govuk-!-font-weight-bold">{{ totalCount }} submissions matching criteria</p>
 
         {% for submission in results %}
-          <div class="app-result-card govuk-!-padding-4 govuk-!-margin-bottom-4" style="border: 1px solid #b1b4b6; background: #fff; box-sizing: border-box;">
+          <div class="app-result-card govuk-!-padding-4 govuk-!-margin-bottom-4">
             
             <!-- 1. Header Flex Row: Handles multiple stacked tags dynamically -->
-            <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #b1b4b6; padding-bottom: 10px; margin-bottom: 15px;">
+            <div class="app-result-card__header govuk-!-padding-bottom-2 govuk-!-margin-bottom-3">
               <h3 class="govuk-heading-m govuk-!-margin-bottom-0">
                 {% if 'Draft' in submission.statuses %}Draft Id: {% endif %}{{ submission.id }}
               </h3>
               
-              <!-- Loop to render each status tag nicely stacked on top of each other -->
-              <div style="display: flex; flex-direction: column; gap: 5px; align-items: flex-end;">
+              <div class="app-result-card__tags">
                 {% for tag in submission.statuses %}
-                  {% set marginClass = "" %}
-                  {% if not loop.last %}
-                      {% set marginClass = "govuk-!-margin-bottom-1" %}
-                  {% endif %}
+                  {% set marginClass = "" if loop.last else "govuk-!-margin-bottom-1" %}
 
                   {% if tag | lower == 'draft' %}
                     <strong class="govuk-tag govuk-tag--orange {{ marginClass }}">Draft</strong>
                   {% elif tag | lower == 'submitted' %}
-                    <strong class="govuk-tag {{ marginClass }}" style="background-color: #ffbf47; color: #0b0c0c;">Submitted</strong>
+                    <strong class="govuk-tag app-tag--submitted {{ marginClass }}">Submitted</strong>
                   {% elif tag | lower == 'samples overdue' %}
-                    <strong class="govuk-tag {{ marginClass }}" style="background-color: #c0226c; color: #fff;">Samples overdue</strong>
+                    <strong class="govuk-tag app-tag--overdue {{ marginClass }}">Samples overdue</strong>
                   {% else %}
                     <strong class="govuk-tag govuk-tag--blue {{ marginClass }}">{{ tag }}</strong>
                   {% endif %}
@@ -114,57 +110,56 @@
             </div>
 
             <!-- 2. Main Six-Column Metadata Grid -->
-            <div class="govuk-grid-row govuk-body-s" style="margin-left: 0; margin-right: 0; border-bottom: {% if submission.hasTests %}1px solid #b1b4b6{% else %}none{% endif %}; padding-bottom: 15px;">
-              <div style="width: 16.66%; float: left; box-sizing: border-box; padding-right: 10px;">
-                <span class="govuk-!-font-weight-bold" style="display: block; margin-bottom: 5px; color: #505a5f;">Samples to</span>
-                <span style="color: #0b0c0c;">{{ submission.samplesTo }}</span>
+            <div class="govuk-grid-row app-result-card__meta-row govuk-body-s {% if submission.hasTests %}app-result-card__meta-row--has-tests{% endif %} govuk-!-padding-bottom-3">
+              <div class="govuk-grid-column-one-sixth govuk-!-padding-right-2">
+                <span class="govuk-hint govuk-body-s govuk-!-font-weight-bold govuk-!-margin-bottom-1">Samples to</span>
+                <span>{{ submission.samplesTo }}</span>
               </div>
-              <div style="width: 16.66%; float: left; box-sizing: border-box; padding-right: 10px;">
-                <span class="govuk-!-font-weight-bold" style="display: block; margin-bottom: 5px; color: #505a5f;">Client</span>
-                <span style="color: #0b0c0c;">{{ submission.client }}</span>
+              <div class="govuk-grid-column-one-sixth govuk-!-padding-right-2">
+                <span class="govuk-hint govuk-body-s govuk-!-font-weight-bold govuk-!-margin-bottom-1">Client</span>
+                <span>{{ submission.client }}</span>
               </div>
-              <div style="width: 16.66%; float: left; box-sizing: border-box; padding-right: 10px;">
-                <span class="govuk-!-font-weight-bold" style="display: block; margin-bottom: 5px; color: #505a5f;">Client farm</span>
-                <span style="color: #0b0c0c;">{{ submission.clientFarm }}</span>
+              <div class="govuk-grid-column-one-sixth govuk-!-padding-right-2">
+                <span class="govuk-hint govuk-body-s govuk-!-font-weight-bold govuk-!-margin-bottom-1">Client farm</span>
+                <span>{{ submission.clientFarm }}</span>
               </div>
-              <div style="width: 16.66%; float: left; box-sizing: border-box; padding-right: 10px;">
-                <span class="govuk-!-font-weight-bold" style="display: block; margin-bottom: 5px; color: #505a5f;">Species</span>
-                <span style="color: #0b0c0c;">{{ submission.species }}</span>
+              <div class="govuk-grid-column-one-sixth govuk-!-padding-right-2">
+                <span class="govuk-hint govuk-body-s govuk-!-font-weight-bold govuk-!-margin-bottom-1">Species</span>
+                <span>{{ submission.species }}</span>
               </div>
-              <div style="width: 16.66%; float: left; box-sizing: border-box; padding-right: 10px;">
-                <span class="govuk-!-font-weight-bold" style="display: block; margin-bottom: 5px; color: #505a5f;">Clinician</span>
-                <span style="color: #0b0c0c;">{{ submission.clinician }}</span>
+              <div class="govuk-grid-column-one-sixth govuk-!-padding-right-2">
+                <span class="govuk-hint govuk-body-s govuk-!-font-weight-bold govuk-!-margin-bottom-1">Clinician</span>
+                <span>{{ submission.clinician }}</span>
               </div>
-              <div style="width: 16.66%; float: left; box-sizing: border-box; padding-right: 10px;">
-                <span class="govuk-!-font-weight-bold" style="display: block; margin-bottom: 5px; color: #505a5f;">Order submitted</span>
-                <span style="color: #0b0c0c;">{{ submission.orderSubmitted }}</span>
+              <div class="govuk-grid-column-one-sixth govuk-!-padding-right-2">
+                <span class="govuk-hint govuk-body-s govuk-!-font-weight-bold govuk-!-margin-bottom-1">Order submitted</span>
+                <span>{{ submission.orderSubmitted }}</span>
               </div>
-              <div style="clear: both;"></div>
             </div>
 
+            <!-- 3. Conditional Content Blocks: Empty notice OR tests grid breakdown -->
             {% if not submission.hasTests %}
-              <p class="govuk-body govuk-!-margin-top-4 govuk-!-margin-bottom-4" style="color: #0b0c0c;">Submission contains no tests.</p>
+              <p class="govuk-body govuk-!-margin-top-4 govuk-!-margin-bottom-0">Submission contains no tests.</p>
             {% else %}
-              <div class="govuk-!-margin-top-3 govuk-body-s" style="color: #0b0c0c;">
+              <div class="govuk-!-margin-top-3 govuk-body-s">
                 {% for test in submission.tests %}
-                  <div class="govuk-grid-row" style="margin-left: 0; margin-right: 0; padding-top: 10px; padding-bottom: 10px;">
-                    <div style="width: 50%; float: left; box-sizing: border-box; padding-right: 10px;">
-                      <span class="govuk-!-font-weight-bold" style="display: block; margin-bottom: 8px; color: #0b0c0c;">Test name</span>
+                  <div class="govuk-grid-row app-result-card__meta-row govuk-!-padding-top-2 govuk-!-padding-bottom-2">
+                    <div class="govuk-grid-column-one-half">
+                      <span class="govuk-!-font-weight-bold govuk-!-margin-bottom-1 govuk-!-display-block">Test name</span>
                       <span>{{ test.name }}</span>
                     </div>
-                    <div style="width: 20%; float: left; box-sizing: border-box; padding-right: 10px;">
-                      <span class="govuk-!-font-weight-bold" style="display: block; margin-bottom: 8px; color: #0b0c0c;">Test type</span>
+                    <div class="govuk-grid-column-one-fifth">
+                      <span class="govuk-!-font-weight-bold govuk-!-margin-bottom-1 govuk-!-display-block">Test type</span>
                       <span>{{ test.type }}</span>
                     </div>
-                    <div style="width: 20%; float: left; box-sizing: border-box; padding-right: 10px;">
-                      <span class="govuk-!-font-weight-bold" style="display: block; margin-bottom: 8px; color: #0b0c0c;">Sample type</span>
+                    <div class="govuk-grid-column-one-fifth">
+                      <span class="govuk-!-font-weight-bold govuk-!-margin-bottom-1 govuk-!-display-block">Sample type</span>
                       <span>{{ test.sampleType }}</span>
                     </div>
-                    <div style="width: 10%; float: left; box-sizing: border-box; padding-right: 10px;">
-                      <span class="govuk-!-font-weight-bold" style="display: block; margin-bottom: 8px; color: #0b0c0c;">Qty</span>
+                    <div class="govuk-grid-column-one-tenth">
+                      <span class="govuk-!-font-weight-bold govuk-!-margin-bottom-1 govuk-!-display-block">Qty</span>
                       <span>{{ test.qty }}</span>
                     </div>
-                    <div style="clear: both;"></div>
                   </div>
                 {% endfor %}
               </div>

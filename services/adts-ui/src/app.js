@@ -3,17 +3,52 @@ import { fileURLToPath } from 'url'
 import Hapi from '@hapi/hapi'
 import Vision from '@hapi/vision'
 import Inert from '@hapi/inert'
+import Yar from '@hapi/yar'
+import Joi from 'joi'
 import nunjucks from 'nunjucks'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
+const HOME_FILTER_STATE_KEY = 'homeFilterState'
 
-const createServer = async () => {
+// Updated validation schema to match both UI names and backend filters perfectly
+const homeFilterSchema = Joi.object({
+  client: Joi.string().max(200).allow('').default(''),
+  clinician: Joi.string().max(200).allow('').default(''),
+  status: Joi.string()
+    .valid('show all', 'draft', 'submitted', 'in_progress', 'completed', 'samples_overdue', 'tests_complete', 'available')
+    .default('show all'),
+  'submitted-date': Joi.string().max(100).allow('').default('')
+})
+
+const createServer = async (options = {}) => {
+  // Safe local fallback secret key to make unit testing easy without .env files
+  const sessionSecret = options.sessionSecret || process.env.SESSION_SECRET || 'abcdefghijklmnopqrstuvwxyz123456'
+
+  if (!sessionSecret && process.env.NODE_ENV === 'production') {
+    throw new Error('SESSION_SECRET must be configured in production')
+  }
+
   const server = Hapi.server({
     port: process.env.PORT || 3000,
     host: '0.0.0.0'
   })
 
-  await server.register([Vision, Inert])
+  await server.register([
+    Vision,
+    Inert,
+    {
+      plugin: Yar,
+      options: {
+        cookieOptions: {
+          password: sessionSecret,
+          isHttpOnly: true,
+          isSameSite: 'Lax',
+          isSecure: process.env.NODE_ENV === 'production',
+          path: '/'
+        }
+      }
+    }
+  ])
 
   server.views({
     engines: {
@@ -32,83 +67,129 @@ const createServer = async () => {
     path: 'views'
   })
 
-  // GOV.UK Frontend static assets (fonts, images) served straight from the installed package
-  server.route({
-    method: 'GET',
-    path: '/assets/{param*}',
-    handler: {
-      directory: {
-        path: path.join(__dirname, '../node_modules/govuk-frontend/dist/govuk/assets')
+  // Static Assets and Compiled UI files
+  server.route([
+    {
+      method: 'GET',
+      path: '/assets/{param*}',
+      handler: {
+        directory: {
+          path: path.join(__dirname, '../node_modules/govuk-frontend/dist/govuk/assets')
+        }
+      }
+    },
+    {
+      method: 'GET',
+      path: '/assets/css/{param*}',
+      handler: {
+        directory: {
+          path: path.join(__dirname, 'public/css')
+        }
+      }
+    },
+    {
+      method: 'GET',
+      path: '/assets/js/{param*}',
+      handler: {
+        directory: {
+          path: path.join(__dirname, 'public/js')
+        }
       }
     }
-  })
+  ])
 
-  // Our compiled CSS, built into src/public by `npm run build`
-  server.route({
-    method: 'GET',
-    path: '/assets/css/{param*}',
-    handler: {
-      directory: {
-        path: path.join(__dirname, 'public/css')
-      }
-    }
-  })
-
-  // Our compiled JS, built into src/public by `npm run build`
-  server.route({
-    method: 'GET',
-    path: '/assets/js/{param*}',
-    handler: {
-      directory: {
-        path: path.join(__dirname, 'public/js')
-      }
-    }
-  })
-
+  // Main Home Page Route
   server.route({
     method: 'GET',
     path: '/',
-    handler: (request, h) => h.view('home.njk', {
-      user: request.auth.credentials
-    })
+    // FIX: Removed the validate object here to prevent Joi defaults from clearing the cache
+    handler: (request, h) => {
+      // 1. Pull the cached search history parameters straight from the session store
+      const cached = request.yar.get(HOME_FILTER_STATE_KEY)
+      let filterValues
+
+      if (cached) {
+        // Use the saved search values exactly as the user typed them
+        filterValues = cached
+      } else {
+        // Absolute first load: build clean defaults using the validation schema
+        filterValues = Joi.attempt({}, homeFilterSchema)
+      }
+
+      // 2. Pass the data to your home view template using the proper 'filteredValues' naming convention
+      return h.view('home.njk', {
+        user: request.auth.credentials,
+        filteredValues: {
+          client: filterValues.client,
+          clinician: filterValues.clinician,
+          status: filterValues.status,
+          // Ensure the template receives the hyphenated key exactly as named
+          submitted_date: filterValues['submitted-date'] || ''
+        }
+      })
+    }
   })
 
+  // Restored /results Route Handler
   server.route({
     method: 'GET',
     path: '/results',
-    handler: async (request, h) => {
-        // 1. Forward the frontend's search criteria query parameters to the backend
-        const queryParams = new URLSearchParams(request.query).toString();
-        const backendUrl = `http://localhost:3100/submissions?${queryParams}`;
-
-        try {
-            // 2. Fetch the JSON data from your Port 3100 mock server
-            const response = await fetch(backendUrl);
-
-            if (!response.ok) {
-                throw new Error(`Backend responded with status: ${response.status}`);
-            }
-
-            const payload = await response.json();
-
-            return h.view('results.njk', {
-                results: payload.results,
-                totalCount: payload.totalCount
-            });
-
-        } catch (error) {
-            console.error('Error contacting backend server:', error.message);
-
-            // Graceful fallback UI states in case your backend server is offline
-            return h.view('results.njk', {
-                results: [],
-                totalCount: 0,
-                error: 'Unable to load submissions at this time.',
-                filteredValues: request.query
-            });
+    options: {
+      validate: {
+        query: homeFilterSchema,
+        failAction: (request, h, err) => {
+          request.log(['results-filter', 'validation-warning'], err.message)
+          return err.localised || h.continue
         }
+      }
+    },
+    handler: async (request, h) => {
+      // 1. PERSIST STATE: Capture the fresh query input and cache it securely inside Yar
+      request.yar.set(HOME_FILTER_STATE_KEY, request.query)
+      request.yar.touch()
+
+      // 2. Build out endpoint requirements pointing down to your mock port 3100 service
+      const queryParams = new URLSearchParams(request.query).toString()
+      const adapterBaseUrl = process.env.LIMS_ADAPTER_URL
+      const adapterUrl = `${adapterBaseUrl}/submissions?${queryParams}`
+
+      const viewContext = {
+        filteredValues: {
+          client: request.query.client,
+          clinician: request.query.clinician,
+          status: request.query.status,
+          submitted_date: request.query['submitted-date'] || ''
+        }
+      }
+
+      try {
+        const response = await fetch(adapterUrl)
+
+        if (!response.ok) {
+          throw new Error(`Backend responded with status: ${response.status}`)
+        }
+
+        const payload = await response.json()
+
+        return h.view('results.njk', {
+          ...viewContext,
+          results: payload.results,
+          totalCount: payload.totalCount
+        })
+      } catch (error) {
+        console.error('Error contacting backend server:', error.message)
+
+        // Graceful fallback view delivery
+        return h.view('results.njk', {
+          ...viewContext,
+          results: [],
+          totalCount: 0,
+          error: 'Unable to load submissions at this time.'
+        })
+      }
     }
-  });
+  })
+
   return server
 }
 

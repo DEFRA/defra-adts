@@ -3,9 +3,7 @@ import { fileURLToPath } from 'url'
 import Hapi from '@hapi/hapi'
 import Inert from '@hapi/inert'
 
-
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
-
 
 const createServer = async () => {
   const server = Hapi.server({
@@ -30,55 +28,33 @@ const createServer = async () => {
     method: 'GET',
     path: '/',
     handler: async (request, h) => {
-        return {"message":"You have hit the landing page"};
+      return { message: 'You have hit the landing page' }
     }
-  });
+  })
 
   server.route({
     method: 'GET',
     path: '/submissions',
     handler: async (request, h) => {
-        const mockSubmissions = [
-            {
-                id: "4458",
-                statuses: ["Draft"],
-                samplesTo: "—",
-                client: "—",
-                clientFarm: "—",
-                species: "—",
-                clinician: "—",
-                orderSubmitted: "—",
-                hasTests: false,
-                tests: []
-            },
-            {
-                id: "14-M0002-02-26",
-                statuses: ["Submitted", "Samples overdue"],
-                samplesTo: "APHA Carmarthen",
-                client: "OLD MCDONALD",
-                clientFarm: "ANIMAL FARM",
-                species: "Goat",
-                clinician: "Dave Simonds",
-                orderSubmitted: "12/Feb/2026",
-                hasTests: true,
-                tests: [
-                    {
-                        name: "Worm egg and/or Cocc. Oocyst Count (TC0060)",
-                        type: "McMaster method",
-                        sampleType: "Caecal Contents",
-                        qty: "1"
-                    }
-                ]
-            }
-        ];
+      // Fallback to a default if the variable isn't set yet
+      const limsBaseUrl = process.env.LIMS_BASE_URL || 'https://thirdparty-lims.gov.uk'
+      const queryParams = new URLSearchParams(request.query).toString()
 
-        // Return standard JSON response back to the port 3000 middleman
-        return {
-            results: mockSubmissions,
-            totalCount: mockSubmissions.length
-        };
+      try {
+        // Forward the query straight down the pipe to the real third-party service
+        const response = await fetch(`${limsBaseUrl}/submissions?${queryParams}`)
+
+        if (!response.ok) {
+          return h.response({ error: 'LIMS integration error' }).code(response.status)
+        }
+
+        const data = await response.json()
+        return data
+      } catch (error) {
+        return h.response({ error: 'LIMS connectivity failure' }).code(502)
+      }
     }
-  });
+  })
 
   return server
 }

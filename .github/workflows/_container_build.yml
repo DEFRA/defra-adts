@@ -164,7 +164,7 @@ jobs:
           file: ${{ inputs.dockerfile }}
           platforms: ${{ inputs.platforms }}
           push: false
-          load: true
+          load: false
           tags: ${{ steps.metadata.outputs.tags }}
           labels: ${{ steps.metadata.outputs.labels }}
 #          outputs: type=oci,dest=./${{ inputs.service-name }}_image.tar
@@ -173,9 +173,10 @@ jobs:
 #          provenance: mode=max
 #          sbom: true
 
-      - name: Inspect archive
+      - name: Save and Inspect image archive
         run: |
-          tar -tf ./${{ inputs.service-name }}_image.tar | head -20
+          docker save ${{ fromJson(steps.metadata.outputs.json).tags[0] }} -o ${{ inputs.service-name }}_image.tar
+          tar -tf ${{ inputs.service-name }}_image.tar | head -20
 
       # Scan the image before it is pushed
       - name: Scan image with Trivy

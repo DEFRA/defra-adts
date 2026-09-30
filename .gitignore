@@ -8,4 +8,5 @@ services/adts-ui/src/public/js/*
 services/adts-lims-adapter/src/public/js/*
 
 explainer.md
+.env
 

@@ -9,8 +9,6 @@ import nunjucks from 'nunjucks'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const HOME_FILTER_STATE_KEY = 'homeFilterState'
-
-// Updated validation schema to match both UI names and backend filters perfectly
 const homeFilterSchema = Joi.object({
   client: Joi.string().max(200).allow('').default(''),
   clinician: Joi.string().max(200).allow('').default(''),

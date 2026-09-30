@@ -175,6 +175,7 @@ jobs:
 
       - name: Save and Inspect image archive
         run: |
+          docker images
           docker save ${{ fromJson(steps.metadata.outputs.json).tags[0] }} -o ${{ inputs.service-name }}_image.tar
           tar -tf ${{ inputs.service-name }}_image.tar | head -20
 

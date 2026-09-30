@@ -21,7 +21,6 @@ lab.experiment('UI Results Card Rendering Integration Pipeline', () => {
   })
 
   lab.test('should accurately bind LIMS adapter payloads into GOV.UK layout elements', async () => {
-    // 1. Structural mock response containing live reference keys matching your specification
     const mockLimsData = {
       results: [
         {
@@ -47,7 +46,6 @@ lab.experiment('UI Results Card Rendering Integration Pipeline', () => {
       totalCount: 1
     }
 
-    // 2. Intercept the outbound web request layer natively
     mock.method(global, 'fetch', async (url) => {
       expect(url).to.contain('/submissions')
       expect(url).to.contain('client=OLD')
@@ -57,7 +55,6 @@ lab.experiment('UI Results Card Rendering Integration Pipeline', () => {
       })
     })
 
-    // 3. Inject simulated form search submit criteria directly into the route lifecycle
     const response = await server.inject({
       method: 'GET',
       url: '/results?client=OLD+MCDONALD'
@@ -67,17 +64,11 @@ lab.experiment('UI Results Card Rendering Integration Pipeline', () => {
 
     const htmlOutput = response.payload
 
-    // 4. Assert summary total headers are rendering values properly
     expect(htmlOutput).to.contain('Submission search results')
     expect(htmlOutput).to.contain('1 submissions matching criteria')
-
-    // 5. Assert reference ID values match layout block requirements
     expect(htmlOutput).to.contain('14-M0002-02-26')
-
-    // 6. Assert dynamic status color coding elements render cleanly
     expect(htmlOutput).to.contain('app-tag--submitted')
     expect(htmlOutput).to.contain('app-tag--overdue')
-    // 7. Assert multi-column core grid data cells map cleanly
     expect(htmlOutput).to.contain('APHA Carmarthen')
     expect(htmlOutput).to.contain('OLD MCDONALD')
     expect(htmlOutput).to.contain('ANIMAL FARM')
@@ -100,7 +91,6 @@ lab.experiment('UI Results Card Rendering Integration Pipeline', () => {
     })
 
     expect(response.statusCode).to.equal(200)
-
     expect(response.payload).to.contain('0 submissions matching criteria')
     expect(response.payload).to.contain('No records found matching your query criteria.')
   })

@@ -74,7 +74,7 @@ jobs:
     permissions:
       contents: read
       id-token: write
-      security-events: write
+#      security-events: write
 
     timeout-minutes: 30
 
@@ -149,15 +149,15 @@ jobs:
             org.opencontainers.image.revision=${{ github.sha }}
             org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
 
-      - name: Set up Docker
-        uses: docker/setup-docker-action@1a6edb0ba9ac496f6850236981f15d8f9a82254d # v4.0
-        with:
-          daemon-config: |
-            {
-              "features": {
-                "containerd-snapshotter": true
-              }
-            }
+#      - name: Set up Docker
+#        uses: docker/setup-docker-action@1a6edb0ba9ac496f6850236981f15d8f9a82254d # v4.0
+#        with:
+#          daemon-config: |
+#            {
+#              "features": {
+#                "containerd-snapshotter": true
+#              }
+#            }
 
       - name: Show metadata tags
         run: |
@@ -178,70 +178,58 @@ jobs:
           platforms: ${{ inputs.platforms }}
           push: false
           load: true
-          tags: ${{ inputs.ecr-repository }}, ${{ steps.image.outputs.image-uri }}:v0.1
+          tags: ${{ steps.metadata.outputs.tags }}
           labels: ${{ steps.metadata.outputs.labels }}
           cache-from: type=gha,scope=${{ inputs.service-name }}
           cache-to: type=gha,mode=max,scope=${{ inputs.service-name }}
           provenance: mode=max
           sbom: true
 
-#      # Build image locally only
-#      - name: Build container image
-#        id: build
-#        run: |
-#          docker buildx build . --file ${{ inputs.dockerfile }} \
-#          --no-cache \
-#          --platform ${{ inputs.platforms }} \
-#          --load \
-#          --target=development \
-#          --tag ${{inputs.service-name}}:v1
-#          docker images
-
       - name: Show images
         run: |
           docker images
 
-#      # Scan the image before it is pushed
-#      - name: Scan image with Trivy
-#        id: trivy-scan
-#        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0
-#        with:
-#          image-ref: ${{ fromJson(steps.metadata.outputs.json).tags[0] }}
-#          format: table
-#          severity: CRITICAL,HIGH
-#          ignore-unfixed: true
-#          exit-code: 1
-#
-#      - name: Trivy scan outcome
-#        run: |
-#          echo "Outcome of Trivy Scan is ${{ steps.trivy-scan.outcome }}"
-#
-#      # Upload SARIF results to GitHub Security
-#      - name: Generate SARIF report
-#        if: always()
-#        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0
-#        with:
-#          image-ref: ${{ fromJson(steps.metadata.outputs.json).tags[0] }}
-#          format: sarif
-#          output: trivy-results.sarif
-#
-#      - name: Upload SARIF report
-#        if: always()
-#        uses: github/codeql-action/upload-sarif@v3
-#        with:
-#          sarif_file: trivy-results.sarif
-#
-#      - name: Fail build if scans failed
-#        if: ${{ steps.trivy-scan.outcome == 'failure' }}
-#        run: |
-#          echo "One or more scans failed. Failing the build."
-#          exit 1
+      # Scan the image before it is pushed
+      - name: Scan image with Trivy
+        id: trivy-scan
+        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0
+        with:
+          image-ref: ${{ fromJson(steps.metadata.outputs.json).tags[0] }}
+          format: table
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          exit-code: 1
+
+      - name: Trivy scan outcome
+        run: |
+          echo "Outcome of Trivy Scan is ${{ steps.trivy-scan.outcome }}"
+
+      # Upload SARIF results to GitHub Security
+      - name: Generate SARIF report
+        if: always()
+        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0
+        with:
+          image-ref: ${{ fromJson(steps.metadata.outputs.json).tags[0] }}
+          format: sarif
+          output: trivy-results.sarif
+
+      - name: Upload SARIF report
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: trivy-results.sarif
+
+      - name: Fail build if scans failed
+        if: ${{ steps.trivy-scan.outcome == 'failure' }}
+        run: |
+          echo "One or more scans failed. Failing the build."
+          exit 1
 
       # Push image to ECR.
       - name: Push container image
         run: |
-          echo "Image destination is ${{ steps.image.outputs.image-uri }}"
-          docker push ${{ steps.image.outputs.image-uri }}:v0.1
+          echo "Image destination is ${{ fromJson(steps.metadata.outputs.json).tags[0] }}"
+          docker push ${{ fromJson(steps.metadata.outputs.json).tags[0] }}
 
       - name: Set immutable image reference
         id: result

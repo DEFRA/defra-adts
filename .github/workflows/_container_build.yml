@@ -243,8 +243,8 @@ jobs:
       # Push image to ECR.
       - name: Push container image
         run: |
-          echo "Image URI is ${{ steps.image.outputs.image-uri }}"
-          docker push ${{ inputs.ecr-repository }}:${{ fromJson(steps.metadata.outputs.json).tags[0] }}
+          echo "Image is ${{ steps.build.outputs.imageid }}"
+          docker push ${{ steps.build.outputs.imageid }}
 
       - name: Set immutable image reference
         id: result

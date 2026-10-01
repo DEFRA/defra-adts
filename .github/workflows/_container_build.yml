@@ -113,11 +113,11 @@ jobs:
         with:
           images: ${{ env.IMAGE_URI }}
           tags: |
+            type=raw,value=do-not-use
             type=sha,prefix=sha-,format=long
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=raw,value=main,enable=${{ inputs.push-main-tag && github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}
-            type=raw,value=do-not-use
           labels: |
             org.opencontainers.image.title=${{ inputs.service-name }}
             org.opencontainers.image.description=${{ inputs.service-name }} JavaScript service
@@ -243,8 +243,8 @@ jobs:
       # Push image to ECR.
       - name: Push container image
         run: |
-          echo "Image URI is ${{ steps.image.outputs.image-uri }}"
-          docker push ${{ steps.image.outputs.image-uri }}
+          echo "Image is ${{ fromJson(steps.metadata.outputs.json).tags[0] }}"
+          docker push ${{ fromJson(steps.metadata.outputs.json).tags[0] }}
 
       - name: Set immutable image reference
         id: result

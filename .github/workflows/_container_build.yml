@@ -79,7 +79,7 @@ jobs:
     timeout-minutes: 30
 
     outputs:
-      image-uri: ${{ steps.image.outputs.image_uri }}
+      image-uri: ${{ steps.image.outputs.image-uri }}
       image-digest: ${{ steps.build.outputs.digest }}
       image-reference: ${{ steps.result.outputs.image-reference }}
 
@@ -116,9 +116,9 @@ jobs:
         run: |
           set -euo pipefail
 
-          image-uri="${ECR_REGISTRY}/${ECR_REPOSITORY}"
+          image_uri="${ECR_REGISTRY}/${ECR_REPOSITORY}"
 
-          echo "image_uri=${image-uri}" >> "${GITHUB_OUTPUT}"
+          echo "image-uri=${image-uri}" >> "${GITHUB_OUTPUT}"
           echo "IMAGE_URI=${image-uri}" >> "${GITHUB_ENV}"
 
       - name: Generate container metadata
@@ -160,7 +160,7 @@ jobs:
           platforms: ${{ inputs.platforms }}
           push: false
           load: true
-          tags: ${{ inputs.ecr-repository }}, ${{ steps.image.outputs.image_uri }}
+          tags: ${{ inputs.ecr-repository }}, ${{ steps.image.outputs.image-uri }}
           labels: ${{ steps.metadata.outputs.labels }}
           cache-from: type=gha,scope=${{ inputs.service-name }}
           cache-to: type=gha,mode=max,scope=${{ inputs.service-name }}
@@ -237,14 +237,14 @@ jobs:
       # Push image to ECR.
       - name: Push container image
         run: |
-          echo "Image destination is ${{ steps.image.outputs.image_uri }}"
-          docker push ${{ steps.image.outputs.image_uri }}
+          echo "Image destination is ${{ steps.image.outputs.image-uri }}"
+          docker push ${{ steps.image.outputs.image-uri }}
 
       - name: Set immutable image reference
         id: result
         shell: bash
         env:
-          IMAGE_URI: ${{ steps.image.outputs.image_uri }}
+          IMAGE_URI: ${{ steps.image.outputs.image-uri }}
           IMAGE_DIGEST: ${{ steps.build.outputs.digest }}
         run: |
           set -euo pipefail
@@ -257,7 +257,7 @@ jobs:
         shell: bash
         env:
           SERVICE_NAME: ${{ inputs.service-name }}
-          IMAGE_URI: ${{ steps.image.outputs.image_uri }}
+          IMAGE_URI: ${{ steps.image.outputs.image-uri }}
           IMAGE_TAGS: ${{ steps.metadata.outputs.tags }}
           IMAGE_DIGEST: ${{ steps.build.outputs.digest }}
         run: |

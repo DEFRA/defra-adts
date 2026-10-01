@@ -243,8 +243,8 @@ jobs:
       # Push image to ECR.
       - name: Push container image
         run: |
-          echo "Image URI is ${{ steps.image.image-uri }}"
-          docker push ${{ steps.image.image-uri }}
+          echo "Image URI is ${{ steps.image.outputs.image-uri }}"
+          docker push ${{ steps.image.outputs.image-uri }}
 
       - name: Set immutable image reference
         id: result

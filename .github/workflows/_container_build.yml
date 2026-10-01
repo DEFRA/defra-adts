@@ -113,7 +113,6 @@ jobs:
         with:
           images: ${{ env.IMAGE_URI }}
           tags: |
-#            type=raw,value=do-not-use
             type=sha,prefix=sha-,format=long
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
@@ -244,7 +243,7 @@ jobs:
       - name: Push container image
         run: |
           echo "Image is ${{ fromJson(steps.metadata.outputs.json).tags[0] }}"
-          docker push ${{ fromJson(steps.metadata.outputs.json).tags[0] }}
+          docker image push ${{ inputs.ecr-repository }}
 
       - name: Set immutable image reference
         id: result

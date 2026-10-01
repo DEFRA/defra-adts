@@ -240,10 +240,12 @@ jobs:
           echo "IMAGE_URI=${image_uri}" >> "${GITHUB_ENV}"
 
       # Push image to ECR.
-      - name: Push container image
-        run: |
-          echo "Image is ${{ fromJson(steps.metadata.outputs.json).tags[0] }}"
-          docker image push ${{ inputs.ecr-repository }}
+      - name: Push to ECR
+        id: ecr
+        uses: jwalton/gh-ecr-push@79b418c8e7c1940802b6314002715209ab6bcf0f  # v2.1.0
+        with:
+          region: ${{ inputs.aws-region }}
+          image: ${{ fromJson(steps.metadata.outputs.json).tags[0] }}
 
       - name: Set immutable image reference
         id: result

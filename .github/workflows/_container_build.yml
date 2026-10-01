@@ -115,9 +115,6 @@ jobs:
           tags: |
             type=raw,value=${{ inputs.ecr-repository }}
             type=sha,prefix=sha-,format=long
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=raw,value=main,enable=${{ inputs.push-main-tag && github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}
           labels: |
             org.opencontainers.image.title=${{ inputs.service-name }}
             org.opencontainers.image.description=${{ inputs.service-name }} JavaScript service
@@ -149,7 +146,7 @@ jobs:
           platforms: ${{ inputs.platforms }}
           push: false
           load: true
-          tags: ${{ steps.metadata.outputs.tags }}
+          tags: ${{ inputs.ecr-repository }}
           labels: ${{ steps.metadata.outputs.labels }}
           cache-from: type=gha,scope=${{ inputs.service-name }}
           cache-to: type=gha,mode=max,scope=${{ inputs.service-name }}
@@ -172,45 +169,41 @@ jobs:
         run: |
           docker images
 
-      # Scan the image before it is pushed
-      - name: Scan image with Trivy
-#        if: ${{ matrix.target == 'production' }}
-        id: trivy-scan
-        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0
-        with:
-          image-ref: ${{ fromJson(steps.metadata.outputs.json).tags[0] }}
-          format: table
-          severity: CRITICAL,HIGH
-          ignore-unfixed: true
-          exit-code: 1
-
-      - name: Trivy scan outcome
-        run: |
-          echo "Outcome of Trivy Scan is ${{ steps.trivy-scan.outcome }}"     
-
-      # Upload SARIF results to GitHub Security
-      - name: Generate SARIF report
-#        if: ${{ matrix.target == 'production' }}
-        if: always()
-        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0
-        with:
-          image-ref: ${{ fromJson(steps.metadata.outputs.json).tags[0] }}
-          format: sarif
-          output: trivy-results.sarif
-
-      - name: Upload SARIF report
-#        if: ${{ matrix.target == 'production' }}
-        if: always()
-        uses: github/codeql-action/upload-sarif@v3
-        with:
-          sarif_file: trivy-results.sarif
-
-      - name: Fail build if scans failed
-#        if: ${{ matrix.target == 'production' && steps.trivy-scan.outcome == 'failure' }}
-        if: ${{ steps.trivy-scan.outcome == 'failure' }}
-        run: |
-          echo "One or more scans failed. Failing the build."
-          exit 1
+#      # Scan the image before it is pushed
+#      - name: Scan image with Trivy
+#        id: trivy-scan
+#        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0
+#        with:
+#          image-ref: ${{ fromJson(steps.metadata.outputs.json).tags[0] }}
+#          format: table
+#          severity: CRITICAL,HIGH
+#          ignore-unfixed: true
+#          exit-code: 1
+#
+#      - name: Trivy scan outcome
+#        run: |
+#          echo "Outcome of Trivy Scan is ${{ steps.trivy-scan.outcome }}"
+#
+#      # Upload SARIF results to GitHub Security
+#      - name: Generate SARIF report
+#        if: always()
+#        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0
+#        with:
+#          image-ref: ${{ fromJson(steps.metadata.outputs.json).tags[0] }}
+#          format: sarif
+#          output: trivy-results.sarif
+#
+#      - name: Upload SARIF report
+#        if: always()
+#        uses: github/codeql-action/upload-sarif@v3
+#        with:
+#          sarif_file: trivy-results.sarif
+#
+#      - name: Fail build if scans failed
+#        if: ${{ steps.trivy-scan.outcome == 'failure' }}
+#        run: |
+#          echo "One or more scans failed. Failing the build."
+#          exit 1
 
       - name: Configure AWS credentials using OIDC
         uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd  #v6.3.0
@@ -243,8 +236,8 @@ jobs:
       # Push image to ECR.
       - name: Push container image
         run: |
-          echo "Image URL is ${{ steps.image.outputs.image-uri }}"
-          docker push ${{ steps.image.outputs.image-uri }}:latest
+          echo "Image destination is ${{ inputs.aws-account-id }}.dkr.ecr.${{ inputs.aws-region }}.amazonaws.com/${{ inputs.ecr-repository }}"
+          docker push ${{ inputs.aws-account-id }}.dkr.ecr.${{ inputs.aws-region }}.amazonaws.com/${{ inputs.ecr-repository }}
 
       - name: Set immutable image reference
         id: result

@@ -1,6 +1,7 @@
-import test from 'node:test'
-import assert from 'node:assert/strict'
+import { describe, test, expect } from '@jest/globals'
 
-test('integration test runner is configured', () => {
-  assert.equal(true, true)
+describe('integration test runner', () => {
+  test('is configured', () => {
+    expect(true).toBe(true)
+  })
 })

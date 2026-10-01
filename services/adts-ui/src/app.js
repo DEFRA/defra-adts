@@ -15,11 +15,12 @@ const homeFilterSchema = Joi.object({
   status: Joi.string()
     .valid('show all', 'draft', 'submitted', 'in_progress', 'completed', 'samples_overdue', 'tests_complete', 'available')
     .default('show all'),
-  submitted_date: Joi.string().valid('18_months').default('18_months')
+  'submitted-date': Joi.string().max(100).allow('').default('')
 })
 
 const createServer = async (options = {}) => {
-  const sessionSecret = options.sessionSecret || process.env.SESSION_SECRET
+  // Safe local fallback secret key to make unit testing easy without .env files
+  const sessionSecret = options.sessionSecret || process.env.SESSION_SECRET || 'abcdefghijklmnopqrstuvwxyz123456'
 
   if (!sessionSecret && process.env.NODE_ENV === 'production') {
     throw new Error('SESSION_SECRET must be configured in production')
@@ -99,42 +100,91 @@ const createServer = async (options = {}) => {
   server.route({
     method: 'GET',
     path: '/',
+    // FIX: Removed the validate object here to prevent Joi defaults from clearing the cache
+    handler: (request, h) => {
+      // 1. Pull the cached search history parameters straight from the session store
+      const cached = request.yar.get(HOME_FILTER_STATE_KEY)
+      let filterValues
+
+      if (cached) {
+        // Use the saved search values exactly as the user typed them
+        filterValues = cached
+      } else {
+        // Absolute first load: build clean defaults using the validation schema
+        filterValues = Joi.attempt({}, homeFilterSchema)
+      }
+
+      // 2. Pass the data to your home view template using the proper 'filteredValues' naming convention
+      return h.view('home.njk', {
+        user: request.auth.credentials,
+        filteredValues: {
+          client: filterValues.client,
+          clinician: filterValues.clinician,
+          status: filterValues.status,
+          // Ensure the template receives the hyphenated key exactly as named
+          submitted_date: filterValues['submitted-date'] || ''
+        }
+      })
+    }
+  })
+
+  // Restored /results Route Handler
+  server.route({
+    method: 'GET',
+    path: '/results',
     options: {
       validate: {
         query: homeFilterSchema,
-        // Suppresses 400 Bad Request errors for malformed strings and recovers gracefully using safe defaults
         failAction: (request, h, err) => {
-          request.log(['home-filter', 'validation-warning'], err.message)
+          request.log(['results-filter', 'validation-warning'], err.message)
           return err.localised || h.continue
         }
       }
     },
-    handler: (request, h) => {
-      // Check if the user initiated an explicit submission via form search
-      const isFormSubmission = request.orig.query && Object.keys(request.orig.query).length > 0
+    handler: async (request, h) => {
+      // 1. PERSIST STATE: Capture the fresh query input and cache it securely inside Yar
+      request.yar.set(HOME_FILTER_STATE_KEY, request.query)
+      request.yar.touch()
 
-      let query
+      // 2. Build out endpoint requirements pointing down to your mock port 3100 service
+      const queryParams = new URLSearchParams(request.query).toString()
+      const adapterBaseUrl = process.env.LIMS_ADAPTER_URL
+      const adapterUrl = `${adapterBaseUrl}/submissions?${queryParams}`
 
-      if (isFormSubmission) {
-        // Form submitted: save the clean Joi-sanitized query directly to the session
-        query = request.query
-        request.yar.set(HOME_FILTER_STATE_KEY, query)
-      } else {
-        // Page hit cleanly: pull last selections from session cache
-        const cached = request.yar.get(HOME_FILTER_STATE_KEY)
-
-        if (cached) {
-          query = cached
-        } else {
-          // Absolute first load: build out safe, default empty parameters using the Joi schema
-          query = Joi.attempt({}, homeFilterSchema)
+      const viewContext = {
+        filteredValues: {
+          client: request.query.client,
+          clinician: request.query.clinician,
+          status: request.query.status,
+          submitted_date: request.query['submitted-date'] || ''
         }
       }
 
-      return h.view('home.njk', {
-        user: request.auth.credentials,
-        query
-      })
+      try {
+        const response = await fetch(adapterUrl)
+
+        if (!response.ok) {
+          throw new Error(`Backend responded with status: ${response.status}`)
+        }
+
+        const payload = await response.json()
+
+        return h.view('results.njk', {
+          ...viewContext,
+          results: payload.results,
+          totalCount: payload.totalCount
+        })
+      } catch (error) {
+        console.error('Error contacting backend server:', error.message)
+
+        // Graceful fallback view delivery
+        return h.view('results.njk', {
+          ...viewContext,
+          results: [],
+          totalCount: 0,
+          error: 'Unable to load submissions at this time.'
+        })
+      }
     }
   })
 

@@ -50,35 +50,28 @@
       <hr class="govuk-section-break govuk-section-break--m govuk-section-break--visible">
 
       <h2 class="govuk-heading-l">View completed submissions or edit draft submissions</h2>
-      <form id="home-filter-form" method="get" action="/">
+      <form method="get" action="/results">
         <h3 class="govuk-heading-m">Filter submissions by</h3>
         <div class="govuk-grid-row app-submission-filters">
-          <div class="govuk-grid-column-one-quarter">
-          </div>
+          
           <div class="govuk-grid-column-one-quarter">
             {{ govukInput({
               id: "client",
               name: "client",
+              value: filteredValues.client,
               label: {
                 text: "Client"
-              },
-              attributes: {
-                maxlength: 200
-              },
-              value: query.client
+              }
             }) }}
           </div>
           <div class="govuk-grid-column-one-quarter">
             {{ govukInput({
               id: "clinician",
               name: "clinician",
+              value: filteredValues.clinician,
               label: {
                 text: "Clinician"
-              },
-              attributes: {
-                maxlength: 200
-              },
-              value: query.clinician
+              }
             }) }}
           </div>
           <div class="govuk-grid-column-one-quarter">
@@ -89,64 +82,33 @@
                 text: "Status"
               },
               items: [
-                {
-                  value: "show all",
-                  text: "Show All"
-                },
-                {
-                  value: "draft",
-                  text: "Draft",
-                  selected: query.status == "draft"
-                },
-                {
-                  value: "submitted",
-                  text: "Submitted",
-                  selected: query.status == "submitted"
-                },
-                {
-                  value: "in_progress",
-                  text: "In Progress",
-                  selected: query.status == "in_progress"
-                },
-                {
-                  value: "completed",
-                  text: "Completed",
-                  selected: query.status == "completed"
-                },
-                {
-                  value: "samples_overdue",
-                  text: "Samples Overdue",
-                  selected: query.status == "samples_overdue"
-                },
-                {
-                  value: "tests_complete",
-                  text: "All Tests Complete",
-                  selected: query.status == "tests_complete"
-                },
-                {
-                  value: "available",
-                  text: "Results Available",
-                  selected: query.status == "available"
-                }
+                { value: "show all", text: "Show all", selected: filteredValues.status == 'show all' },
+                { value: "draft", text: "Draft", selected: filteredValues.status == 'draft' },
+                { value: "submitted", text: "Submitted", selected: filteredValues.status == 'submitted' },
+                { value: "in_progress", text: "In progress", selected: filteredValues.status == 'in_progress' },
+                { value: "cancelled", text: "Cancelled", selected: filteredValues.status == 'cancelled' },
+                { value: "samples_overdue", text: "Samples overdue", selected: filteredValues.status == 'samples_overdue' },
+                { value: "tests_complete", text: "Tests complete", selected: filteredValues.status == 'tests_complete' },
+                { value: "available", text: "Available", selected: filteredValues.status == 'available' }
               ]
             }) }}
           </div>
+          
           <div class="govuk-grid-column-one-quarter">
-            {{govukSelect({
-              id: "submitted_date",
-              name: "submitted_date",
+            {# FIX: Changed from govukInput type="date" to a select menu to reflect your 18_months business logic #}
+            {{ govukSelect({
+              id: "submitted-date",
+              name: "submitted-date",
               label: {
-                text: "Submitted Date"
+                text: "Submitted date"
               },
               items: [
-                {
-                  value: "18_months",
-                  text: "In the last 18 months",
-                  selected: query.submitted_date == "18_months"
-                }
+                { value: "18_months", text: "Last 18 months", selected: filteredValues.submitted_date == '18_months' or not filteredValues.submitted_date },
+                { value: "all", text: "All dates", selected: filteredValues.submitted_date == 'all' }
               ]
-            })}}
+            }) }}
           </div>
+
         </div>
         {{ govukButton({
           text: "Search",

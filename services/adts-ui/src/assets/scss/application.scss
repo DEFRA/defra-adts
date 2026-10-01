@@ -6,3 +6,94 @@
 		border-radius: 0;
 	}
 }
+
+// ==========================================================================
+// ADTS Custom Search Results Styles
+// ==========================================================================
+
+.app-result-card {
+  border: 1px solid $govuk-border-colour;
+  background-color: govuk-colour("white");
+  box-sizing: border-box;
+}
+
+.app-result-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  border-bottom: 2px solid $govuk-border-colour;
+}
+
+.app-result-card__tags {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  align-items: flex-end;
+}
+
+// Fixed 6-column layout matching spec image precisely
+.app-result-card__meta-grid {
+  display: flex;
+  flex-wrap: wrap;
+  width: 100%;
+
+  &--has-tests {
+    border-bottom: 1px solid $govuk-border-colour;
+  }
+}
+
+.app-result-card__meta-col {
+  flex: 0 0 16.666%;
+  max-width: 16.666%;
+  box-sizing: border-box;
+  padding-right: 15px;
+}
+
+.app-result-card__meta-label {
+  display: block;
+  font-weight: bold;
+  color: govuk-colour("mid-grey");
+  margin-bottom: 5px;
+}
+
+.app-result-card__meta-value {
+  color: $govuk-text-colour;
+}
+
+// Tests table grid alignment widths
+.app-result-card__test-row {
+  display: flex;
+  width: 100%;
+}
+
+.app-result-card__test-col--name   { flex: 0 0 50%; max-width: 50%; padding-right: 15px; }
+.app-result-card__test-col--type   { flex: 0 0 20%; max-width: 20%; padding-right: 15px; }
+.app-result-card__test-col--sample { flex: 0 0 20%; max-width: 20%; padding-right: 15px; }
+.app-result-card__test-col--qty    { flex: 0 0 10%; max-width: 10%; text-align: left; }
+
+.app-result-card__test-label {
+  display: block;
+  font-weight: bold;
+  color: $govuk-text-colour;
+  margin-bottom: 8px;
+}
+
+.app-result-card__footer {
+  text-align: right;
+}
+
+// Status tag color assignments
+.app-tag--submitted {
+  background-color: govuk-colour("yellow") !important;
+  color: $govuk-text-colour !important;
+}
+
+.app-tag--overdue {
+  background-color: govuk-colour("pink") !important;
+  color: govuk-colour("white") !important;
+}
+
+ .govuk-tag {
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+  }

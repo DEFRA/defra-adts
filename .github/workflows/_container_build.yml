@@ -240,10 +240,11 @@ jobs:
           echo "image-uri=${image_uri}" >> "${GITHUB_OUTPUT}"
           echo "IMAGE_URI=${image_uri}" >> "${GITHUB_ENV}"
 
-      # We didn't exit so scan passed. Push image.
+      # Push image to ECR.
       - name: Push container image
         run: |
-          docker push ${{ fromJson(steps.metadata.outputs.json).tags[0] }}
+          echo "Image URI is ${{ steps.image.image-uri }}"
+          docker push ${{ steps.image.image-uri }}
 
       - name: Set immutable image reference
         id: result

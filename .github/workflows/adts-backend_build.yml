@@ -66,6 +66,7 @@ jobs:
     permissions:
       contents: read
       id-token: write
+      security-events: write
 
     with:
       service-name: adts-backend

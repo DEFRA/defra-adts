@@ -178,7 +178,7 @@ jobs:
           platforms: ${{ inputs.platforms }}
           push: false
           load: true
-          tags: ${{ inputs.ecr-repository }}, ${{ steps.image.outputs.image-uri }}
+          tags: ${{ inputs.ecr-repository }}, ${{ steps.image.outputs.image-uri }}:v0.1
           labels: ${{ steps.metadata.outputs.labels }}
           cache-from: type=gha,scope=${{ inputs.service-name }}
           cache-to: type=gha,mode=max,scope=${{ inputs.service-name }}

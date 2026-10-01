@@ -113,7 +113,7 @@ jobs:
         with:
           images: ${{ env.IMAGE_URI }}
           tags: |
-            type=raw,value=${{ inputs.ecr-repository }}
+            type=raw,value=${{ inputs.ecr-repository }} ${{ inputs.aws-account-id }}.dkr.ecr.${{ inputs.aws-region }}.amazonaws.com/${{ inputs.ecr-repository }}:v0.1
             type=sha,prefix=sha-,format=long
           labels: |
             org.opencontainers.image.title=${{ inputs.service-name }}
@@ -146,7 +146,7 @@ jobs:
           platforms: ${{ inputs.platforms }}
           push: false
           load: true
-          tags: ${{ inputs.ecr-repository }} ${{ inputs.aws-account-id }}.dkr.ecr.${{ inputs.aws-region }}.amazonaws.com/${{ inputs.ecr-repository }}
+          tags: ${{ inputs.ecr-repository }}, ${{ inputs.aws-account-id }}.dkr.ecr.${{ inputs.aws-region }}.amazonaws.com/${{ inputs.ecr-repository }}
           labels: ${{ steps.metadata.outputs.labels }}
           cache-from: type=gha,scope=${{ inputs.service-name }}
           cache-to: type=gha,mode=max,scope=${{ inputs.service-name }}
@@ -167,6 +167,7 @@ jobs:
 
       - name: Show images
         run: |
+          echo "Tags are ${{ steps.metadata.outputs.tags }}"
           docker images
 
 #      # Scan the image before it is pushed

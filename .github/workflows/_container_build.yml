@@ -113,6 +113,7 @@ jobs:
         with:
           images: ${{ env.IMAGE_URI }}
           tags: |
+            type=raw,value=${{ inputs.ecr-repository }}
             type=sha,prefix=sha-,format=long
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}

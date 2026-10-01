@@ -113,7 +113,7 @@ jobs:
         with:
           images: ${{ env.IMAGE_URI }}
           tags: |
-            type=raw,value=do-not-use
+#            type=raw,value=do-not-use
             type=sha,prefix=sha-,format=long
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}

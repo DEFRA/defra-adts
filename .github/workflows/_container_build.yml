@@ -244,7 +244,7 @@ jobs:
       - name: Push container image
         run: |
           echo "Image is ${{ steps.build.outputs.imageid }}"
-          docker push ${{ steps.build.outputs.imageid }}
+          docker push ${{ fromJson(steps.metadata.outputs.json).tags[0] }}:latest
 
       - name: Set immutable image reference
         id: result

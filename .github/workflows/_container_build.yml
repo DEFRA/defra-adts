@@ -146,7 +146,7 @@ jobs:
           platforms: ${{ inputs.platforms }}
           push: false
           load: true
-          tags: ${{ inputs.ecr-repository }}
+          tags: ${{ inputs.ecr-repository }} ${{ inputs.aws-account-id }}.dkr.ecr.${{ inputs.aws-region }}.amazonaws.com/${{ inputs.ecr-repository }}
           labels: ${{ steps.metadata.outputs.labels }}
           cache-from: type=gha,scope=${{ inputs.service-name }}
           cache-to: type=gha,mode=max,scope=${{ inputs.service-name }}

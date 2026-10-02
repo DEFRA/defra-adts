@@ -20,6 +20,23 @@ const config = {
     screenshot: 'only-on-failure',
     video: 'retain-on-failure'
   },
+  webServer: [
+  {
+    command: 'npm start --prefix services/adts-lims-adapter',
+    url: 'http://localhost:3100',
+    reuseExistingServer: !process.env.CI,
+    timeout: 60 * 1000
+  },
+  {
+    command: 'npm start --prefix services/adts-ui',
+    url: 'http://localhost:3000',
+    reuseExistingServer: !process.env.CI,
+    timeout: 60 * 1000,
+    env: {
+      LIMS_ADAPTER_URL: 'http://localhost:3100'
+    }
+  }
+],
 
   projects: [
     {

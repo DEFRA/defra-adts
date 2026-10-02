@@ -50,6 +50,11 @@ on:
         default: true
         type: boolean
 
+      tag:
+        description: Tag to be applied to the image
+        default: "v0.0.0"
+        type: string
+
     outputs:
       image-uri:
         description: ECR image repository URI
@@ -138,42 +143,86 @@ jobs:
         id: metadata
         uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
         with:
-          images: ${{ env.IMAGE_URI }}
+          images: ${{ steps.image.outputs.image-uri }}
           tags: |
+            type=raw,value=${{ inputs.tag }},enable=false
             type=sha,prefix=sha-,format=long
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=raw,value=main,enable=${{ inputs.push-main-tag && github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}
           labels: |
             org.opencontainers.image.title=${{ inputs.service-name }}
             org.opencontainers.image.description=${{ inputs.service-name }} JavaScript service
             org.opencontainers.image.revision=${{ github.sha }}
             org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
 
+      - name: Set up Docker
+        uses: docker/setup-docker-action@1a6edb0ba9ac496f6850236981f15d8f9a82254d # v4.0
+        with:
+          daemon-config: |
+            {
+              "features": {
+                "containerd-snapshotter": true
+              }
+            }
+
+      - name: Show metadata tags
+        run: |
+          echo "Tags are ${{ steps.metadata.outputs.tags }}"
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069  # v4.4.1
 
-      - name: Validate Docker build configuration
-        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc  # v7.4.0
-        with:
-          context: ${{ inputs.service-directory }}
-          file: ${{ inputs.dockerfile }}
-          call: check
-
-      - name: Build and push container image
+      - name: Build container image
         id: build
         uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc  # v7.4.0
         with:
           context: ${{ inputs.service-directory }}
           file: ${{ inputs.dockerfile }}
           platforms: ${{ inputs.platforms }}
-          push: true
+          push: false
+          load: true
           tags: ${{ steps.metadata.outputs.tags }}
           labels: ${{ steps.metadata.outputs.labels }}
           cache-from: type=gha,scope=${{ inputs.service-name }}
           cache-to: type=gha,mode=max,scope=${{ inputs.service-name }}
           provenance: mode=max
           sbom: true
+
+      # Scan the image before it is pushed
+      - name: Scan image with Trivy
+        id: trivy-scan
+        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0
+        with:
+          image-ref: ${{ fromJson(steps.metadata.outputs.json).tags[0] }}
+          format: table
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          exit-code: 1
+
+      # Upload SARIF results to GitHub Security
+      - name: Generate SARIF report
+        if: always()
+        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0
+        with:
+          image-ref: ${{ fromJson(steps.metadata.outputs.json).tags[0] }}
+          format: sarif
+          output: trivy-results.sarif
+
+      - name: Upload SARIF report
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: trivy-results.sarif
+
+      - name: Fail build if scans failed
+        if: ${{ steps.trivy-scan.outcome == 'failure' }}
+        run: |
+          echo "One or more scans failed. Failing the build."
+          exit 1
+
+      # Push image to ECR.
+      - name: Push container image
+        run: |
+          echo "Image destination is ${{ fromJson(steps.metadata.outputs.json).tags[0] }}"
+          docker push ${{ fromJson(steps.metadata.outputs.json).tags[0] }}
 
       - name: Set immutable image reference
         id: result

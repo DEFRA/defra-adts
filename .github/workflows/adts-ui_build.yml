@@ -45,7 +45,7 @@ jobs:
       run-audit: false
       run-lint: true
       run-format-check: false
-      run-tests: false
+      run-tests: true
       run-sonarqube-scan: false
       test-command: npm test -- --ci --coverage
       build-command: npm run build

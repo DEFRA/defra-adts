@@ -145,7 +145,7 @@ jobs:
         with:
           images: ${{ steps.image.outputs.image-uri }}
           tags: |
-            type=raw,value=${{ inputs.tag }}
+            type=raw,value=${{ inputs.tag }},enable=false
             type=sha,prefix=sha-,format=long
           labels: |
             org.opencontainers.image.title=${{ inputs.service-name }}

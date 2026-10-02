@@ -186,10 +186,6 @@ jobs:
           provenance: mode=max
           sbom: true
 
-      - name: Show images
-        run: |
-          docker images
-
       # Scan the image before it is pushed
       - name: Scan image with Trivy
         id: trivy-scan
@@ -200,10 +196,6 @@ jobs:
           severity: CRITICAL,HIGH
           ignore-unfixed: true
           exit-code: 1
-
-      - name: Trivy scan outcome
-        run: |
-          echo "Outcome of Trivy Scan is ${{ steps.trivy-scan.outcome }}"
 
       # Upload SARIF results to GitHub Security
       - name: Generate SARIF report

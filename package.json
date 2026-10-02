@@ -1,0 +1,29 @@
+{
+  "name": "defra-adts",
+  "version": "1.0.0",
+  "description": "ADTS cross-service test tooling and E2E suite",
+
+  "scripts": {
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:chromium": "playwright test --project=chromium",
+    "test:e2e:debug": "playwright test --debug",
+    "test:e2e:report": "playwright show-report"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DEFRA/defra-adts.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/DEFRA/defra-adts/issues"
+  },
+  "homepage": "https://github.com/DEFRA/defra-adts#readme",
+  "devDependencies": {
+    "@axe-core/playwright": "4.13.0",
+    "@playwright/test": "1.63.0"
+  }
+}

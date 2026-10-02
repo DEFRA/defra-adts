@@ -66,7 +66,6 @@ jobs:
     permissions:
       contents: read
       id-token: write
-#      security-events: write
 
     with:
       service-name: adts-backend
@@ -76,5 +75,5 @@ jobs:
       ecr-repository: ${{ vars.ADTS_BACKEND_ECR }}
       aws-account-id: ${{ vars.AWS_ECR_ROLE_ACCOUNT_ID }}
       aws-role: ${{ vars.AWS_ECR_ROLE_NAME }}
-      platforms: linux/amd64
+      platforms: linux
       push-main-tag: false

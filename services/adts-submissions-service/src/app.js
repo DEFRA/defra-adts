@@ -61,7 +61,7 @@ const createServer = async () => {
     method: 'GET',
     path: '/health',
     handler: (request, h) => {
-        return h.response({ status: 'UP', timestamp: new Date() }).code(200);
+      return h.response({ status: 'UP', timestamp: new Date() }).code(200)
     }
   })
 

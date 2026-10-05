@@ -27,7 +27,7 @@ const createServer = async (options = {}) => {
   }
 
   const server = Hapi.server({
-    port: process.env.PORT || 3000,
+    port: process.env.PORT || 9181,
     host: '0.0.0.0'
   })
 
@@ -146,7 +146,7 @@ const createServer = async (options = {}) => {
       request.yar.set(HOME_FILTER_STATE_KEY, request.query)
       request.yar.touch()
 
-      // 2. Build out endpoint requirements pointing down to your mock port 3100 service
+      // 2. Build out endpoint requirements pointing down to your mock port 9180 service
       const queryParams = new URLSearchParams(request.query).toString()
       const adapterBaseUrl = process.env.LIMS_ADAPTER_URL
       const adapterUrl = `${adapterBaseUrl}/submissions?${queryParams}`
@@ -186,6 +186,15 @@ const createServer = async (options = {}) => {
         })
       }
     }
+  })
+
+  // Healthcheck endpoint
+  server.route({
+      method: 'GET',
+      path: '/health',
+      handler: (request, h) => {
+        return h.response({ status: 'UP', timestamp: new Date() }).code(200);
+      }
   })
 
   return server

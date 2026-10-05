@@ -7,7 +7,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 const createServer = async () => {
   const server = Hapi.server({
-    port: process.env.PORT || 3100,
+    port: process.env.PORT || 9180,
     host: '0.0.0.0'
   })
 
@@ -53,6 +53,15 @@ const createServer = async () => {
       } catch (error) {
         return h.response({ error: 'LIMS connectivity failure' }).code(502)
       }
+    }
+  })
+
+  // Healthcheck endpoint
+  server.route({
+    method: 'GET',
+    path: '/health',
+    handler: (request, h) => {
+        return h.response({ status: 'UP', timestamp: new Date() }).code(200);
     }
   })
 

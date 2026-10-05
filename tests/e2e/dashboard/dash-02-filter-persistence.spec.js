@@ -46,7 +46,7 @@ test.describe('DASH-02 — Dashboard filter persistence', () => {
     await page.getByLabel('Client').fill('OLD MCDONALD')
     await page.getByLabel('Clinician').fill('Dr Smith')
     await page.getByLabel('Status').selectOption('draft')
-    await page.getByLabel('Submitted date').selectOption('18_months')
+    await page.getByLabel('Submitted date').selectOption('1_week')
     await page.getByRole('button', { name: 'Search' }).click()
     await expect(page).toHaveURL(/\/results/)
 
@@ -56,7 +56,7 @@ test.describe('DASH-02 — Dashboard filter persistence', () => {
     await expect(page.getByLabel('Client')).toHaveValue('OLD MCDONALD')
     await expect(page.getByLabel('Clinician')).toHaveValue('Dr Smith')
     await expect(page.getByLabel('Status')).toHaveValue('draft')
-    await expect(page.getByLabel('Submitted date')).toHaveValue('18_months')
+    await expect(page.getByLabel('Submitted date')).toHaveValue('1_week')
   })
 
   test('AC4: Status dropdown selection is preserved on return', async ({ page }) => {
@@ -77,11 +77,11 @@ test.describe('DASH-02 — Dashboard filter persistence', () => {
   })
 
   test('AC6: Submitted date value is preserved on return', async ({ page }) => {
-    await page.getByLabel('Submitted date').selectOption('all')
+    await page.getByLabel('Submitted date').selectOption('6_months')
     await page.getByRole('button', { name: 'Search' }).click()
 
     await page.getByRole('link', { name: /back to home dashboard/i }).click()
-    await expect(page.getByLabel('Submitted date')).toHaveValue('all')
+    await expect(page.getByLabel('Submitted date')).toHaveValue('6_months')
   })
 
   test('AC7: filters are not cleared by repeated navigation or reload', async ({ page }) => {

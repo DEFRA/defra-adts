@@ -2,26 +2,38 @@
   "name": "defra-adts",
   "version": "1.0.0",
   "description": "ADTS cross-service test tooling and E2E suite",
+  "private": true,
+  "type": "module",
+  "author": "ADTS-Defra",
+  "license": "ISC",
 
   "scripts": {
+    "install:all": "npm install && npm install --prefix services/adts-ui && npm install --prefix services/adts-submissions-service && npm install --prefix services/adts-backend",
+
+    "test:ui": "npm test --prefix services/adts-ui",
+    "test:submissions": "npm test --prefix services/adts-submissions-service",
+    "test:backend": "npm test --prefix services/adts-backend",
+    "test:services": "npm run test:ui && npm run test:submissions && npm run test:backend",
+
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:chromium": "playwright test --project=chromium",
     "test:e2e:debug": "playwright test --debug",
-    "test:e2e:report": "playwright show-report"
+    "test:e2e:report": "playwright show-report",
+
+    "test": "npm run test:services && npm run test:e2e"
   },
+
   "repository": {
     "type": "git",
     "url": "git+https://github.com/DEFRA/defra-adts.git"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "module",
   "bugs": {
     "url": "https://github.com/DEFRA/defra-adts/issues"
   },
   "homepage": "https://github.com/DEFRA/defra-adts#readme",
+  "keywords": [],
+
   "devDependencies": {
     "@axe-core/playwright": "4.13.0",
     "@playwright/test": "1.63.0"

@@ -1,1 +1,1 @@
-# ADTS LIMS Adapter
+# ADTS Submissions Service

@@ -21,4 +21,4 @@ process.on('unhandledRejection', (error) => {
 
 await server.start()
 
-console.log(`ADTS LIMS Adapter listening on ${server.info.uri}`)
+console.log(`ADTS Submissions Service listening on ${server.info.uri}`)

@@ -1,1 +1,0 @@
-# ADTS LIMS Adapter

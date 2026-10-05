@@ -79,6 +79,7 @@ jobs:
     permissions:
       contents: read
       id-token: write
+      security-events: write
 
     timeout-minutes: 30
 

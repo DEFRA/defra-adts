@@ -1,5 +1,5 @@
 ARG PARENT_VERSION=3.2.1-node24.20.0
-ARG PORT=3000
+ARG PORT=9182
 
 FROM defradigital/node-development:$PARENT_VERSION AS development
 
@@ -7,7 +7,7 @@ ENV TZ="Europe/London"
 
 ARG PORT
 ENV PORT=${PORT}
-EXPOSE ${PORT} 9182
+EXPOSE ${PORT} 9332
 
 COPY --chown=node:node package*.json ./
 RUN npm ci --ignore-scripts

@@ -24,16 +24,6 @@
     "test": "npm run test:services && npm run test:e2e"
   },
 
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/DEFRA/defra-adts.git"
-  },
-  "bugs": {
-    "url": "https://github.com/DEFRA/defra-adts/issues"
-  },
-  "homepage": "https://github.com/DEFRA/defra-adts#readme",
-  "keywords": [],
-
   "devDependencies": {
     "@axe-core/playwright": "4.13.0",
     "@playwright/test": "1.63.0"

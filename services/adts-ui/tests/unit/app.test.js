@@ -1,4 +1,4 @@
-import { describe, test, expect, afterAll, spyOn } from '@jest/globals'
+import { describe, test, expect, afterAll, jest } from '@jest/globals'
 import createServer from '../../src/app.js'
 
 describe('createServer', () => {
@@ -27,7 +27,7 @@ describe('createServer', () => {
   })
 
   test('SIGTERM triggers shutdown', async () => {
-    const exitSpy = spyOn(process, 'exit').mockImplementation(() => {})
+    const exitSpy = jest.spyOn(process, 'exit').mockImplementation(() => {})
     process.emit('SIGTERM')
     await new Promise(resolve => setTimeout(resolve, 100))
     expect(exitSpy).toHaveBeenCalledWith(0)
@@ -35,7 +35,7 @@ describe('createServer', () => {
   })
 
   test('uncaughtException triggers shutdown with exit code 1', async () => {
-    const exitSpy = spyOn(process, 'exit').mockImplementation(() => {})
+    const exitSpy = jest.spyOn(process, 'exit').mockImplementation(() => {})
     process.emit('uncaughtException', new Error('Test error'))
     await new Promise(resolve => setTimeout(resolve, 100))
     expect(exitSpy).toHaveBeenCalledWith(1)

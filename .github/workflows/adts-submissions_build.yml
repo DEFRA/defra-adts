@@ -57,7 +57,7 @@ jobs:
       - validate
 
     # Pull requests validate the service but do not publish images.
-    if: "true" == "false"  # Temporarily disabled   ${{ github.event_name != 'pull_request' }}
+    if: ${{ 'true' == 'false' }} # Temporarily disabled   ${{ github.event_name != 'pull_request' }}
 
     uses: ./.github/workflows/_container_build.yml
 

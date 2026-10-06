@@ -44,7 +44,7 @@ lab.experiment('Home Filter State Persistence', () => {
     expect(context.filteredValues).to.equal({
       client: '',
       clinician: '',
-      status: 'show all',
+      status: 'show_all',
       submitted_date: ''
     })
   })

@@ -13,8 +13,8 @@ const homeFilterSchema = Joi.object({
   client: Joi.string().max(200).allow('').default(''),
   clinician: Joi.string().max(200).allow('').default(''),
   status: Joi.string()
-    .valid('show all', 'draft', 'submitted', 'in_progress', 'cancelled', 'samples_overdue', 'tests_complete', 'available')
-    .default('show all'),
+    .valid('show_all', 'draft', 'submitted', 'in_progress', 'cancelled', 'samples_overdue', 'tests_complete', 'available')
+    .default('show_all'),
   'submitted-date': Joi.string()
     .valid('1_day', '1_week', '14_days', '1_month', '6_months', '1_year', '18_months')
     .allow('')

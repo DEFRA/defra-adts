@@ -15,7 +15,7 @@ const config = {
   ],
 
   use: {
-    baseURL: process.env.BASE_URL || 'http://localhost:3000',
+    baseURL: process.env.BASE_URL || 'http://localhost:9181',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure'
@@ -23,17 +23,17 @@ const config = {
 webServer: [
   {
     command: 'npm start --prefix services/adts-submissions-service',   
-    url: 'http://localhost:3100',
+    url: 'http://localhost:9180',
     reuseExistingServer: !process.env.CI,
     timeout: 60 * 1000
   },
   {
     command: 'npm start --prefix services/adts-ui',
-    url: 'http://localhost:3000',
+    url: 'http://localhost:9181',
     reuseExistingServer: !process.env.CI,
     timeout: 60 * 1000,
     env: {
-      SUBMISSIONS_SERVICE_URL: 'http://localhost:3100'   
+      SUBMISSIONS_SERVICE_URL: 'http://localhost:9180'
     }
   }
 ],

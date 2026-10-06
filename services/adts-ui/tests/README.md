@@ -24,7 +24,7 @@ Node version required: **24.x**.
 From this folder (`services/adts-ui`):
 
 ```bash
-# Start the UI on http://localhost:3000
+# Start the UI on http://localhost:9181
 npm start
 
 # Start with live reload on template changes
@@ -36,11 +36,11 @@ npm run build
 # Lint
 npm run lint
 
-# Kill anything already bound to port 3000
+# Kill anything already bound to port 9181
 npm run kill
 ```
 
-The UI expects `adts-submissions-service` on port 3100. Start it in a separate terminal:
+The UI expects `adts-submissions-service` on port 9180. Start it in a separate terminal:
 
 ```bash
 npm start --prefix services/adts-submissions-service
@@ -109,4 +109,4 @@ Running `npm test` from this folder does **not** run E2E tests. For the full gat
 
 **`ERR_MODULE_NOT_FOUND: Cannot find package '@hapi/hapi'`** — service deps aren't installed. Run `npm install` from this folder, or `npm run install:all` from the repo root.
 
-**Port 3000 already in use** — run `npm run kill` to free it, or find the culprit with `lsof -tiTCP:3000`.
+**Port 9181 already in use** — run `npm run kill` to free it, or find the culprit with `lsof -tiTCP:9181`.

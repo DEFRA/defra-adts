@@ -81,17 +81,17 @@ npx playwright test --grep "AC6" --debug
 Playwright's `webServer` config auto-starts `adts-ui` and `adts-submissions-service` when they aren't already running locally (`reuseExistingServer: !process.env.CI`). You don't need to start them manually unless you want to watch their logs:
 
 ```bash
-# Terminal A — submissions service on :3100
+# Terminal A — submissions service on :9181
 npm start --prefix services/adts-submissions-service
 
-# Terminal B — UI on :3000
+# Terminal B — UI on :9181
 npm start --prefix services/adts-ui
 
 # Terminal C — run tests, which will reuse the running services
 npm run test:e2e
 ```
 
-If you hit `ERR_CONNECTION_REFUSED` on `http://localhost:3000`, a service hasn't come up — check that port isn't already in use by something else (`lsof -tiTCP:3000`), and check each service was `npm install`ed.
+If you hit `ERR_CONNECTION_REFUSED` on `http://localhost:9181`, a service hasn't come up — check that port isn't already in use by something else (`lsof -tiTCP:9181`), and check each service was `npm install`ed.
 
 ## Accessibility checks
 

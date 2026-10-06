@@ -82,18 +82,18 @@
                 text: "Status"
               },
               items: [
-                { value: "show all", text: "Show all", selected: filteredValues.status == 'show all' },
+                { value: "show all", text: "Show All", selected: filteredValues.status == 'show all' },
                 { value: "draft", text: "Draft", selected: filteredValues.status == 'draft' },
                 { value: "submitted", text: "Submitted", selected: filteredValues.status == 'submitted' },
                 { value: "in_progress", text: "In progress", selected: filteredValues.status == 'in_progress' },
                 { value: "cancelled", text: "Cancelled", selected: filteredValues.status == 'cancelled' },
                 { value: "samples_overdue", text: "Samples overdue", selected: filteredValues.status == 'samples_overdue' },
-                { value: "tests_complete", text: "Tests complete", selected: filteredValues.status == 'tests_complete' },
-                { value: "available", text: "Available", selected: filteredValues.status == 'available' }
+                { value: "tests_complete", text: "All tests complete", selected: filteredValues.status == 'tests_complete' },
+                { value: "available", text: "Results available", selected: filteredValues.status == 'available' }
               ]
             }) }}
           </div>
-          
+           
           <div class="govuk-grid-column-one-quarter">
             {{ govukSelect({
               id: "submitted-date",

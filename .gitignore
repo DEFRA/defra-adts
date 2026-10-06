@@ -10,3 +10,8 @@ services/adts-submissions-service/src/public/js/*
 explainer.md
 .env
 
+# Playwright
+playwright-report/
+test-results/
+blob-report/
+.playwright/

@@ -26,8 +26,10 @@ const createServer = async (options = {}) => {
     throw new Error('SESSION_SECRET must be configured in production')
   }
 
+  const port = 9181
+
   const server = Hapi.server({
-    port: process.env.PORT || 9181,
+    port: process.env.PORT || port,
     host: '0.0.0.0'
   })
 

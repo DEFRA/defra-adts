@@ -5,9 +5,11 @@ import Inert from '@hapi/inert'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
+const port = 9180
+
 const createServer = async () => {
   const server = Hapi.server({
-    port: process.env.PORT || 9180,
+    port: process.env.PORT || port,
     host: '0.0.0.0'
   })
 

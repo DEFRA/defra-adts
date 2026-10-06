@@ -17,15 +17,21 @@ const shutdown = async (exitCode) => {
   process.exit(exitCode)
 }
 
-process.on('SIGTERM', () => shutdown(0))
-process.on('SIGINT', () => shutdown(0))
+process.on('SIGTERM', () => shutdown(0).catch(console.error))
+process.on('SIGINT', () => shutdown(0).catch(console.error))
 process.on('uncaughtException', (error) => {
   console.error(error)
-  shutdown(1)
+  shutdown(1).catch((shutdownError) => {
+    console.error(shutdownError)
+    process.exit(1)
+  })
 })
 process.on('unhandledRejection', (error) => {
   console.error(error)
-  shutdown(1)
+  shutdown(1).catch((shutdownError) => {
+    console.error(shutdownError)
+    process.exit(1)
+  })
 })
 
 await server.start()

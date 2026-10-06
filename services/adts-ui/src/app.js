@@ -18,7 +18,7 @@ const homeFilterSchema = Joi.object({
   'submitted-date': Joi.string()
     .valid('1_day', '1_week', '14_days', '1_month', '6_months', '1_year', '18_months')
     .allow('')
-    .default('')
+    .default('18_months')
 })
 
 const createServer = async (options = {}) => {

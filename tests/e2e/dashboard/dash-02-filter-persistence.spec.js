@@ -111,7 +111,7 @@ test.describe('DASH-02 — Dashboard filter persistence', () => {
     await page.getByRole('link', { name: /back to home dashboard/i }).click()
     await page.getByLabel('Client').clear()
     await page.getByLabel('Clinician').clear()
-    await page.getByLabel('Status').selectOption('show all')
+    await page.getByLabel('Status').selectOption('show_all')
     await page.getByRole('button', { name: 'Search' }).click()
 
     await expect(page).toHaveURL(/\/results/)

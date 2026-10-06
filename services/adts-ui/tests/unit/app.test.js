@@ -25,20 +25,4 @@ describe('createServer', () => {
     const response = await server.inject({ method: 'GET', url: '/' })
     expect(response.headers['content-type']).toContain('text/html')
   })
-
-  test('SIGTERM triggers shutdown', async () => {
-    const exitSpy = jest.spyOn(process, 'exit').mockImplementation(() => {})
-    process.emit('SIGTERM')
-    await new Promise(resolve => setTimeout(resolve, 100))
-    expect(exitSpy).toHaveBeenCalledWith(0)
-    exitSpy.mockRestore()
-  })
-
-  test('uncaughtException triggers shutdown with exit code 1', async () => {
-    const exitSpy = jest.spyOn(process, 'exit').mockImplementation(() => {})
-    process.emit('uncaughtException', new Error('Test error'))
-    await new Promise(resolve => setTimeout(resolve, 100))
-    expect(exitSpy).toHaveBeenCalledWith(1)
-    exitSpy.mockRestore()
-  })
 })

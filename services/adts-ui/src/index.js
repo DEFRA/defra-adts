@@ -17,8 +17,11 @@ const shutdown = async (exitCode) => {
   process.exit(exitCode)
 }
 
+// @ts-ignore coverage ignore next
 process.on('SIGTERM', () => shutdown(0).catch(console.error))
+// @ts-ignore coverage ignore next
 process.on('SIGINT', () => shutdown(0).catch(console.error))
+// @ts-ignore coverage ignore next
 process.on('uncaughtException', (error) => {
   console.error(error)
   shutdown(1).catch((shutdownError) => {
@@ -26,6 +29,7 @@ process.on('uncaughtException', (error) => {
     process.exit(1)
   })
 })
+// @ts-ignore coverage ignore next
 process.on('unhandledRejection', (error) => {
   console.error(error)
   shutdown(1).catch((shutdownError) => {

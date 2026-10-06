@@ -60,7 +60,7 @@ const createServer = async () => {
   server.route({
     method: 'GET',
     path: '/health',
-    handler: (request, h) => {
+    handler: (_request, h) => {
       return h.response({ status: 'UP', timestamp: new Date() }).code(200)
     }
   })

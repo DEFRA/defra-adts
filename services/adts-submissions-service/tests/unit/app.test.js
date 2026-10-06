@@ -25,4 +25,9 @@ describe('createServer', () => {
     const response = await server.inject({ method: 'GET', url: '/' })
     expect(response.headers['content-type']).toContain('text/html')
   })
+
+  test('/health responds wih 200', async () => {
+    const response = await server.inject({ method: 'GET', url: '/health' })
+    expect(response.statusCode).toBe(200)
+  })
 })

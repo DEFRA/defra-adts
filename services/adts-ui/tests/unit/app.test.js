@@ -41,5 +41,4 @@ describe('createServer', () => {
     expect(exitSpy).toHaveBeenCalledWith(1)
     exitSpy.mockRestore()
   })
-
 })

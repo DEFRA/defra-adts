@@ -31,7 +31,7 @@ describe('Dashboard filter — Status dropdown (DASH-02 AC2)', () => {
   })
 
   const filteredValues = { client: '', clinician: '', status: 'show_all', submitted_date: '' }
-  const {dateItems, statusItems } = getSelectItems(filteredValues)
+  const { dateItems, statusItems } = getSelectItems(filteredValues)
   const defaultContext = { filteredValues, dateItems, statusItems }
 
   const requiredStatuses = [

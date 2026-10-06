@@ -38,7 +38,7 @@ describe('Dashboard home page (DASH-12)', () => {
   })
 
   const filteredValues = { client: '', clinician: '', status: 'show_all', submitted_date: '' }
-  const {dateItems, statusItems } = getSelectItems(filteredValues)
+  const { dateItems, statusItems } = getSelectItems(filteredValues)
   const defaultContext = { filteredValues, dateItems, statusItems }
 
   describe('AC1: Submission management section heading', () => {
@@ -129,12 +129,12 @@ describe('Dashboard home page (DASH-12)', () => {
 
     it('marks the selected Status option when filter value provided', () => {
       const filteredValues = {
-          client: '',
-          clinician: '',
-          status: 'draft',
-          submitted_date: ''
-        }
-      const {dateItems, statusItems } = getSelectItems(filteredValues)
+        client: '',
+        clinician: '',
+        status: 'draft',
+        submitted_date: ''
+      }
+      const { dateItems, statusItems } = getSelectItems(filteredValues)
       const html = env.render('home.njk', {
         filteredValues,
         dateItems,
@@ -157,13 +157,13 @@ describe('Dashboard home page (DASH-12)', () => {
   describe('Security', () => {
     it('escapes HTML in Client filter value to prevent XSS', () => {
       const filteredValues = {
-          client: '<script>alert("xss")</script>',
-          clinician: '',
-          status: 'show_all',
-          submitted_date: ''
-        }
-      
-      const {dateItems, statusItems } = getSelectItems(filteredValues)
+        client: '<script>alert("xss")</script>',
+        clinician: '',
+        status: 'show_all',
+        submitted_date: ''
+      }
+
+      const { dateItems, statusItems } = getSelectItems(filteredValues)
       const html = env.render('home.njk', {
         filteredValues,
         dateItems,
@@ -175,12 +175,12 @@ describe('Dashboard home page (DASH-12)', () => {
 
     it('escapes HTML in Clinician filter value to prevent XSS', () => {
       const filteredValues = {
-          client: '',
-          clinician: '"><img src=x onerror=alert(1)>',
-          status: 'show_all',
-          submitted_date: ''
-        }
-      const {dateItems, statusItems } = getSelectItems(filteredValues)
+        client: '',
+        clinician: '"><img src=x onerror=alert(1)>',
+        status: 'show_all',
+        submitted_date: ''
+      }
+      const { dateItems, statusItems } = getSelectItems(filteredValues)
       const html = env.render('home.njk', {
         filteredValues,
         dateItems,

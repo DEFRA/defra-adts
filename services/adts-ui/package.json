@@ -11,8 +11,8 @@
     "start": "node src/index.js",
     "test": "npm run test:unit && npm run test:component && npm run test:integration && npm run test:routes",
     "test:unit": "node --experimental-vm-modules node_modules/jest/bin/jest.js tests/unit",
-    "test:component": "node --test \"tests/component/**/*.js\"",
-    "test:integration": "node --test \"tests/integration/**/*.js\"",
+    "test:component": "node --experimental-vm-modules node_modules/jest/bin/jest.js tests/component",
+    "test:integration": "node --experimental-vm-modules node_modules/jest/bin/jest.js tests/integration",
     "test:routes": "lab -v tests/routes/*.lab.test.js",
     "test:e2e": "echo \"E2E tests are not enabled yet\"",
     "start:watch": "nodemon --watch src/views --ignore src/public --ext njk --signal SIGTERM src/index.js",
@@ -30,12 +30,12 @@
     "nunjucks": "3.2.4"
   },
   "devDependencies": {
-  "@hapi/lab": "^26.0.1",
-  "esbuild": "0.28.1",
-  "eslint": "9.39.5",
-  "jest": "^30.5.2",
-  "neostandard": "0.13.0",
-  "nodemon": "3.1.14",
-  "sass": "1.105.0"
-}
+    "@hapi/lab": "^26.0.1",
+    "esbuild": "0.28.1",
+    "eslint": "9.39.5",
+    "jest": "^30.5.2",
+    "neostandard": "0.13.0",
+    "nodemon": "3.1.14",
+    "sass": "1.105.0"
+  }
 }

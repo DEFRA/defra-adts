@@ -7,7 +7,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 const createServer = async () => {
   const port = 9180
-  const http_success = 200
+  const httpSuccess = 200
 
   const server = Hapi.server({
     port: process.env.PORT || port,
@@ -64,7 +64,7 @@ const createServer = async () => {
     method: 'GET',
     path: '/health',
     handler: (_request, h) => {
-      return h.response({ status: 'UP', timestamp: new Date() }).code(http_success)
+      return h.response({ status: 'UP', timestamp: new Date() }).code(httpSuccess)
     }
   })
 

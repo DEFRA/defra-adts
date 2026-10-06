@@ -19,6 +19,7 @@ import { describe, it, expect, beforeAll } from '@jest/globals'
 import nunjucks from 'nunjucks'
 import path from 'path'
 import { fileURLToPath } from 'url'
+import { getSelectItems } from '../../src/constants.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -36,14 +37,9 @@ describe('Dashboard home page (DASH-12)', () => {
     )
   })
 
-  const defaultContext = {
-    filteredValues: {
-      client: '',
-      clinician: '',
-      status: 'show_all',
-      submitted_date: ''
-    }
-  }
+  const filteredValues = { client: '', clinician: '', status: 'show_all', submitted_date: '' }
+  const {dateItems, statusItems } = getSelectItems(filteredValues)
+  const defaultContext = { filteredValues, dateItems, statusItems }
 
   describe('AC1: Submission management section heading', () => {
     it('renders the submission management section heading', () => {
@@ -132,13 +128,17 @@ describe('Dashboard home page (DASH-12)', () => {
     })
 
     it('marks the selected Status option when filter value provided', () => {
-      const html = env.render('home.njk', {
-        filteredValues: {
+      const filteredValues = {
           client: '',
           clinician: '',
           status: 'draft',
           submitted_date: ''
         }
+      const {dateItems, statusItems } = getSelectItems(filteredValues)
+      const html = env.render('home.njk', {
+        filteredValues,
+        dateItems,
+        statusItems
       })
       expect(html).toMatch(/<option[^>]*value="draft"[^>]*selected/i)
     })
@@ -156,26 +156,35 @@ describe('Dashboard home page (DASH-12)', () => {
 
   describe('Security', () => {
     it('escapes HTML in Client filter value to prevent XSS', () => {
-      const html = env.render('home.njk', {
-        filteredValues: {
+      const filteredValues = {
           client: '<script>alert("xss")</script>',
           clinician: '',
           status: 'show_all',
           submitted_date: ''
         }
+      
+      const {dateItems, statusItems } = getSelectItems(filteredValues)
+      const html = env.render('home.njk', {
+        filteredValues,
+        dateItems,
+        statusItems
       })
       expect(html).not.toContain('<script>alert("xss")</script>')
       expect(html).toContain('&lt;script&gt;')
     })
 
     it('escapes HTML in Clinician filter value to prevent XSS', () => {
-      const html = env.render('home.njk', {
-        filteredValues: {
+      const filteredValues = {
           client: '',
           clinician: '"><img src=x onerror=alert(1)>',
           status: 'show_all',
           submitted_date: ''
         }
+      const {dateItems, statusItems } = getSelectItems(filteredValues)
+      const html = env.render('home.njk', {
+        filteredValues,
+        dateItems,
+        statusItems
       })
       expect(html).not.toContain('<img src=x onerror')
     })

@@ -12,6 +12,7 @@ import { describe, it, expect, beforeAll } from '@jest/globals'
 import nunjucks from 'nunjucks'
 import path from 'path'
 import { fileURLToPath } from 'url'
+import { getSelectItems } from '../../src/constants.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -29,9 +30,9 @@ describe('Dashboard filter — Status dropdown (DASH-02 AC2)', () => {
     )
   })
 
-  const defaultContext = {
-    filteredValues: { client: '', clinician: '', status: 'show_all', submitted_date: '' }
-  }
+  const filteredValues = { client: '', clinician: '', status: 'show_all', submitted_date: '' }
+  const {dateItems, statusItems } = getSelectItems(filteredValues)
+  const defaultContext = { filteredValues, dateItems, statusItems }
 
   const requiredStatuses = [
     'Show All',

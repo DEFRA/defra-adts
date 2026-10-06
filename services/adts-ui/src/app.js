@@ -6,6 +6,7 @@ import Inert from '@hapi/inert'
 import Yar from '@hapi/yar'
 import Joi from 'joi'
 import nunjucks from 'nunjucks'
+import { getSelectItems } from './constants.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const HOME_FILTER_STATE_KEY = 'homeFilterState'
@@ -107,25 +108,28 @@ const createServer = async (options = {}) => {
     handler: (request, h) => {
       // 1. Pull the cached search history parameters straight from the session store
       const cached = request.yar.get(HOME_FILTER_STATE_KEY)
-      let filterValues
+      let filteredValues
 
       if (cached) {
         // Use the saved search values exactly as the user typed them
-        filterValues = cached
+        filteredValues = cached
       } else {
         // Absolute first load: build clean defaults using the validation schema
-        filterValues = Joi.attempt({}, homeFilterSchema)
+        filteredValues = Joi.attempt({}, homeFilterSchema)
       }
+
+      const { statusItems, dateItems } = getSelectItems(filteredValues)
 
       // 2. Pass the data to your home view template using the proper 'filteredValues' naming convention
       return h.view('home.njk', {
         user: request.auth.credentials,
+        statusItems,
+        dateItems,
         filteredValues: {
-          client: filterValues.client,
-          clinician: filterValues.clinician,
-          status: filterValues.status,
-          // Ensure the template receives the hyphenated key exactly as named
-          submitted_date: filterValues['submitted-date'] || ''
+          client: filteredValues.client,
+          clinician: filteredValues.clinician,
+          status: filteredValues.status,
+          submitted_date: filteredValues['submitted-date'] || ''
         }
       })
     }
@@ -163,6 +167,8 @@ const createServer = async (options = {}) => {
         }
       }
 
+      const { statusItems, dateItems } = getSelectItems(viewContext.filteredValues)
+
       try {
         const response = await fetch(adapterUrl)
 
@@ -174,6 +180,8 @@ const createServer = async (options = {}) => {
 
         return h.view('results.njk', {
           ...viewContext,
+          statusItems,
+          dateItems,
           results: payload.results,
           totalCount: payload.totalCount
         })
@@ -183,6 +191,8 @@ const createServer = async (options = {}) => {
         // Graceful fallback view delivery
         return h.view('results.njk', {
           ...viewContext,
+          statusItems,
+          dateItems,
           results: [],
           totalCount: 0,
           error: 'Unable to load submissions at this time.'

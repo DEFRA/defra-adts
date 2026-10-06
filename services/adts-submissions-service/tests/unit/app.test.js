@@ -21,6 +21,11 @@ describe('createServer', () => {
     expect(response.statusCode).toBe(200)
   })
 
+  test('home route returns JSON', async () => {
+    const response = await server.inject({ method: 'GET', url: '/' })
+    expect(response.headers['content-type']).toContain('application/json')
+  })
+
   test('/health responds wih 200', async () => {
     const response = await server.inject({ method: 'GET', url: '/health' })
     expect(response.statusCode).toBe(200)

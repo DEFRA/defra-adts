@@ -24,15 +24,13 @@ const homeFilterSchema = Joi.object({
 const createServer = async (options = {}) => {
   // Safe local fallback secret key to make unit testing easy without .env files
   const sessionSecret = options.sessionSecret || process.env.SESSION_SECRET || 'abcdefghijklmnopqrstuvwxyz123456'
-  const port = 9181
-  const httpSuccess = 200
 
   if (!sessionSecret && process.env.NODE_ENV === 'production') {
     throw new Error('SESSION_SECRET must be configured in production')
   }
 
   const server = Hapi.server({
-    port: process.env.PORT || port,
+    port: process.env.PORT,
     host: '0.0.0.0'
   })
 
@@ -198,7 +196,7 @@ const createServer = async (options = {}) => {
     method: 'GET',
     path: '/health',
     handler: (_request, h) => {
-      return h.response({ status: 'UP', timestamp: new Date() }).code(httpSuccess)
+      return h.response({ status: 'UP', timestamp: new Date() }).code(process.env.HTTP_SUCCESS)
     }
   })
 

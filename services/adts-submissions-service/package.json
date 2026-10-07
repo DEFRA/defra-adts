@@ -8,7 +8,7 @@
     "build": "esbuild src/client/all.js --bundle --minify --outfile=src/public/js/all.js",
     "start": "node src/index.js",
     "start:watch": "nodemon --ext njk --signal SIGTERM src/app.js",
-    "kill": "sh -c 'pids=$(lsof -tiTCP:3000 -sTCP:LISTEN); [ -z \"$pids\" ] || kill $pids'",
+    "kill": "sh -c 'pids=$(lsof -tiTCP:9180 -sTCP:LISTEN); [ -z \"$pids\" ] || kill $pids'",
     "lint": "eslint --fix .",
     "test:routes": "lab -v tests/routes/*.lab.test.js"
   },

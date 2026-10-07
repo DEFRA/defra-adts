@@ -1,6 +1,13 @@
 import { describe, test, expect, afterAll } from '@jest/globals'
 import createServer from '../../src/app.js'
 
+/**
+ * Unit test — server factory only.
+ *
+ * Route-level behaviour (GET / responds, returns HTML) is covered by
+ * route tests in services/adts-ui/tests/routes/dashboard-layout.lab.test.js
+ * and dashboard-filter-persistence.lab.test.js — not duplicated here.
+ */
 describe('createServer', () => {
   let server
 
@@ -14,15 +21,5 @@ describe('createServer', () => {
     server = await createServer()
     expect(server).toBeDefined()
     expect(typeof server.inject).toBe('function')
-  })
-
-  test('home route responds with 200', async () => {
-    const response = await server.inject({ method: 'GET', url: '/' })
-    expect(response.statusCode).toBe(200)
-  })
-
-  test('home route returns HTML', async () => {
-    const response = await server.inject({ method: 'GET', url: '/' })
-    expect(response.headers['content-type']).toContain('text/html')
   })
 })

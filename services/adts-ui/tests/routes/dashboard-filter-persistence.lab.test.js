@@ -1,3 +1,13 @@
+/**
+ * Route-level tests for Dashboard filter persistence (server-side session).
+ *
+ * Verifies that filter values applied on /results persist back into the
+ * dashboard form on return navigation to /, via the Yar session store.
+ *
+ * @story DASH-02
+ * @acs AC3, AC7
+ */
+
 import { expect } from '@hapi/code'
 import Lab from '@hapi/lab'
 import { mock } from 'node:test'
@@ -14,7 +24,7 @@ const getCookieHeader = (response) => {
 const lab = Lab.script()
 export { lab }
 
-lab.experiment('Home Filter State Persistence', () => {
+lab.experiment('Dashboard Filter State Persistence', () => {
   let server
 
   lab.before(async () => {

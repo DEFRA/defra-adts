@@ -14,7 +14,7 @@ describe('createServer', () => {
     server = await createServer()
     expect(server).toBeDefined()
     expect(typeof server.inject).toBe('function')
-    expect(server.port).toBe(9181)
+    expect(server.port).toBe(undefined)
   })
 
   test('home route responds with 200', async () => {

@@ -21,17 +21,11 @@ const homeFilterSchema = Joi.object({
     .default('18_months')
 })
 
-const createServer = async (options = {}) => {
-  // Safe local fallback secret key to make unit testing easy without .env files
-  const sessionSecret = options.sessionSecret || process.env.SESSION_SECRET || 'abcdefghijklmnopqrstuvwxyz123456'
-
-  if (!sessionSecret && process.env.NODE_ENV === 'production') {
-    throw new Error('SESSION_SECRET must be configured in production')
-  }
+const createServer = async () => {
+  const sessionSecret = process.env.SESSION_SECRET
 
   const server = Hapi.server({
-    port: process.env.PORT,
-    host: '0.0.0.0'
+    port: process.env.PORT
   })
 
   await server.register([
@@ -44,7 +38,6 @@ const createServer = async (options = {}) => {
           password: sessionSecret,
           isHttpOnly: true,
           isSameSite: 'Lax',
-          isSecure: process.env.NODE_ENV === 'production',
           path: '/'
         }
       }
@@ -68,7 +61,6 @@ const createServer = async (options = {}) => {
     path: 'views'
   })
 
-  // Static Assets and Compiled UI files
   server.route([
     {
       method: 'GET',
@@ -99,39 +91,31 @@ const createServer = async (options = {}) => {
     }
   ])
 
-  // Main Home Page Route
   server.route({
     method: 'GET',
     path: '/',
-    // FIX: Removed the validate object here to prevent Joi defaults from clearing the cache
     handler: (request, h) => {
-      // 1. Pull the cached search history parameters straight from the session store
       const cached = request.yar.get(HOME_FILTER_STATE_KEY)
       let filterValues
 
       if (cached) {
-        // Use the saved search values exactly as the user typed them
         filterValues = cached
       } else {
-        // Absolute first load: build clean defaults using the validation schema
         filterValues = Joi.attempt({}, homeFilterSchema)
       }
 
-      // 2. Pass the data to your home view template using the proper 'filteredValues' naming convention
       return h.view('home.njk', {
         user: request.auth.credentials,
         filteredValues: {
           client: filterValues.client,
           clinician: filterValues.clinician,
           status: filterValues.status,
-          // Ensure the template receives the hyphenated key exactly as named
           submitted_date: filterValues['submitted-date'] || ''
         }
       })
     }
   })
 
-  // Restored /results Route Handler
   server.route({
     method: 'GET',
     path: '/results',
@@ -145,11 +129,9 @@ const createServer = async (options = {}) => {
       }
     },
     handler: async (request, h) => {
-      // 1. PERSIST STATE: Capture the fresh query input and cache it securely inside Yar
       request.yar.set(HOME_FILTER_STATE_KEY, request.query)
       request.yar.touch()
 
-      // 2. Build out endpoint requirements pointing down to your mock port 9180 service
       const queryParams = new URLSearchParams(request.query).toString()
       const adapterBaseUrl = process.env.LIMS_ADAPTER_URL
       const adapterUrl = `${adapterBaseUrl}/submissions?${queryParams}`
@@ -180,7 +162,6 @@ const createServer = async (options = {}) => {
       } catch (error) {
         console.error('Error contacting backend server:', error.message)
 
-        // Graceful fallback view delivery
         return h.view('results.njk', {
           ...viewContext,
           results: [],
@@ -191,7 +172,6 @@ const createServer = async (options = {}) => {
     }
   })
 
-  // Healthcheck endpoint
   server.route({
     method: 'GET',
     path: '/health',

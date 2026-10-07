@@ -115,6 +115,52 @@ lab.experiment('UI Results Card Rendering Integration Pipeline', () => {
     expect(response.payload).to.contain('Submission contains no tests.')
   })
 
+  lab.test('should render a cancelled submission with the GOV.UK grey status tag', async () => {
+    const mockLimsData = {
+      results: [
+        {
+          id: '16-C0001-11-25',
+          statuses: ['Cancelled'],
+          samplesTo: 'APHA Starcross',
+          client: 'SPOURS, L',
+          clientFarm: 'TWIZELL FARM',
+          species: 'Cattle',
+          clinician: 'Jon Drake',
+          orderSubmitted: '18/Nov/2025',
+          hasTests: true,
+          tests: [
+            {
+              name: 'Salmonella Culture (TC0025)',
+              type: 'Culture',
+              sampleType: 'Faeces',
+              qty: '1'
+            }
+          ]
+        }
+      ],
+      totalCount: 1
+    }
+
+    mock.method(global, 'fetch', async () => {
+      return new Response(JSON.stringify(mockLimsData), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      })
+    })
+
+    const response = await server.inject({
+      method: 'GET',
+      url: '/results?status=cancelled'
+    })
+
+    expect(response.statusCode).to.equal(200)
+    expect(response.payload).to.contain('16-C0001-11-25')
+    expect(response.payload).to.contain('govuk-tag--purple')
+    expect(response.payload).to.contain('Cancelled')
+    expect(response.payload).to.contain('Salmonella Culture (TC0025)')
+    expect(response.payload).to.contain('APHA Starcross')
+  })
+
   lab.test('should render a clear empty state block if LIMS adapter query results are empty', async () => {
     mock.method(global, 'fetch', async () => {
       return new Response(JSON.stringify({ results: [], totalCount: 0 }), {

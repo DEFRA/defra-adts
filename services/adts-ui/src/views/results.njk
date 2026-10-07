@@ -117,6 +117,8 @@
                     <strong class="govuk-tag app-tag--submitted {{ marginClass }}">Submitted</strong>
                   {% elif tag | lower == 'samples overdue' %}
                     <strong class="govuk-tag app-tag--overdue {{ marginClass }}">Samples overdue</strong>
+                  {% elif tag | lower == 'cancelled' %}
+                    <strong class="govuk-tag govuk-tag--purple {{ marginClass }}">Cancelled</strong>
                   {% else %}
                     <strong class="govuk-tag govuk-tag--blue {{ marginClass }}">{{ tag }}</strong>
                   {% endif %}

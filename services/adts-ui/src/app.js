@@ -30,7 +30,7 @@ const createServer = async (options = {}) => {
   }
 
   const server = Hapi.server({
-    port: process.env.PORT,
+    port: typeof process.env.PORT === "undefined" ? 9181 : process.env.PORT,
     host: '0.0.0.0'
   })
 
@@ -196,7 +196,7 @@ const createServer = async (options = {}) => {
     method: 'GET',
     path: '/health',
     handler: (_request, h) => {
-      return h.response({ status: 'UP', timestamp: new Date() }).code(process.env.HTTP_SUCCESS)
+      return h.response({ status: 'UP', timestamp: new Date() })
     }
   })
 

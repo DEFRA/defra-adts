@@ -1,6 +1,23 @@
 /**
+ * E2E tests for DASH-02 — Dashboard filter persistence.
+ *
+ * Covers AC3 (combined with AC4+AC5+AC6), AC7, AC8, AC9.
+ *
+ * Not covered here (owned elsewhere):
+ * - AC1 (filter controls visible) → DASH-12 E2E AC2
+ * - AC2 (status dropdown options) → component test
+ *   services/adts-ui/tests/component/dashboard-filter-statuses.test.js
+ * - AC4/AC5/AC6 as single-field tests — redundant with combined AC3+4+5+6
+ *   test below (one navigation covers all fields)
+ *
+ * Note: ACs 3-6 reference the "Home link" in the service header, which is
+ * a DASH-01 AC2 (not implemented - needs confirmation from Dee). These tests currently use the
+ * in-page "back to home dashboard" link, which exercises the same
+ * server-side session persistence. When DASH-01 AC2 lands, update the
+ * selector to use the Home link.
+ *
  * @story DASH-02
- * @acs AC1, AC2, AC3, AC4, AC5, AC6, AC7, AC8, AC9
+ * @acs AC3, AC4, AC5, AC6, AC7, AC8, AC9
  * @journey Dashboard filter persistence
  */
 
@@ -12,37 +29,7 @@ test.describe('DASH-02 — Dashboard filter persistence', () => {
     await page.goto('/')
   })
 
-  test('AC1: all filter controls are visible on the dashboard', async ({ page }) => {
-    await expect(page.getByLabel('Client')).toBeVisible()
-    await expect(page.getByLabel('Clinician')).toBeVisible()
-    await expect(page.getByLabel('Status')).toBeVisible()
-    await expect(page.getByLabel('Submitted date')).toBeVisible()
-    await expect(page.getByRole('button', { name: 'Search' })).toBeVisible()
-  })
-
-  test('AC2: Status dropdown contains the implemented status options', async ({ page }) => {
-    // Asserts current template behaviour. Label mismatches against legacy ADTS
-    // are tracked as defects on DASH-02 — see component tests for the gap.
-    const statusSelect = page.getByLabel('Status')
-    await expect(statusSelect.locator('option')).toHaveCount(8)
-
-    const implementedLabels = [
-      'Show all',
-      'Draft',
-      'Submitted',
-      'In progress',
-      'Cancelled',
-      'Samples overdue',
-      'Tests complete',
-      'Available'
-    ]
-
-    for (const label of implementedLabels) {
-      await expect(statusSelect.locator(`option:has-text("${label}")`)).toHaveCount(1)
-    }
-  })
-
-  test('AC3-AC6: all filter values persist after Search and navigating back', async ({ page }) => {
+  test('AC3+AC4+AC5+AC6: all filter values persist after Search and navigating back', async ({ page }) => {
     await page.getByLabel('Client').fill('OLD MCDONALD')
     await page.getByLabel('Clinician').fill('Dr Smith')
     await page.getByLabel('Status').selectOption('draft')
@@ -57,31 +44,6 @@ test.describe('DASH-02 — Dashboard filter persistence', () => {
     await expect(page.getByLabel('Clinician')).toHaveValue('Dr Smith')
     await expect(page.getByLabel('Status')).toHaveValue('draft')
     await expect(page.getByLabel('Submitted date')).toHaveValue('1_week')
-  })
-
-  test('AC4: Status dropdown selection is preserved on return', async ({ page }) => {
-    await page.getByLabel('Status').selectOption('submitted')
-    await page.getByRole('button', { name: 'Search' }).click()
-    await expect(page).toHaveURL(/status=submitted/)
-
-    await page.getByRole('link', { name: /back to home dashboard/i }).click()
-    await expect(page.getByLabel('Status')).toHaveValue('submitted')
-  })
-
-  test('AC5: Clinician value is preserved on return', async ({ page }) => {
-    await page.getByLabel('Clinician').fill('Dave Simonds')
-    await page.getByRole('button', { name: 'Search' }).click()
-
-    await page.getByRole('link', { name: /back to home dashboard/i }).click()
-    await expect(page.getByLabel('Clinician')).toHaveValue('Dave Simonds')
-  })
-
-  test('AC6: Submitted date value is preserved on return', async ({ page }) => {
-    await page.getByLabel('Submitted date').selectOption('6_months')
-    await page.getByRole('button', { name: 'Search' }).click()
-
-    await page.getByRole('link', { name: /back to home dashboard/i }).click()
-    await expect(page.getByLabel('Submitted date')).toHaveValue('6_months')
   })
 
   test('AC7: filters are not cleared by repeated navigation or reload', async ({ page }) => {

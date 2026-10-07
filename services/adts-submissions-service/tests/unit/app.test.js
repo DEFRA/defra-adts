@@ -11,10 +11,10 @@ describe('createServer', () => {
   })
 
   test('returns a Hapi server instance with inject capability', async () => {
-    server = await createServer()
+    server = await createServer({ port: 9180 })
     expect(server).toBeDefined()
     expect(typeof server.inject).toBe('function')
-    expect(server.port).toBe(undefined)
+    expect(server.info.port).toBe(9180)
   })
 
   test('home route responds with 200', async () => {

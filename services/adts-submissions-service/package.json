@@ -7,6 +7,7 @@
   "scripts": {
     "build": "esbuild src/client/all.js --bundle --minify --outfile=src/public/js/all.js",
     "start": "node src/index.js",
+    "test:coverage": "node --experimental-vm-modules node_modules/jest/bin/jest.js tests/unit tests/component tests/integration --coverage",
     "start:watch": "nodemon --ext njk --signal SIGTERM src/app.js",
     "kill": "sh -c 'pids=$(lsof -tiTCP:9180 -sTCP:LISTEN); [ -z \"$pids\" ] || kill $pids'",
     "lint": "eslint --fix .",
@@ -19,8 +20,9 @@
   },
   "devDependencies": {
     "@hapi/lab": "^26.0.1",
-    "esbuild": "0.24.2",
+    "esbuild": "0.28.1",
     "eslint": "9.39.5",
+    "jest": "^30.5.2",
     "neostandard": "0.13.0",
     "nodemon": "3.1.14"
   }

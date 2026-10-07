@@ -5,13 +5,10 @@ import Inert from '@hapi/inert'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
-const createServer = async () => {
-  const port = 9180
-  const httpSuccess = 200
+const createServer = async (options) => {
 
   const server = Hapi.server({
-    port: process.env.PORT || port,
-    host: '0.0.0.0'
+    port: options.port
   })
 
   await server.register([Inert])
@@ -64,7 +61,7 @@ const createServer = async () => {
     method: 'GET',
     path: '/health',
     handler: (_request, h) => {
-      return h.response({ status: 'UP', timestamp: new Date() }).code(httpSuccess)
+      return h.response({ status: 'UP', timestamp: new Date() })
     }
   })
 

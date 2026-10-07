@@ -14,7 +14,7 @@
   "test:component": "node --experimental-vm-modules node_modules/jest/bin/jest.js tests/component",
   "test:integration": "node --experimental-vm-modules node_modules/jest/bin/jest.js tests/integration",
   "test:routes": "lab -v tests/routes/*.lab.test.js",
-  "test:coverage": "node --env-file=.env --experimental-vm-modules node_modules/jest/bin/jest.js tests/unit tests/component tests/integration --coverage",
+  "test:coverage": "node --env-file=.env --experimental-vm-modules node_modules/jest/bin/jest.js tests/unit tests/component tests/integration tests/routes --coverage",
   "start:watch": "nodemon --watch src/views --ignore src/public --ext njk --signal SIGTERM src/index.js",
   "kill": "sh -c 'pids=$(lsof -tiTCP:9181 -sTCP:LISTEN); [ -z \"$pids\" ] || kill $pids'",
   "lint": "eslint ." 

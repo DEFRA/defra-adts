@@ -1,26 +1,22 @@
-import { expect } from '@hapi/code'
-import Lab from '@hapi/lab'
-import { mock } from 'node:test'
+import { afterAll, afterEach, beforeAll, describe, expect, jest, test } from '@jest/globals'
 import createServer from '../../src/app.js'
-const lab = Lab.script()
-export { lab }
 
-lab.experiment('UI Results Card Rendering Integration Pipeline', () => {
+describe('UI Results Card Rendering Integration Pipeline', () => {
   let server
 
-  lab.before(async () => {
+  beforeAll(async () => {
     server = await createServer({ port: 9181, sessionSecret: 'jcgBvzmcBdLDIorYTvedmnNqIiiHIiymBokR', limsAdapterUrl: 'http://localhost:9180' })
   })
 
-  lab.after(async () => {
+  afterAll(async () => {
     await server.stop()
   })
 
-  lab.afterEach(() => {
-    mock.reset()
+  afterEach(() => {
+    jest.restoreAllMocks()
   })
 
-  lab.test('should accurately bind LIMS adapter payloads into GOV.UK layout elements', async () => {
+  test('should accurately bind LIMS adapter payloads into GOV.UK layout elements', async () => {
     const mockLimsData = {
       results: [
         {
@@ -46,9 +42,9 @@ lab.experiment('UI Results Card Rendering Integration Pipeline', () => {
       totalCount: 1
     }
 
-    mock.method(global, 'fetch', async (url) => {
-      expect(url).to.contain('/submissions')
-      expect(url).to.contain('client=OLD')
+    jest.spyOn(globalThis, 'fetch').mockImplementation(async (url) => {
+      expect(url).toContain('/submissions')
+      expect(url).toContain('client=OLD')
       return new Response(JSON.stringify(mockLimsData), {
         status: 200,
         headers: { 'Content-Type': 'application/json' }
@@ -60,24 +56,24 @@ lab.experiment('UI Results Card Rendering Integration Pipeline', () => {
       url: '/results?client=OLD+MCDONALD'
     })
 
-    expect(response.statusCode).to.equal(200)
+    expect(response.statusCode).toBe(200)
 
     const htmlOutput = response.payload
 
-    expect(htmlOutput).to.contain('Submission search results')
-    expect(htmlOutput).to.contain('1 submissions matching criteria')
-    expect(htmlOutput).to.contain('14-M0002-02-26')
-    expect(htmlOutput).to.contain('app-tag--submitted')
-    expect(htmlOutput).to.contain('app-tag--overdue')
-    expect(htmlOutput).to.contain('APHA Carmarthen')
-    expect(htmlOutput).to.contain('OLD MCDONALD')
-    expect(htmlOutput).to.contain('ANIMAL FARM')
-    expect(htmlOutput).to.contain('Goat')
-    expect(htmlOutput).to.contain('Dave Simonds')
-    expect(htmlOutput).to.contain('12/Feb/2026')
+    expect(htmlOutput).toContain('Submission search results')
+    expect(htmlOutput).toContain('1 submissions matching criteria')
+    expect(htmlOutput).toContain('14-M0002-02-26')
+    expect(htmlOutput).toContain('app-tag--submitted')
+    expect(htmlOutput).toContain('app-tag--overdue')
+    expect(htmlOutput).toContain('APHA Carmarthen')
+    expect(htmlOutput).toContain('OLD MCDONALD')
+    expect(htmlOutput).toContain('ANIMAL FARM')
+    expect(htmlOutput).toContain('Goat')
+    expect(htmlOutput).toContain('Dave Simonds')
+    expect(htmlOutput).toContain('12/Feb/2026')
   })
 
-  lab.test('should render a draft submission with its draft status and no-tests message', async () => {
+  test('should render a draft submission with its draft status and no-tests message', async () => {
     const mockLimsData = {
       results: [
         {
@@ -96,8 +92,8 @@ lab.experiment('UI Results Card Rendering Integration Pipeline', () => {
       totalCount: 1
     }
 
-    mock.method(global, 'fetch', async (url) => {
-      expect(url).to.contain('status=draft')
+    jest.spyOn(globalThis, 'fetch').mockImplementation(async (url) => {
+      expect(url).toContain('status=draft')
       return new Response(JSON.stringify(mockLimsData), {
         status: 200,
         headers: { 'Content-Type': 'application/json' }
@@ -109,14 +105,14 @@ lab.experiment('UI Results Card Rendering Integration Pipeline', () => {
       url: '/results?status=draft'
     })
 
-    expect(response.statusCode).to.equal(200)
-    expect(response.payload).to.contain('Draft Id: 4457')
-    expect(response.payload).to.contain('govuk-tag--orange')
-    expect(response.payload).to.contain('Submission contains no tests.')
+    expect(response.statusCode).toBe(200)
+    expect(response.payload).toContain('Draft Id: 4457')
+    expect(response.payload).toContain('govuk-tag--orange')
+    expect(response.payload).toContain('Submission contains no tests.')
   })
 
-  lab.test('should render a clear empty state block if LIMS adapter query results are empty', async () => {
-    mock.method(global, 'fetch', async () => {
+  test('should render a clear empty state block if LIMS adapter query results are empty', async () => {
+    jest.spyOn(globalThis, 'fetch').mockImplementation(async () => {
       return new Response(JSON.stringify({ results: [], totalCount: 0 }), {
         status: 200,
         headers: { 'Content-Type': 'application/json' }
@@ -128,8 +124,8 @@ lab.experiment('UI Results Card Rendering Integration Pipeline', () => {
       url: '/results?client=NonExistent'
     })
 
-    expect(response.statusCode).to.equal(200)
-    expect(response.payload).to.contain('0 submissions matching criteria')
-    expect(response.payload).to.contain('No records found matching your query criteria.')
+    expect(response.statusCode).toBe(200)
+    expect(response.payload).toContain('0 submissions matching criteria')
+    expect(response.payload).toContain('No records found matching your query criteria.')
   })
 })

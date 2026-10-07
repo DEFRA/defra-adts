@@ -22,7 +22,6 @@ const homeFilterSchema = Joi.object({
 })
 
 const createServer = async (options) => {
-
   const server = Hapi.server({
     port: options.port
   })

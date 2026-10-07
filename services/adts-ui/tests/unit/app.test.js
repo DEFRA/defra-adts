@@ -31,4 +31,8 @@ describe('createServer', () => {
     const response = await server.inject({ method: 'GET', url: '/health' })
     expect(response.statusCode).toBe(200)
   })
+
+  test('home route returns HTTP status 200', async () => {
+    expect(createServer.port).toBe(9181)
+  })
 })

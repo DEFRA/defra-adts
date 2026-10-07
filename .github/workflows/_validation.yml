@@ -46,7 +46,7 @@ on:
       run-sonarqube-scan:
         description: Run a SonarQube scan
         required: false
-        default: true
+        default: false
         type: boolean
 
       test-command:

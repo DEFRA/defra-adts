@@ -18,8 +18,7 @@ lab.experiment('Home Filter State Persistence', () => {
   let server
 
   lab.before(async () => {
-    process.env.LIMS_ADAPTER_URL = 'http://localhost:9180'
-    server = await createServer()
+    server = await createServer({port: 3000, sessionSecret: 'jcgBvzmcBdLDIorYTvedmnNqIiiHIiymBokR', limsAdapterUrl: 'http://localhost:9180'})
   })
 
   lab.after(async () => {

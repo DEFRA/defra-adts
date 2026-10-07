@@ -21,11 +21,10 @@ const homeFilterSchema = Joi.object({
     .default('18_months')
 })
 
-const createServer = async () => {
-  const sessionSecret = process.env.SESSION_SECRET
+const createServer = async (options) => {
 
   const server = Hapi.server({
-    port: process.env.PORT
+    port: options.port
   })
 
   await server.register([
@@ -35,7 +34,7 @@ const createServer = async () => {
       plugin: Yar,
       options: {
         cookieOptions: {
-          password: sessionSecret,
+          password: options.sessionSecret,
           isHttpOnly: true,
           isSameSite: 'Lax',
           path: '/'
@@ -133,7 +132,7 @@ const createServer = async () => {
       request.yar.touch()
 
       const queryParams = new URLSearchParams(request.query).toString()
-      const adapterBaseUrl = process.env.LIMS_ADAPTER_URL
+      const adapterBaseUrl = options.limsAdapterUrl
       const adapterUrl = `${adapterBaseUrl}/submissions?${queryParams}`
 
       const viewContext = {

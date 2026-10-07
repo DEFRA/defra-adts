@@ -77,6 +77,44 @@ lab.experiment('UI Results Card Rendering Integration Pipeline', () => {
     expect(htmlOutput).to.contain('12/Feb/2026')
   })
 
+  lab.test('should render a draft submission with its draft status and no-tests message', async () => {
+    const mockLimsData = {
+      results: [
+        {
+          id: '4457',
+          statuses: ['Draft'],
+          samplesTo: '---',
+          client: '---',
+          clientFarm: '---',
+          species: '---',
+          clinician: '---',
+          orderSubmitted: '---',
+          hasTests: false,
+          tests: []
+        }
+      ],
+      totalCount: 1
+    }
+
+    mock.method(global, 'fetch', async (url) => {
+      expect(url).to.contain('status=draft')
+      return new Response(JSON.stringify(mockLimsData), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      })
+    })
+
+    const response = await server.inject({
+      method: 'GET',
+      url: '/results?status=draft'
+    })
+
+    expect(response.statusCode).to.equal(200)
+    expect(response.payload).to.contain('Draft Id: 4457')
+    expect(response.payload).to.contain('govuk-tag--orange')
+    expect(response.payload).to.contain('Submission contains no tests.')
+  })
+
   lab.test('should render a clear empty state block if LIMS adapter query results are empty', async () => {
     mock.method(global, 'fetch', async () => {
       return new Response(JSON.stringify({ results: [], totalCount: 0 }), {

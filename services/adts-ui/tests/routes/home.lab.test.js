@@ -44,8 +44,8 @@ lab.experiment('Home Filter State Persistence', () => {
     expect(context.filteredValues).to.equal({
       client: '',
       clinician: '',
-      status: 'show all',
-      submitted_date: ''
+      status: 'show_all',
+      submitted_date: '18_months'
     })
   })
 
@@ -83,7 +83,7 @@ lab.experiment('Home Filter State Persistence', () => {
     expect(context.filteredValues.client).to.equal('Acme Corp')
     expect(context.filteredValues.clinician).to.equal('Dr Smith')
     expect(context.filteredValues.status).to.equal('draft')
-    expect(context.filteredValues.submitted_date).to.equal('')
+    expect(context.filteredValues.submitted_date).to.equal('18_months')
 
     const html = cleanNavResponse.payload
 

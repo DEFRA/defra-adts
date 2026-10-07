@@ -40,7 +40,7 @@ describe('Dashboard home page (DASH-12)', () => {
     filteredValues: {
       client: '',
       clinician: '',
-      status: 'show all',
+      status: 'show_all',
       submitted_date: ''
     }
   }
@@ -112,7 +112,7 @@ describe('Dashboard home page (DASH-12)', () => {
         filteredValues: {
           client: 'OLD MCDONALD',
           clinician: '',
-          status: 'show all',
+          status: 'show_all',
           submitted_date: ''
         }
       })
@@ -124,7 +124,7 @@ describe('Dashboard home page (DASH-12)', () => {
         filteredValues: {
           client: '',
           clinician: 'Dr Smith',
-          status: 'show all',
+          status: 'show_all',
           submitted_date: ''
         }
       })
@@ -143,9 +143,9 @@ describe('Dashboard home page (DASH-12)', () => {
       expect(html).toMatch(/<option[^>]*value="draft"[^>]*selected/i)
     })
 
-    it('defaults Status to "Show all" when no filter value provided', () => {
+    it('defaults Status to "show_all" when no filter value provided', () => {
       const html = env.render('home.njk', defaultContext)
-      expect(html).toMatch(/<option[^>]*value="show all"[^>]*selected/i)
+      expect(html).toMatch(/<option[^>]*value="show_all"[^>]*selected/i)
     })
 
     it('defaults Submitted date to "Last 18 months" when no filter value provided', () => {
@@ -160,7 +160,7 @@ describe('Dashboard home page (DASH-12)', () => {
         filteredValues: {
           client: '<script>alert("xss")</script>',
           clinician: '',
-          status: 'show all',
+          status: 'show_all',
           submitted_date: ''
         }
       })
@@ -173,7 +173,7 @@ describe('Dashboard home page (DASH-12)', () => {
         filteredValues: {
           client: '',
           clinician: '"><img src=x onerror=alert(1)>',
-          status: 'show all',
+          status: 'show_all',
           submitted_date: ''
         }
       })

@@ -1,3 +1,15 @@
+/**
+ * Route-level tests for the /results page.
+ *
+ * Covers:
+ * - DASH-03a: Submitted submission rendering (card + status tag + fields)
+ * - DASH-03b: Draft submission rendering (orange tag + no-tests message)
+ * - DASH-12 AC4: Submission count rendering above results
+ * - Empty state rendering
+ *
+ * @story DASH-03a, DASH-03b, DASH-12
+ */
+
 import { expect } from '@hapi/code'
 import Lab from '@hapi/lab'
 import { mock } from 'node:test'

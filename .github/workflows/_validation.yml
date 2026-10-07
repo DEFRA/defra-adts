@@ -139,12 +139,6 @@ jobs:
           set -euo pipefail
           eval "${BUILD_COMMAND}"
 
-      - name: SonarQube Scan
-        if: ${{ inputs.run-sonarqube-scan }}
-        uses: sonarSource/sonarqube-scan-action@ba9859eae8dd6bd29e412f25ddbbef3d032000f4  # v8.2.2
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-
       - name: Write validation summary
         env:
           SERVICE_NAME: ${{ inputs.service-name }}
@@ -161,3 +155,18 @@ jobs:
             echo "| Node.js version | \`${NODE_VERSION}\` |"
             echo "| Commit | \`${GITHUB_SHA}\` |"
           } >> "${GITHUB_STEP_SUMMARY}"
+
+      - name: Wait for others to complete before running SonarQube
+        if: ${{ inputs.run-sonarqube-scan }}
+        run: sleep 30
+
+      - name: SonarQube Scan
+        if: ${{ inputs.run-sonarqube-scan }}
+        uses: sonarSource/sonarqube-scan-action@ba9859eae8dd6bd29e412f25ddbbef3d032000f4  # v8.2.2
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+      - name: Wait SonarQube Scan
+        if: ${{ inputs.run-sonarqube-scan }}
+        run: sleep 60
+

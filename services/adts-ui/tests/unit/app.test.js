@@ -33,6 +33,7 @@ describe('createServer', () => {
   })
 
   test('home route returns HTTP status 200', async () => {
+    server = await createServer()
     expect(createServer.port).toBe(9181)
   })
 })

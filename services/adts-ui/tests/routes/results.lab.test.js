@@ -67,6 +67,8 @@ lab.experiment('UI Results Card Rendering Integration Pipeline', () => {
     expect(htmlOutput).to.contain('Submission search results')
     expect(htmlOutput).to.contain('1 submissions matching criteria')
     expect(htmlOutput).to.contain('14-M0002-02-26')
+    expect(htmlOutput).to.contain('href="/submissions/14-M0002-02-26"')
+    expect(htmlOutput).to.contain('View submission 14-M0002-02-26')
     expect(htmlOutput).to.contain('app-tag--submitted')
     expect(htmlOutput).to.contain('app-tag--overdue')
     expect(htmlOutput).to.contain('APHA Carmarthen')

@@ -179,6 +179,10 @@
                 {% endfor %}
               </div>
             {% endif %}
+
+            <p class="govuk-body govuk-!-margin-top-4 govuk-!-margin-bottom-0 govuk-!-text-align-right">
+              <a class="govuk-link" href="/submissions/{{ submission.id | urlencode }}">View submission {{ submission.id }}</a>
+            </p>
           </div>
         {% else %}
           <p class="govuk-body">No records found matching your query criteria.</p>

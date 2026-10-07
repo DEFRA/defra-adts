@@ -180,9 +180,16 @@
               </div>
             {% endif %}
 
-            <p class="govuk-body govuk-!-margin-top-4 govuk-!-margin-bottom-0 govuk-!-text-align-right">
-              <a class="govuk-link" href="/submissions/{{ submission.id | urlencode }}">View submission {{ submission.id }}</a>
-            </p>
+            <div class="app-result-card__footer govuk-body govuk-!-margin-top-4">
+              {% if 'Submitted' in submission.statuses %}
+                <a class="govuk-link" href="/submissions/{{ submission.id | urlencode }}">View submission {{ submission.id }}</a>
+              {% elif 'In Progress' in submission.statuses %}
+                <a class="govuk-link" href="/test-result?id={{ submission.id | urlencode }}">View results</a>
+                {% if submission.pdfUrl %}
+                  <a class="govuk-link govuk-!-margin-left-2" href="{{ submission.pdfUrl }}">View PDF</a>
+                {% endif %}
+              {% endif %}
+            </div>
           </div>
         {% else %}
           <p class="govuk-body">No records found matching your query criteria.</p>

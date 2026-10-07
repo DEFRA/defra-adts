@@ -18,3 +18,5 @@ blob-report/
 
 coverage/
 **/coverage/
+
+.github/

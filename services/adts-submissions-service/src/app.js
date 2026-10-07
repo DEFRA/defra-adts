@@ -58,6 +58,15 @@ const createServer = async () => {
     }
   })
 
+  // Healthcheck endpoint
+  server.route({
+    method: 'GET',
+    path: '/health',
+    handler: (_request, h) => {
+      return h.response({ status: 'UP', timestamp: new Date() }).code(httpSuccess)
+    }
+  })
+
   return server
 }
 

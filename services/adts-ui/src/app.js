@@ -24,13 +24,15 @@ const homeFilterSchema = Joi.object({
 const createServer = async (options = {}) => {
   // Safe local fallback secret key to make unit testing easy without .env files
   const sessionSecret = options.sessionSecret || process.env.SESSION_SECRET || 'abcdefghijklmnopqrstuvwxyz123456'
+  const port = 9181
+  const httpSuccess = 200
 
   if (!sessionSecret && process.env.NODE_ENV === 'production') {
     throw new Error('SESSION_SECRET must be configured in production')
   }
 
   const server = Hapi.server({
-    port: process.env.PORT || 3000,
+    port: process.env.PORT || port,
     host: '0.0.0.0'
   })
 
@@ -149,7 +151,7 @@ const createServer = async (options = {}) => {
       request.yar.set(HOME_FILTER_STATE_KEY, request.query)
       request.yar.touch()
 
-      // 2. Build out endpoint requirements pointing down to your mock port 3100 service
+      // 2. Build out endpoint requirements pointing down to your mock port 9180 service
       const queryParams = new URLSearchParams(request.query).toString()
       const adapterBaseUrl = process.env.LIMS_ADAPTER_URL
       const adapterUrl = `${adapterBaseUrl}/submissions?${queryParams}`
@@ -188,6 +190,15 @@ const createServer = async (options = {}) => {
           error: 'Unable to load submissions at this time.'
         })
       }
+    }
+  })
+
+  // Healthcheck endpoint
+  server.route({
+    method: 'GET',
+    path: '/health',
+    handler: (_request, h) => {
+      return h.response({ status: 'UP', timestamp: new Date() }).code(httpSuccess)
     }
   })
 

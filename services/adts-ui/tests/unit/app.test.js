@@ -11,11 +11,10 @@ describe('createServer', () => {
   })
 
   test('returns a Hapi server instance with inject capability', async () => {
-    server = await createServer({
-      port: 9181,
-      sessionSecret: 'jcgBvzmcBdLDIorYTvedmnNqIiiHIiymBokR',
-      limsAdapterUrl: 'http://localhost:9180'
-    })
+    process.env.PORT = '9181'
+    process.env.SESSION_SECRET = 'jcgBvzmcBdLDIorYTvedmnNqIiiHIiymBokR'
+    process.env.LIMS_ADAPTER_URL = 'http://localhost:9180'
+    server = await createServer()
     expect(server).toBeDefined()
     expect(typeof server.inject).toBe('function')
   })

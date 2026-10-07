@@ -5,10 +5,10 @@ import Inert from '@hapi/inert'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
-const createServer = async (options) => {
+const createServer = async () => {
 
   const server = Hapi.server({
-    port: options.port
+    port: process.env.PORT
   })
 
   await server.register([Inert])
@@ -41,7 +41,7 @@ const createServer = async (options) => {
 
       try {
         // Forward the query straight down the pipe to the real third-party service
-        const response = await fetch(`${options.limsBaseUrl}/submissions?${queryParams}`)
+        const response = await fetch(`${process.env.LIMS_BASE_URL}/submissions?${queryParams}`)
 
         if (!response.ok) {
           return h.response({ error: 'LIMS integration error' }).code(response.status)

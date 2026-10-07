@@ -5,7 +5,10 @@ describe('UI Results Card Rendering Integration Pipeline', () => {
   let server
 
   beforeAll(async () => {
-    server = await createServer({ port: 9181, sessionSecret: 'jcgBvzmcBdLDIorYTvedmnNqIiiHIiymBokR', limsAdapterUrl: 'http://localhost:9180' })
+    process.env.PORT = '9181'
+    process.env.SESSION_SECRET = 'jcgBvzmcBdLDIorYTvedmnNqIiiHIiymBokR'
+    process.env.LIMS_ADAPTER_URL = 'http://localhost:9180'
+    server = await createServer()
   })
 
   afterAll(async () => {

@@ -89,6 +89,21 @@ const createServer = async (options) => {
     }
   ])
 
+  getHomePage(server)
+  getResultsPage(server, options)
+
+  server.route({
+    method: 'GET',
+    path: '/health',
+    handler: (_request, h) => {
+      return h.response({ status: 'UP', timestamp: new Date() })
+    }
+  })
+
+  return server
+}
+
+const getHomePage = (server) => {
   server.route({
     method: 'GET',
     path: '/',
@@ -113,7 +128,9 @@ const createServer = async (options) => {
       })
     }
   })
+}
 
+const getResultsPage = (server, options) => {
   server.route({
     method: 'GET',
     path: '/results',
@@ -169,16 +186,6 @@ const createServer = async (options) => {
       }
     }
   })
-
-  server.route({
-    method: 'GET',
-    path: '/health',
-    handler: (_request, h) => {
-      return h.response({ status: 'UP', timestamp: new Date() })
-    }
-  })
-
-  return server
 }
 
 export default createServer

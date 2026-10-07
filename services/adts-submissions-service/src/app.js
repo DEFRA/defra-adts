@@ -37,12 +37,11 @@ const createServer = async (options) => {
     path: '/submissions',
     handler: async (request, h) => {
       // Fallback to a default if the variable isn't set yet
-      const limsBaseUrl = process.env.LIMS_BASE_URL || 'https://thirdparty-lims.gov.uk'
       const queryParams = new URLSearchParams(request.query).toString()
 
       try {
         // Forward the query straight down the pipe to the real third-party service
-        const response = await fetch(`${limsBaseUrl}/submissions?${queryParams}`)
+        const response = await fetch(`${options.limsBaseUrl}/submissions?${queryParams}`)
 
         if (!response.ok) {
           return h.response({ error: 'LIMS integration error' }).code(response.status)

@@ -30,7 +30,7 @@ const createServer = async (options = {}) => {
   }
 
   const server = Hapi.server({
-    port: typeof process.env.PORT === 'undefined' ? 9181 : process.env.PORT,
+    port: typeof process.env.PORT,
     host: '0.0.0.0'
   })
 

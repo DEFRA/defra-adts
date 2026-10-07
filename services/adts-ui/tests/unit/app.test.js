@@ -14,7 +14,6 @@ describe('createServer', () => {
     server = await createServer({
       port: 9181,
       sessionSecret: 'jcgBvzmcBdLDIorYTvedmnNqIiiHIiymBokR',
-      homeFilterState: 'homeFilterState',
       limsAdapterUrl: 'http://localhost:9180'
     })
     expect(server).toBeDefined()

@@ -8,6 +8,7 @@ import Joi from 'joi'
 import nunjucks from 'nunjucks'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
+const filterStateKey = 'filterState'
 const homeFilterSchema = Joi.object({
   client: Joi.string().max(200).allow('').default(''),
   clinician: Joi.string().max(200).allow('').default(''),
@@ -102,12 +103,12 @@ const createServer = async (options) => {
   return server
 }
 
-const getHomePage = (server, options) => {
+const getHomePage = (server) => {
   server.route({
     method: 'GET',
     path: '/',
     handler: (request, h) => {
-      const cached = request.yar.get(options.homeFilterState)
+      const cached = request.yar.get(filterStateKey)
       let filterValues
 
       if (cached) {
@@ -143,7 +144,7 @@ const getResultsPage = (server, options) => {
       }
     },
     handler: async (request, h) => {
-      request.yar.set(options.homeFilterState, request.query)
+      request.yar.set(filterStateKey, request.query)
       request.yar.touch()
 
       const queryParams = new URLSearchParams(request.query).toString()

@@ -18,6 +18,7 @@ describe('createServer', () => {
   })
 
   test('returns a Hapi server instance with inject capability', async () => {
+    process.env.SESSION_SECRET = 'test-session-secret-with-at-least-32-characters'
     server = await createServer()
     expect(server).toBeDefined()
     expect(typeof server.inject).toBe('function')

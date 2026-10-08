@@ -28,6 +28,7 @@ lab.experiment('Dashboard Filter State Persistence', () => {
   let server
 
   lab.before(async () => {
+    process.env.SESSION_SECRET = 'test-session-secret-with-at-least-32-characters'
     process.env.LIMS_ADAPTER_URL = 'http://localhost:3100'
     server = await createServer()
   })

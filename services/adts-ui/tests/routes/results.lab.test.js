@@ -7,7 +7,7 @@
  * - DASH-12 AC4: Submission count rendering above results
  * - Empty state rendering
  *
- * @story DASH-03a, DASH-03b, DASH-12
+ * @story DASH-03a, DASH-03b, DASH-03d, DASH-03e, DASH-12
  */
 
 import { expect } from '@hapi/code'
@@ -91,12 +91,12 @@ lab.experiment('UI Results Card Rendering Integration Pipeline', () => {
     expect(htmlOutput).to.contain('12/Feb/2026')
   })
 
-  lab.test('should render result and PDF links for an in-progress submission', async () => {
+  lab.test('should render result and PDF links when results are available', async () => {
     const mockLimsData = {
       results: [
         {
           id: '123456',
-          statuses: ['In Progress'],
+          statuses: ['In progress', 'Tests complete'],
           samplesTo: 'APHA Weybridge',
           client: 'BITTADON FARMS LTD',
           clientFarm: 'CHURCH FARM',
@@ -104,15 +104,22 @@ lab.experiment('UI Results Card Rendering Integration Pipeline', () => {
           clinician: 'Arturas Puodziunas',
           orderSubmitted: '18/Sep/2026',
           pdfUrl: 'https://documents.example.gov/reports/123456.pdf',
-          hasTests: false,
-          tests: []
+          hasTests: true,
+          tests: [
+            {
+              name: 'Worm egg and/or Cocc. Oocyst Count (TC0060)',
+              type: 'McMaster method',
+              sampleType: 'Caecal Contents',
+              qty: '1'
+            }
+          ]
         }
       ],
       totalCount: 1
     }
 
     mock.method(global, 'fetch', async (url) => {
-      expect(url).to.contain('status=in_progress')
+      expect(url).to.contain('status=tests_complete')
       return new Response(JSON.stringify(mockLimsData), {
         status: 200,
         headers: { 'Content-Type': 'application/json' }
@@ -121,12 +128,14 @@ lab.experiment('UI Results Card Rendering Integration Pipeline', () => {
 
     const response = await server.inject({
       method: 'GET',
-      url: '/results?status=in_progress'
+      url: '/results?status=tests_complete'
     })
 
     expect(response.statusCode).to.equal(200)
     expect(response.payload).to.contain('href="/test-result?id=123456"')
+    expect(response.payload).to.contain('govuk-tag--green')
     expect(response.payload).to.contain('View results')
+    expect(response.payload).to.contain('In progress')
     expect(response.payload).to.contain('href="https://documents.example.gov/reports/123456.pdf"')
     expect(response.payload).to.contain('View PDF')
   })
@@ -167,6 +176,122 @@ lab.experiment('UI Results Card Rendering Integration Pipeline', () => {
     expect(response.payload).to.contain('Draft Id: 4457')
     expect(response.payload).to.contain('govuk-tag--orange')
     expect(response.payload).to.contain('Submission contains no tests.')
+  })
+
+  lab.test('should render a cancelled submission with the GOV.UK grey status tag', async () => {
+    const mockLimsData = {
+      results: [
+        {
+          id: '16-C0001-11-25',
+          statuses: ['Cancelled'],
+          samplesTo: 'APHA Starcross',
+          client: 'SPOURS, L',
+          clientFarm: 'TWIZELL FARM',
+          species: 'Cattle',
+          clinician: 'Jon Drake',
+          orderSubmitted: '18/Nov/2025',
+          hasTests: true,
+          tests: [
+            {
+              name: 'Salmonella Culture (TC0025)',
+              type: 'Culture',
+              sampleType: 'Faeces',
+              qty: '1'
+            }
+          ]
+        }
+      ],
+      totalCount: 1
+    }
+
+    mock.method(global, 'fetch', async () => {
+      return new Response(JSON.stringify(mockLimsData), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      })
+    })
+
+    const response = await server.inject({
+      method: 'GET',
+      url: '/results?status=cancelled'
+    })
+
+    expect(response.statusCode).to.equal(200)
+    expect(response.payload).to.contain('16-C0001-11-25')
+    expect(response.payload).to.contain('govuk-tag--purple')
+    expect(response.payload).to.contain('Cancelled')
+    expect(response.payload).to.contain('Salmonella Culture (TC0025)')
+    expect(response.payload).to.contain('APHA Starcross')
+  })
+
+  lab.test('should render all submissions when filtered by status=samples_overdue', async () => {
+    const mockLimsData = {
+      results: [
+        {
+          id: '14-M0002-02-26',
+          statuses: ['Submitted', 'Samples overdue'],
+          samplesTo: 'APHA Carmarthen',
+          client: 'OLD MCDONALD',
+          clientFarm: 'ANIMAL FARM',
+          species: 'Goat',
+          clinician: 'Dave Simonds',
+          orderSubmitted: '12/Feb/2026',
+          hasTests: true,
+          tests: [
+            {
+              name: 'Worm egg and/or Cocc. Oocyst Count (TC0060)',
+              type: 'McMaster method',
+              sampleType: 'Caecal Contents',
+              qty: '1'
+            }
+          ]
+        },
+        {
+          id: '15-X0001-03-26',
+          statuses: ['Submitted', 'Samples overdue'],
+          samplesTo: 'APHA Weybridge',
+          client: 'BITTADON FARMS LTD',
+          clientFarm: 'CHURCH FARM',
+          species: 'Cattle',
+          clinician: 'Jon Drake',
+          orderSubmitted: '18/Jan/2026',
+          hasTests: true,
+          tests: [
+            {
+              name: 'Salmonella Culture (TC0025)',
+              type: 'Culture',
+              sampleType: 'Faeces',
+              qty: '1'
+            }
+          ]
+        }
+      ],
+      totalCount: 2
+    }
+
+    mock.method(global, 'fetch', async (url) => {
+      expect(url).to.contain('status=samples_overdue')
+      return new Response(JSON.stringify(mockLimsData), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      })
+    })
+
+    const response = await server.inject({
+      method: 'GET',
+      url: '/results?status=samples_overdue'
+    })
+
+    expect(response.statusCode).to.equal(200)
+    expect(response.payload).to.contain('2 submissions matching criteria')
+    expect(response.payload).to.contain('14-M0002-02-26')
+    expect(response.payload).to.contain('15-X0001-03-26')
+    expect(response.payload).to.contain('View submission 14-M0002-02-26')
+    expect(response.payload).to.contain('View submission 15-X0001-03-26')
+    const overdueMatches = (response.payload.match(/app-tag--overdue/g) || []).length
+    expect(overdueMatches).to.equal(2)
+    const submittedMatches = (response.payload.match(/app-tag--submitted/g) || []).length
+    expect(submittedMatches).to.equal(2)
   })
 
   lab.test('should render a clear empty state block if LIMS adapter query results are empty', async () => {

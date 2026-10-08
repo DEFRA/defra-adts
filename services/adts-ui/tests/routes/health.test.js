@@ -4,7 +4,7 @@
  * Verifies that the /health endpoint returns HTTP statusCode 200.
  *
  */
-import { afterAll, beforeAll, describe, expect, test } from '@jest/globals'
+import { afterAll, afterEach, beforeAll, describe, expect, test, jest } from '@jest/globals'
 import createServer from '../../src/app.js'
 
 describe('Healthcheck endpoint', () => {

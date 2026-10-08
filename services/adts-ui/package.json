@@ -13,14 +13,13 @@
   "test:unit": "node --experimental-vm-modules node_modules/jest/bin/jest.js tests/unit",
   "test:component": "node --experimental-vm-modules node_modules/jest/bin/jest.js tests/component",
   "test:integration": "node --experimental-vm-modules node_modules/jest/bin/jest.js tests/integration",
-  "test:routes": "lab -v tests/routes/*.lab.test.js",
+  "test:routes": "node --experimental-vm-modules node_modules/jest/bin/jest.js tests/routes",
   "test:coverage": "node --experimental-vm-modules node_modules/jest/bin/jest.js tests/unit tests/component tests/integration --coverage",
   "start:watch": "nodemon --watch src/views --ignore src/public --ext njk --signal SIGTERM src/index.js",
   "kill": "sh -c 'pids=$(lsof -tiTCP:3000 -sTCP:LISTEN); [ -z \"$pids\" ] || kill $pids'",
   "lint": "eslint ." 
 },
   "dependencies": {
-    "@hapi/code": "^9.0.3",
     "@hapi/hapi": "21.4.10",
     "@hapi/inert": "7.1.2",
     "@hapi/vision": "7.0.3",
@@ -30,7 +29,6 @@
     "nunjucks": "3.2.4"
   },
   "devDependencies": {
-  "@hapi/lab": "^26.0.1",
   "esbuild": "0.28.1",
   "eslint": "9.39.5",
   "jest": "^30.5.2",

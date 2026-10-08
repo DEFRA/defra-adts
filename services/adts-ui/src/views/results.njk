@@ -123,34 +123,42 @@
                     <strong class="govuk-tag govuk-tag--blue {{ marginClass }}">{{ tag }}</strong>
                   {% endif %}
                 {% endfor %}
+                {% if 'Results available' in submission.statuses %}
+                  <div>
+                    <a class="govuk-link" href="/test-result?id={{ submission.id | urlencode }}">View results</a>
+                    {% if submission.pdfUrl %}
+                      <a class="govuk-link govuk-!-margin-left-2" href="{{ submission.pdfUrl }}">View PDF</a>
+                    {% endif %}
+                  </div>
+                {% endif %}
               </div>
             </div>
 
             <!-- 2. Main Six-Column Metadata Grid -->
-            <div class="govuk-grid-row app-result-card__meta-row govuk-body-s {% if submission.hasTests %}app-result-card__meta-row--has-tests{% endif %} govuk-!-padding-bottom-3">
-              <div class="govuk-grid-column-one-sixth govuk-!-padding-right-2">
-                <span class="govuk-hint govuk-body-s govuk-!-font-weight-bold govuk-!-margin-bottom-1">Samples to</span>
-                <span>{{ submission.samplesTo }}</span>
+            <div class="app-result-card__meta-grid govuk-body-s {% if submission.hasTests %}app-result-card__meta-grid--has-tests{% endif %} govuk-!-padding-bottom-3">
+              <div class="app-result-card__meta-col">
+                <span class="app-result-card__meta-label">Samples to</span>
+                <span class="app-result-card__meta-value">{{ submission.samplesTo }}</span>
               </div>
-              <div class="govuk-grid-column-one-sixth govuk-!-padding-right-2">
-                <span class="govuk-hint govuk-body-s govuk-!-font-weight-bold govuk-!-margin-bottom-1">Client</span>
-                <span>{{ submission.client }}</span>
+              <div class="app-result-card__meta-col">
+                <span class="app-result-card__meta-label">Client</span>
+                <span class="app-result-card__meta-value">{{ submission.client }}</span>
               </div>
-              <div class="govuk-grid-column-one-sixth govuk-!-padding-right-2">
-                <span class="govuk-hint govuk-body-s govuk-!-font-weight-bold govuk-!-margin-bottom-1">Client farm</span>
-                <span>{{ submission.clientFarm }}</span>
+              <div class="app-result-card__meta-col">
+                <span class="app-result-card__meta-label">Client farm</span>
+                <span class="app-result-card__meta-value">{{ submission.clientFarm }}</span>
               </div>
-              <div class="govuk-grid-column-one-sixth govuk-!-padding-right-2">
-                <span class="govuk-hint govuk-body-s govuk-!-font-weight-bold govuk-!-margin-bottom-1">Species</span>
-                <span>{{ submission.species }}</span>
+              <div class="app-result-card__meta-col">
+                <span class="app-result-card__meta-label">Species</span>
+                <span class="app-result-card__meta-value">{{ submission.species }}</span>
               </div>
-              <div class="govuk-grid-column-one-sixth govuk-!-padding-right-2">
-                <span class="govuk-hint govuk-body-s govuk-!-font-weight-bold govuk-!-margin-bottom-1">Clinician</span>
-                <span>{{ submission.clinician }}</span>
+              <div class="app-result-card__meta-col">
+                <span class="app-result-card__meta-label">Clinician</span>
+                <span class="app-result-card__meta-value">{{ submission.clinician }}</span>
               </div>
-              <div class="govuk-grid-column-one-sixth govuk-!-padding-right-2">
-                <span class="govuk-hint govuk-body-s govuk-!-font-weight-bold govuk-!-margin-bottom-1">Order submitted</span>
-                <span>{{ submission.orderSubmitted }}</span>
+              <div class="app-result-card__meta-col">
+                <span class="app-result-card__meta-label">Order submitted</span>
+                <span class="app-result-card__meta-value">{{ submission.orderSubmitted }}</span>
               </div>
             </div>
 
@@ -159,22 +167,32 @@
               <p class="govuk-body govuk-!-margin-top-4 govuk-!-margin-bottom-0">Submission contains no tests.</p>
             {% else %}
               <div class="govuk-!-margin-top-3 govuk-body-s">
+                <div class="app-result-card__test-row govuk-!-padding-bottom-2">
+                  <div class="app-result-card__test-col--name">
+                    <span class="app-result-card__test-label">Test name</span>
+                  </div>
+                  <div class="app-result-card__test-col--type">
+                    <span class="app-result-card__test-label">Test type</span>
+                  </div>
+                  <div class="app-result-card__test-col--sample">
+                    <span class="app-result-card__test-label">Sample type</span>
+                  </div>
+                  <div class="app-result-card__test-col--qty">
+                    <span class="app-result-card__test-label">Qty</span>
+                  </div>
+                </div>
                 {% for test in submission.tests %}
-                  <div class="govuk-grid-row app-result-card__meta-row govuk-!-padding-top-2 govuk-!-padding-bottom-2">
-                    <div class="govuk-grid-column-one-half">
-                      <span class="govuk-!-font-weight-bold govuk-!-margin-bottom-1 govuk-!-display-block">Test name</span>
+                  <div class="app-result-card__test-row govuk-!-padding-top-2 govuk-!-padding-bottom-2">
+                    <div class="app-result-card__test-col--name">
                       <span>{{ test.name }}</span>
                     </div>
-                    <div class="govuk-grid-column-one-fifth">
-                      <span class="govuk-!-font-weight-bold govuk-!-margin-bottom-1 govuk-!-display-block">Test type</span>
+                    <div class="app-result-card__test-col--type">
                       <span>{{ test.type }}</span>
                     </div>
-                    <div class="govuk-grid-column-one-fifth">
-                      <span class="govuk-!-font-weight-bold govuk-!-margin-bottom-1 govuk-!-display-block">Sample type</span>
+                    <div class="app-result-card__test-col--sample">
                       <span>{{ test.sampleType }}</span>
                     </div>
-                    <div class="govuk-grid-column-one-tenth">
-                      <span class="govuk-!-font-weight-bold govuk-!-margin-bottom-1 govuk-!-display-block">Qty</span>
+                    <div class="app-result-card__test-col--qty">
                       <span>{{ test.qty }}</span>
                     </div>
                   </div>
@@ -183,13 +201,8 @@
             {% endif %}
 
             <div class="app-result-card__footer govuk-body govuk-!-margin-top-4">
-              {% if 'Submitted' in submission.statuses %}
+              {% if not 'Draft' in submission.statuses %}
                 <a class="govuk-link" href="/submissions/{{ submission.id | urlencode }}">View submission {{ submission.id }}</a>
-              {% elif 'In Progress' in submission.statuses %}
-                <a class="govuk-link" href="/test-result?id={{ submission.id | urlencode }}">View results</a>
-                {% if submission.pdfUrl %}
-                  <a class="govuk-link govuk-!-margin-left-2" href="{{ submission.pdfUrl }}">View PDF</a>
-                {% endif %}
               {% endif %}
             </div>
           </div>

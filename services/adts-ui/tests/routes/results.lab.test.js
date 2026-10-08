@@ -91,12 +91,12 @@ lab.experiment('UI Results Card Rendering Integration Pipeline', () => {
     expect(htmlOutput).to.contain('12/Feb/2026')
   })
 
-  lab.test('should render result and PDF links for an in-progress submission', async () => {
+  lab.test('should render result and PDF links when results are available', async () => {
     const mockLimsData = {
       results: [
         {
           id: '123456',
-          statuses: ['In Progress'],
+          statuses: ['In progress', 'Results available'],
           samplesTo: 'APHA Weybridge',
           client: 'BITTADON FARMS LTD',
           clientFarm: 'CHURCH FARM',
@@ -104,15 +104,22 @@ lab.experiment('UI Results Card Rendering Integration Pipeline', () => {
           clinician: 'Arturas Puodziunas',
           orderSubmitted: '18/Sep/2026',
           pdfUrl: 'https://documents.example.gov/reports/123456.pdf',
-          hasTests: false,
-          tests: []
+          hasTests: true,
+          tests: [
+            {
+              name: 'Worm egg and/or Cocc. Oocyst Count (TC0060)',
+              type: 'McMaster method',
+              sampleType: 'Caecal Contents',
+              qty: '1'
+            }
+          ]
         }
       ],
       totalCount: 1
     }
 
     mock.method(global, 'fetch', async (url) => {
-      expect(url).to.contain('status=in_progress')
+      expect(url).to.contain('status=available')
       return new Response(JSON.stringify(mockLimsData), {
         status: 200,
         headers: { 'Content-Type': 'application/json' }
@@ -121,12 +128,13 @@ lab.experiment('UI Results Card Rendering Integration Pipeline', () => {
 
     const response = await server.inject({
       method: 'GET',
-      url: '/results?status=in_progress'
+      url: '/results?status=available'
     })
 
     expect(response.statusCode).to.equal(200)
     expect(response.payload).to.contain('href="/test-result?id=123456"')
     expect(response.payload).to.contain('View results')
+    expect(response.payload).to.contain('In progress')
     expect(response.payload).to.contain('href="https://documents.example.gov/reports/123456.pdf"')
     expect(response.payload).to.contain('View PDF')
   })

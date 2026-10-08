@@ -11,7 +11,7 @@
     "start:watch": "nodemon --ext njk --signal SIGTERM src/app.js",
     "kill": "sh -c 'pids=$(lsof -tiTCP:3000 -sTCP:LISTEN); [ -z \"$pids\" ] || kill $pids'",
     "lint": "eslint .",
-    "test:routes": "node --experimental-vm-modules node_modules/jest/bin/jest.js tests/routes"
+    "test:routes": "node --experimental-vm-modules node_modules/jest/bin/jest.js tests/routes --coverage"
   },
   "dependencies": {
     "@hapi/hapi": "21.4.10",

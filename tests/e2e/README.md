@@ -82,9 +82,12 @@ Playwright's `webServer` config auto-starts `adts-ui` and `adts-submissions-serv
 
 ```bash
 # Terminal A — submissions service on :3100
-npm start --prefix services/adts-submissions-service
+PORT=3100 npm start --prefix services/adts-submissions-service
 
 # Terminal B — UI on :3000
+PORT=3000 \
+SESSION_SECRET=e2e-test-session-secret-with-at-least-32-characters \
+SUBMISSIONS_SERVICE_URL=http://localhost:3100 \
 npm start --prefix services/adts-ui
 
 # Terminal C — run tests, which will reuse the running services

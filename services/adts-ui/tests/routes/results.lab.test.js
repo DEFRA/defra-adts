@@ -22,7 +22,7 @@ lab.experiment('UI Results Card Rendering Integration Pipeline', () => {
 
   lab.before(async () => {
     process.env.PORT = 3000
-    process.env.LIMS_ADAPTER_URL = 'http://localhost:3100'
+    process.env.SUBMISSIONS_SERVICE_URL = 'http://localhost:3100'
     process.env.SESSION_SECRET = 'abcdefghijklmnopqrstuvwxyz123456'
     server = await createServer()
   })

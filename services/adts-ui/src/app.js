@@ -139,7 +139,7 @@ const createServer = async (options = {}) => {
       request.yar.touch()
 
       const queryParams = new URLSearchParams(request.query).toString()
-      const adapterBaseUrl = process.env.LIMS_ADAPTER_URL
+      const adapterBaseUrl = process.env.SUBMISSIONS_SERVICE_URL
       const adapterUrl = `${adapterBaseUrl}/submissions?${queryParams}`
 
       const viewContext = {

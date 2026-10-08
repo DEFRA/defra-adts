@@ -38,6 +38,5 @@ lab.experiment('Healthcheck endpoint', () => {
     })
 
     expect(response.statusCode).to.equal(200)
-
   })
 })

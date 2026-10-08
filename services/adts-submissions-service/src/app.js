@@ -7,13 +7,10 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 const createServer = async () => {
   const server = Hapi.server({
-    port: process.env.PORT || 3100,
-    host: '0.0.0.0'
+    port: process.env.PORT
   })
 
   await server.register([Inert])
-
-  // Our compiled JS, built into src/public by `npm run build`
   server.route({
     method: 'GET',
     path: '/assets/js/{param*}',
@@ -36,18 +33,12 @@ const createServer = async () => {
     method: 'GET',
     path: '/submissions',
     handler: async (request, h) => {
-      // Fallback to a default if the variable isn't set yet
-      const limsBaseUrl = process.env.LIMS_BASE_URL || 'https://thirdparty-lims.gov.uk'
       const queryParams = new URLSearchParams(request.query).toString()
-
       try {
-        // Forward the query straight down the pipe to the real third-party service
-        const response = await fetch(`${limsBaseUrl}/submissions?${queryParams}`)
-
+        const response = await fetch(`${process.env.LIMS_BASE_URL}/submissions?${queryParams}`)
         if (!response.ok) {
           return h.response({ error: 'LIMS integration error' }).code(response.status)
         }
-
         const data = await response.json()
         return data
       } catch (error) {
@@ -55,7 +46,6 @@ const createServer = async () => {
       }
     }
   })
-
   return server
 }
 

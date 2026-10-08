@@ -33,6 +33,6 @@ describe('Healthcheck endpoint', () => {
     })
 
     expect(response.statusCode).toBe(200)
-    expect(response.body).toContain('"status": "UP"')
+    expect(response).toContain('"status": "UP"')
   })
 })

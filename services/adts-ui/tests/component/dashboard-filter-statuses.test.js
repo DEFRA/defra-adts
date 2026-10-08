@@ -40,8 +40,7 @@ describe('Dashboard filter — Status dropdown (DASH-02 AC2)', () => {
     'In progress',
     'Cancelled',
     'Samples overdue',
-    'All tests complete',
-    'Results available'
+    'Tests complete',
   ]
 
   // Helper — isolate the Status select element so assertions don't false-positive
@@ -64,6 +63,6 @@ describe('Dashboard filter — Status dropdown (DASH-02 AC2)', () => {
     const html = env.render('home.njk', defaultContext)
     const statusSelectHtml = getStatusSelectHtml(html)
     const optionCount = (statusSelectHtml.match(/<option/g) || []).length
-    expect(optionCount).toBe(8)
+    expect(optionCount).toBe(7)
   })
 })

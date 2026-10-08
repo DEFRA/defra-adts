@@ -38,5 +38,7 @@ lab.experiment('Healthcheck endpoint', () => {
     })
 
     expect(response.statusCode).to.equal(200)
+    const responseBody = response.body
+    expect(response.statusCode).to.contain('"status": "UP"')
   })
 })

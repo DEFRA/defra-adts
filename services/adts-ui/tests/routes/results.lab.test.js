@@ -96,7 +96,7 @@ lab.experiment('UI Results Card Rendering Integration Pipeline', () => {
       results: [
         {
           id: '123456',
-          statuses: ['In progress', 'Results available'],
+          statuses: ['In progress', 'Tests complete'],
           samplesTo: 'APHA Weybridge',
           client: 'BITTADON FARMS LTD',
           clientFarm: 'CHURCH FARM',
@@ -119,7 +119,7 @@ lab.experiment('UI Results Card Rendering Integration Pipeline', () => {
     }
 
     mock.method(global, 'fetch', async (url) => {
-      expect(url).to.contain('status=available')
+      expect(url).to.contain('status=tests_complete')
       return new Response(JSON.stringify(mockLimsData), {
         status: 200,
         headers: { 'Content-Type': 'application/json' }
@@ -128,7 +128,7 @@ lab.experiment('UI Results Card Rendering Integration Pipeline', () => {
 
     const response = await server.inject({
       method: 'GET',
-      url: '/results?status=available'
+      url: '/results?status=tests_complete'
     })
 
     expect(response.statusCode).to.equal(200)

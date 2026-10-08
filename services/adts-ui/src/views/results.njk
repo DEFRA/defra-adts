@@ -62,8 +62,7 @@
                 { value: "in_progress", text: "In progress", selected: filteredValues.status == 'in_progress' },
                 { value: "cancelled", text: "Cancelled", selected: filteredValues.status == 'cancelled' },
                 { value: "samples_overdue", text: "Samples overdue", selected: filteredValues.status == 'samples_overdue' },
-                { value: "tests_complete", text: "Tests complete", selected: filteredValues.status == 'tests_complete' },
-                { value: "available", text: "Available", selected: filteredValues.status == 'available' }
+                { value: "tests_complete", text: "Tests complete", selected: filteredValues.status == 'tests_complete' }
               ]
             }) }}
           </div>
@@ -125,7 +124,7 @@
                     <strong class="govuk-tag govuk-tag--blue {{ marginClass }}">{{ tag }}</strong>
                   {% endif %}
                 {% endfor %}
-                {% if 'Results available' in submission.statuses %}
+                {% if 'Tests complete' in submission.statuses %}
                   <div>
                     <a class="govuk-link" href="/test-result?id={{ submission.id | urlencode }}">View results</a>
                     {% if submission.pdfUrl %}

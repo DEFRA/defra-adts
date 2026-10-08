@@ -119,6 +119,8 @@
                     <strong class="govuk-tag app-tag--overdue {{ marginClass }}">Samples overdue</strong>
                   {% elif tag | lower == 'cancelled' %}
                     <strong class="govuk-tag govuk-tag--purple {{ marginClass }}">Cancelled</strong>
+                  {% elif tag | lower == 'in progress' %}
+                    <strong class="govuk-tag govuk-tag--green {{ marginClass }}">In progress</strong>
                   {% else %}
                     <strong class="govuk-tag govuk-tag--blue {{ marginClass }}">{{ tag }}</strong>
                   {% endif %}

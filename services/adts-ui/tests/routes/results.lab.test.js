@@ -133,6 +133,7 @@ lab.experiment('UI Results Card Rendering Integration Pipeline', () => {
 
     expect(response.statusCode).to.equal(200)
     expect(response.payload).to.contain('href="/test-result?id=123456"')
+    expect(response.payload).to.contain('govuk-tag--green')
     expect(response.payload).to.contain('View results')
     expect(response.payload).to.contain('In progress')
     expect(response.payload).to.contain('href="https://documents.example.gov/reports/123456.pdf"')

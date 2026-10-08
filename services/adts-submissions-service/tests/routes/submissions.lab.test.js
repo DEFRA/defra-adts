@@ -13,6 +13,7 @@ describe('LIMS Backend Proxy - Network Mock Tests', () => {
   before(async () => {
     // Direct our code to a dummy endpoint during test runtimes
     process.env.LIMS_BASE_URL = 'https://mock-lims.local'
+    process.env.PORT = 3100
     server = await createServer()
   })
 
@@ -36,12 +37,8 @@ describe('LIMS Backend Proxy - Network Mock Tests', () => {
       }
     ]
 
-    // Mock global.fetch natively
     mock.method(global, 'fetch', async (url) => {
-      // Assert that our code targeted the correct environment endpoint configuration
       expect(url).to.startWith('https://mock-lims.local')
-
-      // Simulate a successful network response stream container
       return new Response(JSON.stringify({
         results: testSubmissionsMock,
         totalCount: testSubmissionsMock.length
@@ -65,7 +62,6 @@ describe('LIMS Backend Proxy - Network Mock Tests', () => {
   })
 
   it('should gracefully handle 500 downstream outages from LIMS platform', async () => {
-    // Force native fetch to simulate a remote platform explosion
     mock.method(global, 'fetch', async () => {
       return new Response(JSON.stringify({ message: 'Internal Server Error' }), {
         status: 500
@@ -76,8 +72,6 @@ describe('LIMS Backend Proxy - Network Mock Tests', () => {
       method: 'GET',
       url: '/submissions'
     })
-
-    // Validates our proxy accurately catches bad error states
     expect(res.statusCode).to.equal(500)
     const data = JSON.parse(res.payload)
     expect(data.error).to.equal('LIMS integration error')

@@ -22,10 +22,13 @@ const config = {
   },
 webServer: [
   {
-    command: 'npm start --prefix services/adts-submissions-service',   
+    command: 'npm start --prefix services/adts-submissions-service',
     url: 'http://localhost:3100',
     reuseExistingServer: !process.env.CI,
-    timeout: 60 * 1000
+    timeout: 60 * 1000,
+    env: {
+      PORT: '3100'
+    }
   },
   {
     command: 'npm start --prefix services/adts-ui',
@@ -33,7 +36,9 @@ webServer: [
     reuseExistingServer: !process.env.CI,
     timeout: 60 * 1000,
     env: {
-      SUBMISSIONS_SERVICE_URL: 'http://localhost:3100'   
+      PORT: '3000',
+      SESSION_SECRET: 'e2e-test-session-secret-with-at-least-32-characters',
+      SUBMISSIONS_SERVICE_URL: 'http://localhost:3100'
     }
   }
 ],

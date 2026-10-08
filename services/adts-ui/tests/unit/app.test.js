@@ -5,8 +5,8 @@ import createServer from '../../src/app.js'
  * Unit test — server factory only.
  *
  * Route-level behaviour (GET / responds, returns HTML) is covered by
- * route tests in services/adts-ui/tests/routes/dashboard-layout.lab.test.js
- * and dashboard-filter-persistence.lab.test.js — not duplicated here.
+ * route tests in services/adts-ui/tests/routes/dashboard-layout.test.js
+ * and dashboard-filter-persistence.test.js — not duplicated here.
  */
 describe('createServer', () => {
   let server

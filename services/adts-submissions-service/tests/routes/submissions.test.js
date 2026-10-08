@@ -1,32 +1,24 @@
-import { mock } from 'node:test'
-import Lab from '@hapi/lab'
-import Code from '@hapi/code'
+import { afterAll, afterEach, beforeAll, describe, expect, jest, test } from '@jest/globals'
 import createServer from '../../src/app.js'
-
-export const lab = Lab.script()
-const { expect } = Code
-const { describe, it, before, after, afterEach } = lab
 
 describe('LIMS Backend Proxy - Network Mock Tests', () => {
   let server
 
-  before(async () => {
-    // Direct our code to a dummy endpoint during test runtimes
+  beforeAll(async () => {
     process.env.LIMS_BASE_URL = 'https://mock-lims.local'
     process.env.PORT = 3100
     server = await createServer()
   })
 
-  after(async () => {
+  afterAll(async () => {
     await server.stop()
   })
 
   afterEach(() => {
-    // Reset all native mocks after each test run
-    mock.reset()
+    jest.restoreAllMocks()
   })
 
-  it('should pass downstream mock LIMS data straight back through the proxy', async () => {
+  test('should pass downstream mock LIMS data straight back through the proxy', async () => {
     const testSubmissionsMock = [
       {
         id: 'TEST-1234',
@@ -37,8 +29,8 @@ describe('LIMS Backend Proxy - Network Mock Tests', () => {
       }
     ]
 
-    mock.method(global, 'fetch', async (url) => {
-      expect(url).to.startWith('https://mock-lims.local')
+    jest.spyOn(globalThis, 'fetch').mockImplementation(async (url) => {
+      expect(url).toMatch(/^https:\/\/mock-lims\.local/)
       return new Response(JSON.stringify({
         results: testSubmissionsMock,
         totalCount: testSubmissionsMock.length
@@ -53,16 +45,16 @@ describe('LIMS Backend Proxy - Network Mock Tests', () => {
       url: '/submissions?client=TESTING'
     })
 
-    expect(res.statusCode).to.equal(200)
+    expect(res.statusCode).toBe(200)
 
     const data = JSON.parse(res.payload)
-    expect(data.totalCount).to.equal(1)
-    expect(data.results[0].id).to.equal('TEST-1234')
-    expect(data.results[0].client).to.equal('TESTING CLIENT')
+    expect(data.totalCount).toBe(1)
+    expect(data.results[0].id).toBe('TEST-1234')
+    expect(data.results[0].client).toBe('TESTING CLIENT')
   })
 
-  it('should gracefully handle 500 downstream outages from LIMS platform', async () => {
-    mock.method(global, 'fetch', async () => {
+  test('should gracefully handle 500 downstream outages from LIMS platform', async () => {
+    jest.spyOn(globalThis, 'fetch').mockImplementation(async () => {
       return new Response(JSON.stringify({ message: 'Internal Server Error' }), {
         status: 500
       })
@@ -72,8 +64,8 @@ describe('LIMS Backend Proxy - Network Mock Tests', () => {
       method: 'GET',
       url: '/submissions'
     })
-    expect(res.statusCode).to.equal(500)
+    expect(res.statusCode).toBe(500)
     const data = JSON.parse(res.payload)
-    expect(data.error).to.equal('LIMS integration error')
+    expect(data.error).toBe('LIMS integration error')
   })
 })

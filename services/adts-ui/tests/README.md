@@ -1,6 +1,6 @@
 # adts-ui
 
-Hapi,Jest + Nunjucks UI for the Animal Disease Testing Service, built with GOV.UK Frontend.
+Jest + Nunjucks UI for the Animal Disease Testing Service, built with GOV.UK Frontend.
 
 ## First-time setup
 
@@ -63,7 +63,7 @@ The `npm test` command runs the configured test suites in this order — stoppin
 | `npm run test:unit` | Pure functions and helpers (no server) | Jest |
 | `npm run test:component` | Template rendering (Nunjucks blocks, GOV.UK components) | Jest |
 | `npm run test:integration` | Multiple parts of the app together, below the HTTP layer | Jest |
-| `npm run test:routes` | Hapi routes exercised via `server.inject` — page responses, session behaviour, request handling, route-level error handling | Hapi Lab |
+| `npm run test:routes` | Hapi routes exercised via `server.inject` — page responses, session behaviour, request handling, route-level error handling | Jest |
 
 ### Run a single suite
 
@@ -76,17 +76,10 @@ npm run test:routes
 
 ### Run a single file or test
 
-Jest suites:
-
 ```bash
 npx jest tests/component/dashboard-filter-block.test.js
+npx jest tests/routes/dashboard-layout.test.js
 npx jest -t "renders the Status dropdown"
-```
-
-Hapi Lab (routes):
-
-```bash
-npx lab tests/routes/home.lab.test.js
 ```
 
 ### Coverage

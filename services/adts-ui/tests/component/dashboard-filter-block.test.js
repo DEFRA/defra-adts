@@ -8,7 +8,7 @@
  * - Filter value pre-population → dashboard-filter-prepopulation.test.js
  * - XSS escaping → dashboard-filter-security.test.js
  * - Primary page landmarks (header + New submission) → DASH-01 route test
- *   (services/adts-ui/tests/routes/dashboard-layout.lab.test.js)
+ *   (services/adts-ui/tests/routes/dashboard-layout.test.js)
  * - Status dropdown options → dashboard-filter-statuses.test.js
  *
  * @story DASH-12

@@ -7,20 +7,20 @@
   "scripts": {
     "build": "esbuild src/client/all.js --bundle --minify --outfile=src/public/js/all.js",
     "start": "node src/index.js",
+    "test": "npm run test:routes",
     "start:watch": "nodemon --ext njk --signal SIGTERM src/app.js",
     "kill": "sh -c 'pids=$(lsof -tiTCP:3000 -sTCP:LISTEN); [ -z \"$pids\" ] || kill $pids'",
     "lint": "eslint .",
-    "test:routes": "lab -v tests/routes/*.lab.test.js"
+    "test:routes": "node --experimental-vm-modules node_modules/jest/bin/jest.js tests/routes --coverage"
   },
   "dependencies": {
-    "@hapi/code": "^9.0.3",
     "@hapi/hapi": "21.4.10",
     "@hapi/inert": "7.1.2"
   },
   "devDependencies": {
-    "@hapi/lab": "^26.0.1",
     "esbuild": "0.28.1",
     "eslint": "9.39.5",
+    "jest": "^30.5.2",
     "neostandard": "0.13.0",
     "nodemon": "3.1.14"
   }

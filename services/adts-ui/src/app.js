@@ -9,6 +9,7 @@ import nunjucks from 'nunjucks'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const HOME_FILTER_STATE_KEY = 'homeFilterState'
+const CLIENT_DETAILS_STATE_KEY = 'submissionClientDetails'
 const homeFilterSchema = Joi.object({
   client: Joi.string().max(200).allow('').default(''),
   clinician: Joi.string().max(200).allow('').default(''),
@@ -19,6 +20,9 @@ const homeFilterSchema = Joi.object({
     .valid('1_day', '1_week', '14_days', '1_month', '6_months', '1_year', '18_months')
     .allow('')
     .default('18_months')
+})
+const clientDetailsSchema = Joi.object({
+  client: Joi.string().max(200).allow('')
 })
 
 const createServer = async () => {
@@ -118,6 +122,29 @@ const createServer = async () => {
           status: filterValues.status,
           submitted_date: filterValues['submitted-date'] || ''
         }
+      })
+    }
+  })
+
+  server.route({
+    method: 'GET',
+    path: '/submission-01-client-details',
+    options: {
+      validate: {
+        query: clientDetailsSchema
+      }
+    },
+    handler: (request, h) => {
+      if (Object.hasOwn(request.query, 'client')) {
+        request.yar.set(CLIENT_DETAILS_STATE_KEY, request.query)
+        request.yar.touch()
+      }
+
+      const clientDetails = request.yar.get(CLIENT_DETAILS_STATE_KEY) || { client: '' }
+
+      return h.view('submission-01-client-details.njk', {
+        client: clientDetails.client,
+        containerClasses: 'app-client-details-container'
       })
     }
   })

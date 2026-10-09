@@ -40,22 +40,14 @@
 }
 
 .app-submission-progress {
-  display: grid;
-  grid-template-columns: repeat(8, minmax(0, 1fr));
   border-bottom: 1px solid $govuk-border-colour;
   margin-bottom: 20px;
-  min-width: 0;
 }
 
 .app-submission-progress__step {
   display: flex;
-  gap: clamp(6px, 0.7vw, 14px);
-  padding: 0 8px 12px 0;
-  color: $govuk-link-colour;
-  font-size: clamp(16px, 1.2vw, 23px);
-  line-height: 1.4;
-  text-decoration: none;
-  min-width: 0;
+  gap: 8px;
+  padding-bottom: 12px;
 
   > span:first-child {
     flex: 0 0 auto;
@@ -77,23 +69,13 @@
   margin: 30px 0 64px;
 }
 
-@media (max-width: 900px) {
-  .app-submission-progress {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
-
+@media (max-width: 640px) {
   .app-phase-banner {
     align-items: flex-start;
   }
 
   .app-account-navigation {
     gap: 12px;
-  }
-}
-
-@media (max-width: 480px) {
-  .app-submission-progress {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 

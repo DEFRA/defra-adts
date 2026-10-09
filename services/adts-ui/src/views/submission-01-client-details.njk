@@ -1,0 +1,69 @@
+{% extends "govuk/template.njk" %}
+
+{% from "govuk/components/header/macro.njk" import govukHeader %}
+{% from "govuk/components/input/macro.njk" import govukInput %}
+
+{% block pageTitle %}Client details – ADTS{% endblock %}
+
+{% block head %}
+  <link rel="stylesheet" href="/assets/css/application.css">
+{% endblock %}
+
+{% block header %}
+  {{ govukHeader({
+    serviceName: "Animal Disease Testing Service",
+    serviceUrl: "/",
+    navigation: [
+      { text: "My Account", href: "#" },
+      { text: "Sign out", href: "#" }
+    ]
+  }) }}
+{% endblock %}
+
+{% block content %}
+  <div class="govuk-phase-banner app-phase-banner govuk-body-l">
+    <strong class="govuk-tag govuk-phase-banner__content__tag">BETA</strong>
+    <span class="govuk-phase-banner__text">
+      This is a new service – your <a class="govuk-link" href="#">feedback</a> will help us to improve it.
+    </span>
+  </div>
+
+  <nav class="govuk-grid-row app-submission-progress govuk-body" aria-label="Submission progress">
+    <a class="govuk-grid-column-one-quarter govuk-link app-submission-progress__step app-submission-progress__step--current" href="#">
+      <span>1</span><span>Client details</span>
+    </a>
+    <a class="govuk-grid-column-one-quarter govuk-link app-submission-progress__step" href="#"><span>2</span><span>Animal details</span></a>
+    <a class="govuk-grid-column-one-quarter govuk-link app-submission-progress__step" href="#"><span>3</span><span>Clinical history</span></a>
+    <a class="govuk-grid-column-one-quarter govuk-link app-submission-progress__step" href="#"><span>4</span><span>Choose tests</span></a>
+    <a class="govuk-grid-column-one-quarter govuk-link app-submission-progress__step" href="#"><span>5</span><span>Your basket</span></a>
+    <a class="govuk-grid-column-one-quarter govuk-link app-submission-progress__step" href="#"><span>6</span><span>Delivery address</span></a>
+    <a class="govuk-grid-column-one-quarter govuk-link app-submission-progress__step" href="#"><span>7</span><span>Review and submit</span></a>
+    <a class="govuk-grid-column-one-quarter govuk-link app-submission-progress__step" href="#"><span>8</span><span>Print documents</span></a>
+  </nav>
+
+  <h1 class="govuk-heading-l">1. Client details</h1>
+  <p class="govuk-body-l">Tell us about the owner (your client) of the animal or animals you want to test.</p>
+
+  <hr class="govuk-section-break govuk-section-break--visible app-client-details-divider">
+
+  <form method="get" action="/submission-01-client-details">
+    <h2 class="govuk-heading-l">Client</h2>
+    <p class="govuk-body-l">Enter the name of your client, their address, or the County Parish Holding (CPH) eg 48/234/2348:</p>
+    {{ govukInput({
+      id: "client",
+      name: "client",
+      value: client,
+      classes: "govuk-!-width-one-half",
+      attributes: { placeholder: "start typing" },
+      label: {
+        text: "Client",
+        classes: "govuk-visually-hidden"
+      }
+    }) }}
+    <p class="govuk-body-l">Or you can <a class="govuk-link" href="#">create a new client</a>.</p>
+  </form>
+{% endblock %}
+
+{% block bodyEnd %}
+  <script type="module" src="/assets/js/all.js"></script>
+{% endblock %}

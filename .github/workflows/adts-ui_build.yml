@@ -55,7 +55,7 @@ jobs:
       - validate
 
     # Pull requests validate the service but do not publish images.
-    if: ${{ github.event_name != 'pull_request' }}
+#    if: ${{ github.event_name != 'pull_request' }}
 
     uses: ./.github/workflows/_container_build.yml
 
@@ -74,3 +74,4 @@ jobs:
       aws-role: ${{ vars.AWS_ECR_ROLE_NAME }}
       platforms: linux
       push-main-tag: false
+      tag: v0.0.0

@@ -21,8 +21,8 @@ const homeFilterSchema = Joi.object({
     .default('18_months')
 })
 
-const createServer = async (options = {}) => {
-  const sessionSecret = options.sessionSecret || process.env.SESSION_SECRET
+const createServer = async () => {
+  const sessionSecret = process.env.SESSION_SECRET
 
   if (!sessionSecret || sessionSecret.length < 32) {
     throw new Error('SESSION_SECRET must be configured and at least 32 characters long')

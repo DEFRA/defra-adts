@@ -95,7 +95,7 @@ describe('UI Results Card Rendering Integration Pipeline', () => {
       results: [
         {
           id: '123456',
-          statuses: ['In progress', 'Tests complete'],
+          statuses: ['In progress', 'All tests complete'],
           samplesTo: 'APHA Weybridge',
           client: 'BITTADON FARMS LTD',
           clientFarm: 'CHURCH FARM',

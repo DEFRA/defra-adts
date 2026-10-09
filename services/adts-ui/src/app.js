@@ -10,9 +10,10 @@ import nunjucks from 'nunjucks'
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const HOME_FILTER_STATE_KEY = 'homeFilterState'
 const CLIENT_DETAILS_STATE_KEY = 'submissionClientDetails'
+
 const homeFilterSchema = Joi.object({
-  client: Joi.string().max(200).allow('').default(''),
-  clinician: Joi.string().max(200).allow('').default(''),
+  client: Joi.string().allow('').default(''),
+  clinician: Joi.string().allow('').default(''),
   status: Joi.string()
     .valid('show_all', 'draft', 'submitted', 'in_progress', 'cancelled', 'samples_overdue', 'tests_complete')
     .default('show_all'),
@@ -22,7 +23,7 @@ const homeFilterSchema = Joi.object({
     .default('18_months')
 })
 const clientDetailsSchema = Joi.object({
-  client: Joi.string().max(200).allow('')
+  client: Joi.string().allow('')
 })
 
 const createServer = async () => {

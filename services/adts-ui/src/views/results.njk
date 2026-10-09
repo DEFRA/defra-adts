@@ -62,7 +62,7 @@
                 { value: "in_progress", text: "In progress", selected: filteredValues.status == 'in_progress' },
                 { value: "cancelled", text: "Cancelled", selected: filteredValues.status == 'cancelled' },
                 { value: "samples_overdue", text: "Samples overdue", selected: filteredValues.status == 'samples_overdue' },
-                { value: "tests_complete", text: "Tests complete", selected: filteredValues.status == 'tests_complete' }
+                { value: "tests_complete", text: "All tests complete", selected: filteredValues.status == 'tests_complete' }
               ]
             }) }}
           </div>
@@ -120,11 +120,13 @@
                     <strong class="govuk-tag govuk-tag--purple {{ marginClass }}">Cancelled</strong>
                   {% elif tag | lower == 'in progress' %}
                     <strong class="govuk-tag govuk-tag--green {{ marginClass }}">In progress</strong>
+                  {% elif tag | lower == 'tests complete' %}
+                    <strong class="govuk-tag govuk-tag--teal {{ marginClass }}">All tests complete</strong>
                   {% else %}
                     <strong class="govuk-tag govuk-tag--blue {{ marginClass }}">{{ tag }}</strong>
                   {% endif %}
                 {% endfor %}
-                {% if 'Tests complete' in submission.statuses %}
+                {% if 'All tests complete' in submission.statuses %}
                   <div>
                     <a class="govuk-link" href="/test-result?id={{ submission.id | urlencode }}">View results</a>
                     {% if submission.pdfUrl %}

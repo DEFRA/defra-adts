@@ -40,7 +40,7 @@ describe('Dashboard filter — Status dropdown (DASH-02 AC2)', () => {
     'In progress',
     'Cancelled',
     'Samples overdue',
-    'Tests complete',
+    'All tests complete',
   ]
 
   // Helper — isolate the Status select element so assertions don't false-positive

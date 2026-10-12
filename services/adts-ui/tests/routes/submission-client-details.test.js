@@ -6,6 +6,8 @@ const getCookieHeader = (response) => {
   return setCookieHeader?.[0]?.split(';')[0] || ''
 }
 
+const url = '/submission-01-client-details' 
+
 describe('Submission client details page', () => {
   let server
 
@@ -21,7 +23,7 @@ describe('Submission client details page', () => {
   test('renders the client details journey page', async () => {
     const response = await server.inject({
       method: 'GET',
-      url: '/submission-01-client-details'
+      url: url
     })
 
     expect(response.statusCode).toBe(200)
@@ -34,7 +36,7 @@ describe('Submission client details page', () => {
   test('restores the client value from the Yar session when revisiting the page', async () => {
     const clientDetailsResponse = await server.inject({
       method: 'GET',
-      url: '/submission-01-client-details?client=Acme+Farm'
+      url: `${url}?client=Acme+Farm`
     })
 
     expect(clientDetailsResponse.statusCode).toBe(200)
@@ -53,7 +55,7 @@ describe('Submission client details page', () => {
 
     const revisitResponse = await server.inject({
       method: 'GET',
-      url: '/submission-01-client-details',
+      url: url,
       headers: { cookie: sessionCookie }
     })
 

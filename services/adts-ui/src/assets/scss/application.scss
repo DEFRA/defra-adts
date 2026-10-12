@@ -7,6 +7,70 @@
 	}
 }
 
+.app-phase-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+  border-top: 10px solid govuk-colour("blue");
+  border-bottom: 1px solid $govuk-border-colour;
+  padding: 14px 0;
+
+  .govuk-tag {
+    flex: 0 0 auto;
+    background-color: #f47738;
+    color: govuk-colour("white");
+  }
+}
+
+.app-client-details-container {
+  max-width: 1350px;
+}
+
+.app-account-navigation {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 20px;
+  border-bottom: 1px solid $govuk-border-colour;
+  padding-top: 26px;
+  padding-bottom: 26px;
+
+  a {
+    margin-left: auto;
+  }
+}
+
+.app-submission-progress {
+  border-bottom: 1px solid $govuk-border-colour;
+  margin-bottom: 20px;
+}
+
+.app-submission-progress__step {
+  display: flex;
+  gap: 8px;
+  padding-bottom: 12px;
+
+  > span:first-child {
+    flex: 0 0 auto;
+  }
+
+  > span:last-child {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  &--current {
+    border-bottom: 5px solid #929900;
+    color: #859900;
+  }
+}
+
+.app-client-details-divider {
+  border-bottom: 1px solid $govuk-text-colour;
+  margin: 30px 0 64px;
+}
+
 // ==========================================================================
 // ADTS Custom Search Results Styles
 // ==========================================================================

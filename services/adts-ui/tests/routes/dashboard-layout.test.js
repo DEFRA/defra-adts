@@ -76,6 +76,24 @@ describe('Dashboard Layout', () => {
       expect(html).toMatch(/>\s*Healthy animal submission\s*</)
     })
 
+    test('both submission buttons navigate to the client details page', async () => {
+      for (const buttonText of ['Sick animal submission', 'Healthy animal submission']) {
+        const button = [...html.matchAll(/<a\b([^>]*)>([\s\S]*?)<\/a>/g)]
+          .find(([, , content]) => content.includes(buttonText))
+
+        expect(button).toBeDefined()
+        expect(button[1]).toContain('href="/submission-01-client-details"')
+      }
+
+      const destinationResponse = await server.inject({
+        method: 'GET',
+        url: '/submission-01-client-details'
+      })
+
+      expect(destinationResponse.statusCode).toBe(200)
+      expect(destinationResponse.payload).toContain('1. Client details')
+    })
+
     test('"Sick animal submission" button is enabled (no disabled attribute)', () => {
       // Isolate the Sick button anchor (includes the start-icon SVG), then
       // assert disabled is absent. Non-greedy match across newlines.

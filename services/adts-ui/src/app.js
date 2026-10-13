@@ -217,7 +217,7 @@ const createServer = async () => {
   server.route({
     method: 'GET',
     path: '/backend_health',
-    handler: async (request, h) => {
+    handler: async (_request, h) => {
       const adapterBaseUrl = process.env.BACKEND_SERVICE_URL
       const adapterUrl = `${adapterBaseUrl}/health`
 
@@ -241,7 +241,7 @@ const createServer = async () => {
   server.route({
     method: 'GET',
     path: '/submissions_health',
-    handler: async (request, h) => {
+    handler: async (_request, h) => {
       const adapterBaseUrl = process.env.SUBMISSIONS_SERVICE_URL
       const adapterUrl = `${adapterBaseUrl}/health`
 

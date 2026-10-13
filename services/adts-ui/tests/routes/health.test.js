@@ -54,6 +54,7 @@ describe('Healthcheck endpoint', () => {
       url: '/submissions_health'
     })
     expect(response.statusCode).toBe(200)
+    console.log(`Result is: ${response.result}`)
     expect(response.result).toEqual({ submissions: { status: 'UP' } })
   })
 })

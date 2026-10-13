@@ -14,6 +14,7 @@ describe('Healthcheck endpoint', () => {
     process.env.PORT = '3000'
     process.env.SESSION_SECRET = 'test-session-secret-with-at-least-32-characters'
     process.env.SUBMISSIONS_SERVICE_URL = 'http://localhost:3100/submissions'
+    process.env.BACKEND_SERVICE_URL = 'http://localhost:3100/backend'
 
     server = await createServer()
   })
@@ -36,7 +37,26 @@ describe('Healthcheck endpoint', () => {
     expect(response.result).toEqual({ status: 'UP' })
   })
 
-  test('should return the health status of submissions statusCode 200', async () => {
+  test('should return the health status of backend - statusCode 200', async () => {
+    const mockHealthResponse = { status: 'UP' }
+
+    jest.spyOn(globalThis, 'fetch').mockImplementation(async (url) => {
+      expect(url).toContain('/backend/health')
+      return new Response(JSON.stringify(mockHealthResponse), {
+        status: 200,
+        headers: { 'content-type': 'application/json' }
+      })
+    })
+
+    const response = await server.inject({
+      method: 'GET',
+      url: '/backend_health'
+    })
+    expect(response.statusCode).toBe(200)
+    expect(response.result).toEqual({ backend: { status: 'UP' } })
+  })
+
+  test('should return the health status of submissions - statusCode 200', async () => {
     const mockHealthResponse = { status: 'UP' }
 
     jest.spyOn(globalThis, 'fetch').mockImplementation(async (url) => {
@@ -52,7 +72,6 @@ describe('Healthcheck endpoint', () => {
       url: '/submissions_health'
     })
     expect(response.statusCode).toBe(200)
-    console.log(`Result is: ${JSON.stringify(response.result)}`)
     expect(response.result).toEqual({ submissions: { status: 'UP' } })
   })
 })

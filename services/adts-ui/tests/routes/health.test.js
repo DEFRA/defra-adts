@@ -13,7 +13,7 @@ describe('Healthcheck endpoint', () => {
   beforeAll(async () => {
     process.env.PORT = '3000'
     process.env.SESSION_SECRET = 'test-session-secret-with-at-least-32-characters'
-    process.env.SUBMISSIONS_SERVICE_URL = 'http://localhost:3100'
+    process.env.SUBMISSIONS_SERVICE_URL = 'http://localhost:3100/submissions'
 
     server = await createServer()
   })
@@ -42,7 +42,7 @@ describe('Healthcheck endpoint', () => {
     }
 
     jest.spyOn(globalThis, 'fetch').mockImplementation(async (url) => {
-      expect(url).toContain('/submissions_health')
+      expect(url).toContain('/submissions/health')
       return new Response(JSON.stringify(mockHealthResponse), {
         status: 200,
         headers: { 'content-type': 'application/json' }

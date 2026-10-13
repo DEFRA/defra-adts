@@ -46,6 +46,15 @@ const createServer = async () => {
       }
     }
   })
+
+  server.route({
+    method: 'GET',
+    path: '/health',
+    handler: (_request, h) => {
+      return h.response({ status: 'UP' })
+    }
+  })
+
   return server
 }
 

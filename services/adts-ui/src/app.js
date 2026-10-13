@@ -214,6 +214,64 @@ const createServer = async () => {
     }
   })
 
+  server.route({
+    method: 'GET',
+    path: '/backend_health',
+    handler: async (request, h) => {
+      const adapterBaseUrl = process.env.BACKEND_SERVICE_URL
+      const adapterUrl = `${adapterBaseUrl}/health?${queryParams}`
+
+      try {
+        const response = await fetch(adapterUrl)
+
+        if (!response.ok) {
+          throw new Error(`Backend responded with status: ${response.status}`)
+        }
+
+        const payload = await response.json()
+        return h.response({ backend: payload })
+      } catch (error) {
+        console.error('Error contacting backend server:', error.message)
+
+        return h.view('results.njk', {
+          ...viewContext,
+          results: [],
+          totalCount: 0,
+          error: 'Unable to reach backend at this time.'
+        })
+      }
+    }
+  })
+
+  server.route({
+    method: 'GET',
+    path: '/submissions_health',
+    handler: async (request, h) => {
+      const adapterBaseUrl = process.env.SUBMISSIONS_SERVICE_URL
+      const adapterUrl = `${adapterBaseUrl}/health?${queryParams}`
+
+      try {
+        const response = await fetch(adapterUrl)
+
+        if (!response.ok) {
+          throw new Error(`Submissions responded with status: ${response.status}`)
+        }
+
+        const payload = await response.json()
+        return h.response({ backend: payload })
+      } catch (error) {
+        console.error('Error contacting submissions server:', error.message)
+
+        return h.view('results.njk', {
+          ...viewContext,
+          results: [],
+          totalCount: 0,
+          error: 'Unable to reach submissions at this time.'
+        })
+      }
+    }
+  })
+
   return server
 }
 

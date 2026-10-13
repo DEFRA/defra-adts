@@ -40,13 +40,22 @@ describe('Healthcheck endpoint', () => {
     const mockHealthResponse = {
       submissions: { status: 'UP' }
     }
-  })
 
-  jest.spyOn(globalThis, 'fetch').mockImplementation(async (url) => {
-    expect(url).toContain('/submissions_health')
-    return new Response(JSON.stringify(mockHealthResponse), {
-      status: 200,
-      headers: { 'content-type': 'application/json' }
+    jest.spyOn(globalThis, 'fetch').mockImplementation(async (url) => {
+      expect(url).toContain('/submissions_health')
+      return new Response(JSON.stringify(mockHealthResponse), {
+        status: 200,
+        headers: { 'content-type': 'application/json' }
+      })
     })
+
+    const response = await server.inject({
+      method: 'GET',
+      url: '/submissions_health'
+    })
+    expect(response.statusCode).toBe(200)
+    const jsonOutput = response.payload
+    expect(jsonOutput).toContain('submissions')
+    expect(jsonOutput.submissions).toBe({"status": "UP"})
   })
 })

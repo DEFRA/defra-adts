@@ -219,7 +219,7 @@ const createServer = async () => {
     path: '/backend_health',
     handler: async (request, h) => {
       const adapterBaseUrl = process.env.BACKEND_SERVICE_URL
-      const adapterUrl = `${adapterBaseUrl}/health?${queryParams}`
+      const adapterUrl = `${adapterBaseUrl}/health`
 
       try {
         const response = await fetch(adapterUrl)
@@ -233,12 +233,7 @@ const createServer = async () => {
       } catch (error) {
         console.error('Error contacting backend server:', error.message)
 
-        return h.view('results.njk', {
-          ...viewContext,
-          results: [],
-          totalCount: 0,
-          error: 'Unable to reach backend at this time.'
-        })
+        return h.response({ message: 'Unable to reach backend at this time.' })
       }
     }
   })
@@ -248,7 +243,7 @@ const createServer = async () => {
     path: '/submissions_health',
     handler: async (request, h) => {
       const adapterBaseUrl = process.env.SUBMISSIONS_SERVICE_URL
-      const adapterUrl = `${adapterBaseUrl}/health?${queryParams}`
+      const adapterUrl = `${adapterBaseUrl}/health`
 
       try {
         const response = await fetch(adapterUrl)
@@ -262,12 +257,7 @@ const createServer = async () => {
       } catch (error) {
         console.error('Error contacting submissions server:', error.message)
 
-        return h.view('results.njk', {
-          ...viewContext,
-          results: [],
-          totalCount: 0,
-          error: 'Unable to reach submissions at this time.'
-        })
+        return h.response({ message: 'Unable to reach submissions at this time.' })
       }
     }
   })

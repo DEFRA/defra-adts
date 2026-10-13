@@ -35,4 +35,18 @@ describe('Healthcheck endpoint', () => {
     expect(response.statusCode).toBe(200)
     expect(response.result).toEqual({ status: 'UP' })
   })
+
+  test('should return the health status of submissions statusCode 200', async () => {
+    const mockHealthResponse = {
+      submissions: { status: 'UP' }
+    }
+  })
+
+  jest.spyOn(globalThis, 'fetch').mockImplementation(async (url) => {
+    expect(url).toContain('/submissions_health')
+    return new Response(JSON.stringify(mockHealthResponse), {
+      status: 200,
+      headers: { 'content-type': 'application/json' }
+    })
+  })
 })

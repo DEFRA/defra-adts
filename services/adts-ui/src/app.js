@@ -253,7 +253,7 @@ const createServer = async () => {
         }
 
         const payload = await response.json()
-        return h.response({ backend: payload })
+        return h.response({ submissions: payload })
       } catch (error) {
         console.error('Error contacting submissions server:', error.message)
 

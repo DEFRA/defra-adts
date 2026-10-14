@@ -6,10 +6,11 @@ import Inert from '@hapi/inert'
 import Yar from '@hapi/yar'
 import Joi from 'joi'
 import nunjucks from 'nunjucks'
+import registerSubmissionPageOne from './routes/submission-01-client-details.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const HOME_FILTER_STATE_KEY = 'homeFilterState'
-const CLIENT_DETAILS_STATE_KEY = 'submissionClientDetails'
+const SUBMISSION_FORM_STATE_KEY = 'submissionFormState'
 
 const homeFilterSchema = Joi.object({
   client: Joi.string().allow('').default(''),
@@ -21,9 +22,6 @@ const homeFilterSchema = Joi.object({
     .valid('1_day', '1_week', '14_days', '1_month', '6_months', '1_year', '18_months')
     .allow('')
     .default('18_months')
-})
-const clientDetailsSchema = Joi.object({
-  client: Joi.string().allow('')
 })
 
 const createServer = async () => {
@@ -82,6 +80,15 @@ const createServer = async () => {
     },
     {
       method: 'GET',
+      path: '/assets/css/accessible-autocomplete.min.css',
+      handler: {
+        file: {
+          path: path.join(__dirname, '../node_modules/accessible-autocomplete/dist/accessible-autocomplete.min.css')
+        }
+      }
+    },
+    {
+      method: 'GET',
       path: '/assets/css/{param*}',
       handler: {
         directory: {
@@ -127,28 +134,7 @@ const createServer = async () => {
     }
   })
 
-  server.route({
-    method: 'GET',
-    path: '/submission-01-client-details',
-    options: {
-      validate: {
-        query: clientDetailsSchema
-      }
-    },
-    handler: (request, h) => {
-      if (Object.hasOwn(request.query, 'client')) {
-        request.yar.set(CLIENT_DETAILS_STATE_KEY, request.query)
-        request.yar.touch()
-      }
-
-      const clientDetails = request.yar.get(CLIENT_DETAILS_STATE_KEY) || { client: '' }
-
-      return h.view('submission-01-client-details.njk', {
-        client: clientDetails.client,
-        containerClasses: 'app-client-details-container'
-      })
-    }
-  })
+  registerSubmissionPageOne(server, SUBMISSION_FORM_STATE_KEY)
 
   server.route({
     method: 'GET',
@@ -167,9 +153,7 @@ const createServer = async () => {
       request.yar.touch()
 
       const queryParams = new URLSearchParams(request.query).toString()
-      const adapterBaseUrl = process.env.SUBMISSIONS_SERVICE_URL
-      const adapterUrl = `${adapterBaseUrl}/submissions?${queryParams}`
-
+      const adapterUrl = `${process.env.SUBMISSIONS_SERVICE_URL}/submissions?${queryParams}`
       const viewContext = {
         filteredValues: {
           client: request.query.client,

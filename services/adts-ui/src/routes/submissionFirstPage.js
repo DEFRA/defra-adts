@@ -8,17 +8,7 @@ const submissionClientSchema = Joi.object({
 
 const getClients = async () => {
   const adapterBaseUrl = process.env.SUBMISSIONS_SERVICE_URL
-
-  if (!adapterBaseUrl) {
-    throw new Error('SUBMISSIONS_SERVICE_URL must be configured')
-  }
-
   const response = await fetch(`${adapterBaseUrl}/GetClients`)
-
-  if (!response.ok) {
-    throw new Error(`Backend responded with status: ${response.status}`)
-  }
-
   const clients = await response.json()
 
   return clients.map((client) => ({
@@ -78,15 +68,9 @@ const submissionFirstPage = (server, submissionFormStateKey) => {
           clients = await getClients()
         } catch (error) {
           console.error('Error contacting backend server:', error.message)
-
-          return h.response().code(503)
         }
 
         const selectedClient = clients.find((client) => client.clientId === request.payload.clientId)
-
-        if (!selectedClient) {
-          return h.response().code(400)
-        }
 
         request.yar.set(submissionFormStateKey, {
           ...formDetails,

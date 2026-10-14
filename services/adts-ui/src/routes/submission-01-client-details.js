@@ -1,5 +1,7 @@
 import Joi from 'joi'
 
+const pageName = 'submission-01-client-details'
+
 const submissionClientSchema = Joi.object({
   clientId: Joi.string().allow('').required()
 })
@@ -55,7 +57,7 @@ const registerSubmissionPageOne = (server, submissionFormStateKey) => {
           console.error('Error contacting backend server:', error.message)
         }
 
-        return h.view('submission-01-client-details.njk', {
+        return h.view(`${pageName}.njk`, {
           ...getClientDetailsViewContext(formDetails, clients)
         })
       }
@@ -92,7 +94,7 @@ const registerSubmissionPageOne = (server, submissionFormStateKey) => {
         })
         request.yar.touch()
 
-        return h.redirect('/submission-01-client-details')
+        return h.redirect(`/${pageName}`)
       }
     }
   ])

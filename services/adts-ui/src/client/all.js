@@ -7,7 +7,7 @@ const clientSelect = document.querySelector('#client')
 
 if (clientSelect) {
   accessibleAutocomplete.enhanceSelectElement({
-    defaultValue: clientSelect.getAttribute('data-default-value'),
+    defaultValue: clientSelect.dataset.defaultValue,
     selectElement: clientSelect
   })
 }

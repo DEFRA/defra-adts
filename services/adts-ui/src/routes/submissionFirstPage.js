@@ -42,11 +42,11 @@ const getClientDetailsViewContext = (formDetails, clients = []) => ({
   formDetails
 })
 
-const registerSubmissionPageOne = (server, submissionFormStateKey) => {
+const submissionFirstPage = (server, submissionFormStateKey) => {
   server.route([
     {
       method: 'GET',
-      path: '/submission-01-client-details',
+      path: `/${pageName}`,
       handler: async (request, h) => {
         const formDetails = request.yar.get(submissionFormStateKey) || {}
         let clients = []
@@ -64,7 +64,7 @@ const registerSubmissionPageOne = (server, submissionFormStateKey) => {
     },
     {
       method: 'POST',
-      path: '/submission-01-client-details',
+      path: `/${pageName}`,
       options: {
         validate: {
           payload: submissionClientSchema
@@ -100,4 +100,4 @@ const registerSubmissionPageOne = (server, submissionFormStateKey) => {
   ])
 }
 
-export default registerSubmissionPageOne
+export default submissionFirstPage

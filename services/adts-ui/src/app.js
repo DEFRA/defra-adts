@@ -6,7 +6,7 @@ import Inert from '@hapi/inert'
 import Yar from '@hapi/yar'
 import Joi from 'joi'
 import nunjucks from 'nunjucks'
-import registerSubmissionPageOne from './routes/submission-01-client-details.js'
+import submissionFirstPage from './routes/submissionFirstPage.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const HOME_FILTER_STATE_KEY = 'homeFilterState'
@@ -134,7 +134,7 @@ const createServer = async () => {
     }
   })
 
-  registerSubmissionPageOne(server, SUBMISSION_FORM_STATE_KEY)
+  submissionFirstPage(server, SUBMISSION_FORM_STATE_KEY)
 
   server.route({
     method: 'GET',

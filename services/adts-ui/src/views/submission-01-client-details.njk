@@ -1,12 +1,14 @@
 {% extends "govuk/template.njk" %}
 
 {% from "govuk/components/header/macro.njk" import govukHeader %}
-{% from "govuk/components/input/macro.njk" import govukInput %}
+{% from "govuk/components/select/macro.njk" import govukSelect %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
 
 {% block pageTitle %}Client details – ADTS{% endblock %}
 
 {% block head %}
   <link rel="stylesheet" href="/assets/css/application.css">
+  <link rel="stylesheet" href="/assets/css/accessible-autocomplete.min.css">
 {% endblock %}
 
 {% block header %}
@@ -28,17 +30,21 @@
     </span>
   </div>
 
-  <nav class="govuk-grid-row app-submission-progress govuk-body" aria-label="Submission progress">
-    <a class="govuk-grid-column-one-quarter govuk-link app-submission-progress__step app-submission-progress__step--current" href="#">
-      <span>1</span><span>Client details</span>
-    </a>
-    <a class="govuk-grid-column-one-quarter govuk-link app-submission-progress__step" href="#"><span>2</span><span>Animal details</span></a>
-    <a class="govuk-grid-column-one-quarter govuk-link app-submission-progress__step" href="#"><span>3</span><span>Clinical history</span></a>
-    <a class="govuk-grid-column-one-quarter govuk-link app-submission-progress__step" href="#"><span>4</span><span>Choose tests</span></a>
-    <a class="govuk-grid-column-one-quarter govuk-link app-submission-progress__step" href="#"><span>5</span><span>Your basket</span></a>
-    <a class="govuk-grid-column-one-quarter govuk-link app-submission-progress__step" href="#"><span>6</span><span>Delivery address</span></a>
-    <a class="govuk-grid-column-one-quarter govuk-link app-submission-progress__step" href="#"><span>7</span><span>Review and submit</span></a>
-    <a class="govuk-grid-column-one-quarter govuk-link app-submission-progress__step" href="#"><span>8</span><span>Print documents</span></a>
+  <nav class="app-submission-progress govuk-body" aria-label="Submission progress">
+    <div class="govuk-grid-row">
+      <a class="govuk-grid-column-one-quarter govuk-link app-submission-progress__step app-submission-progress__step--current" href="#">
+        <span>1</span><span>Client details</span>
+      </a>
+      <a class="govuk-grid-column-one-quarter govuk-link app-submission-progress__step" href="#"><span>2</span><span>Animal details</span></a>
+      <a class="govuk-grid-column-one-quarter govuk-link app-submission-progress__step" href="#"><span>3</span><span>Clinical history</span></a>
+      <a class="govuk-grid-column-one-quarter govuk-link app-submission-progress__step" href="#"><span>4</span><span>Choose tests</span></a>
+    </div>
+    <div class="govuk-grid-row">
+      <a class="govuk-grid-column-one-quarter govuk-link app-submission-progress__step" href="#"><span>5</span><span>Your basket</span></a>
+      <a class="govuk-grid-column-one-quarter govuk-link app-submission-progress__step" href="#"><span>6</span><span>Delivery address</span></a>
+      <a class="govuk-grid-column-one-quarter govuk-link app-submission-progress__step" href="#"><span>7</span><span>Review and submit</span></a>
+      <a class="govuk-grid-column-one-quarter govuk-link app-submission-progress__step" href="#"><span>8</span><span>Print documents</span></a>
+    </div>
   </nav>
 
   <h1 class="govuk-heading-l">1. Client details</h1>
@@ -46,21 +52,22 @@
 
   <hr class="govuk-section-break govuk-section-break--visible app-client-details-divider">
 
-  <form method="get" action="/submission-01-client-details">
+  <form method="post" action="/submission-01-client-details">
     <h2 class="govuk-heading-l">Client</h2>
     <p class="govuk-body-l">Enter the name of your client, their address, or the County Parish Holding (CPH) eg 48/234/2348:</p>
-    {{ govukInput({
+    {{ govukSelect({
       id: "client",
-      name: "client",
-      value: client,
-      classes: "govuk-!-width-one-half",
-      attributes: { placeholder: "start typing" },
+      name: "clientId",
       label: {
         text: "Client",
         classes: "govuk-visually-hidden"
-      }
+      },
+      items: clientOptions
     }) }}
     <p class="govuk-body-l">Or you can <a class="govuk-link" href="#">create a new client</a>.</p>
+    {{ govukButton({
+      text: "Continue"
+    }) }}
   </form>
 {% endblock %}
 

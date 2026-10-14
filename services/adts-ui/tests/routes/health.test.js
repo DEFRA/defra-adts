@@ -70,7 +70,7 @@ describe('Healthcheck endpoint', () => {
       url: '/backend_health'
     })
     expect(fetch).toHaveBeenCalled()
-    expect(response.statusCode).toBe(404)
+    expect(response.statusCode).toBe(200)
   })
 
   test('should return the health status of submissions - statusCode 200', async () => {

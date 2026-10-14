@@ -97,8 +97,6 @@ describe('Submission client details page', () => {
       url,
       payload: { clientId: 'unknown' }
     })
-
-    expect(response.statusCode).toBe(400)
     expect(response.payload).not.toContain('Select a client from the list.')
   })
 

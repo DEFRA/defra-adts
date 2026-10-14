@@ -57,7 +57,7 @@ const submissionFirstPage = (server, submissionFormStateKey) => {
           console.error('Error contacting backend server:', error.message)
         }
 
-        return h.view(`${pageName}.njk`, {
+        return h.view('submissionFirstPage.njk', {
           ...getClientDetailsViewContext(formDetails, clients)
         })
       }

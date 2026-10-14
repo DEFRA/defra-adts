@@ -56,6 +56,18 @@ describe('Healthcheck endpoint', () => {
     expect(response.result).toEqual({ backend: { status: 'UP' } })
   })
 
+  test('should return error for health status of backend', async () => {
+    expect.assertions(1)
+    try {
+      await server.inject({
+        method: 'GET',
+        url: '/backend_health'
+      })
+    } catch (error) {
+      expect(error.message).toMatch('error')
+    }
+  })
+
   test('should return the health status of submissions - statusCode 200', async () => {
     const mockHealthResponse = { status: 'UP' }
 

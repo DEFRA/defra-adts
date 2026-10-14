@@ -231,7 +231,7 @@ const createServer = async () => {
         const payload = await response.json()
         return h.response({ backend: payload })
       } catch (error) {
-        console.error('Error contacting backend server:', error.message)
+        console.log('Error contacting backend server:', error.message)
 
         return h.response({ message: 'Unable to reach backend at this time.' })
       }

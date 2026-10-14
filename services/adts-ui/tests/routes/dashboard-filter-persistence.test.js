@@ -55,21 +55,35 @@ describe('Dashboard Filter State Persistence', () => {
     })
   })
 
-  test('should persist active filters when navigating back to the home page cleanly', async () => {
-    // Mock the LIMS adapter backend call since hitting /results will trigger a fetch request
-    jest.spyOn(globalThis, 'fetch').mockImplementation(async () => {
-      return new Response(JSON.stringify({ results: [], totalCount: 0 }), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' }
-      })
-    })
+  test('should persist all submitted filters when the results adapter is unavailable', async () => {
+    jest.spyOn(globalThis, 'fetch').mockRejectedValue(new Error('Adapter unavailable'))
+    jest.spyOn(console, 'error').mockImplementation(() => {})
 
     const searchResponse = await server.inject({
       method: 'GET',
-      url: '/results?client=Acme+Corp&status=draft&clinician=Dr+Smith'
+      url: '/results?client=Acme+Corp&status=draft&clinician=Dr+Smith&submitted-date=6_months'
     })
 
     expect(searchResponse.statusCode).toBe(200)
+    expect(searchResponse.request.response.source.context.filteredValues).toEqual({
+      client: 'Acme Corp',
+      clinician: 'Dr Smith',
+      status: 'draft',
+      submitted_date: '6_months'
+    })
+    expect(searchResponse.payload).toContain('value="Acme Corp"')
+    expect(searchResponse.payload).toContain('value="Dr Smith"')
+    expect(searchResponse.payload).toContain('<option value="draft" selected>Draft</option>')
+    expect(searchResponse.payload).toContain('<option value="6_months" selected>In the last 6 months</option>')
+    expect(globalThis.fetch).toHaveBeenCalledTimes(1)
+    const adapterUrl = new URL(globalThis.fetch.mock.calls[0][0])
+    expect(adapterUrl.pathname).toBe('/submissions')
+    expect(Object.fromEntries(adapterUrl.searchParams)).toEqual({
+      client: 'Acme Corp',
+      status: 'draft',
+      clinician: 'Dr Smith',
+      'submitted-date': '6_months'
+    })
 
     const sessionCookie = getCookieHeader(searchResponse)
     expect(sessionCookie).toContain('session=')
@@ -89,12 +103,13 @@ describe('Dashboard Filter State Persistence', () => {
     expect(context.filteredValues.client).toBe('Acme Corp')
     expect(context.filteredValues.clinician).toBe('Dr Smith')
     expect(context.filteredValues.status).toBe('draft')
-    expect(context.filteredValues.submitted_date).toBe('18_months')
+    expect(context.filteredValues.submitted_date).toBe('6_months')
 
     const html = cleanNavResponse.payload
 
     expect(html).toContain('value="Acme Corp"')
     expect(html).toContain('value="Dr Smith"')
-    expect(html).toContain('value="draft"')
+    expect(html).toContain('<option value="draft" selected>Draft</option>')
+    expect(html).toContain('<option value="6_months" selected>In the last 6 months</option>')
   })
 })

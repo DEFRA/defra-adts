@@ -36,6 +36,7 @@ const getClientOptions = (clients, selectedClientId = '') => [
 
 const getClientDetailsViewContext = (formDetails, clients = []) => ({
   clientOptions: getClientOptions(clients, formDetails.client?.clientId || ''),
+  selectedClientName: formDetails.client?.name || '',
   formDetails
 })
 

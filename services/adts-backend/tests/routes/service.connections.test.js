@@ -115,7 +115,7 @@ describe('Healthcheck endpoint', () => {
   test('should return error when submissions request throws exception', async () => {
     jest.spyOn(globalThis, 'fetch').mockImplementation(async (url) => {
       expect(url).toContain('/submissions/health')
-      throw new Error('Backend unreachable.')
+      throw new Error('Submissions unreachable.')
     })
 
     const response = await server.inject({

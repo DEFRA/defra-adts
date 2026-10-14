@@ -52,7 +52,7 @@ const createServer = async () => {
         }
 
         const payload = await response.json()
-        return h.response({ backend: payload })
+        return h.response({ ui: payload })
       } catch (error) {
         console.log('Error contacting UI server:', error.message)
 

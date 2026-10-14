@@ -1,0 +1,129 @@
+/**
+ * Route-level tests for container health (server-side session).
+ *
+ * Verifies that the /health endpoint returns HTTP statusCode 200.
+ *
+ */
+import { afterAll, afterEach, beforeAll, describe, expect, test, jest } from '@jest/globals'
+import createServer from '../../src/app.js'
+
+describe('Healthcheck endpoint', () => {
+  let server
+
+  beforeAll(async () => {
+    process.env.PORT = '3000'
+    process.env.SESSION_SECRET = 'test-session-secret-with-at-least-32-characters'
+    process.env.SUBMISSIONS_SERVICE_URL = 'http://localhost:3100/submissions'
+    process.env.BACKEND_SERVICE_URL = 'http://localhost:3100/backend'
+
+    server = await createServer()
+  })
+
+  afterAll(async () => {
+    await server.stop()
+  })
+
+  afterEach(() => {
+    jest.restoreAllMocks()
+  })
+
+  test('should return the health status of backend - statusCode 200', async () => {
+    const mockHealthResponse = { status: 'UP' }
+
+    jest.spyOn(globalThis, 'fetch').mockImplementation(async (url) => {
+      expect(url).toContain('/backend/health')
+      return new Response(JSON.stringify(mockHealthResponse), {
+        status: 200,
+        headers: { 'content-type': 'application/json' }
+      })
+    })
+
+    const response = await server.inject({
+      method: 'GET',
+      url: '/backend_health'
+    })
+    expect(response.statusCode).toBe(200)
+    expect(response.result).toEqual({ backend: { status: 'UP' } })
+  })
+
+  test('should return error when backend status not ok', async () => {
+    jest.spyOn(globalThis, 'fetch').mockImplementation(async (url) => {
+      expect(url).toContain('/backend/health')
+      return new Response('Not Found', {
+        ok: false,
+        status: 404,
+      })
+    })
+
+    const response = await server.inject({
+      method: 'GET',
+      url: '/backend_health'
+    })
+    expect(fetch).toHaveBeenCalled()
+    expect(response.statusCode).toBe(200)
+  })
+
+  test('should return error when backend request throws exception', async () => {
+    jest.spyOn(globalThis, 'fetch').mockImplementation(async (url) => {
+      expect(url).toContain('/backend/health')
+      throw new Error('Backend unreachable.')
+    })
+
+    const response = await server.inject({
+      method: 'GET',
+      url: '/backend_health'
+    })
+    expect(fetch).toHaveBeenCalled()
+    expect(response.statusCode).toBe(200)
+  })
+
+  test('should return the health status of submissions - statusCode 200', async () => {
+    const mockHealthResponse = { status: 'UP' }
+
+    jest.spyOn(globalThis, 'fetch').mockImplementation(async (url) => {
+      expect(url).toContain('/submissions/health')
+      return new Response(JSON.stringify(mockHealthResponse), {
+        status: 200,
+        headers: { 'content-type': 'application/json' }
+      })
+    })
+
+    const response = await server.inject({
+      method: 'GET',
+      url: '/submissions_health'
+    })
+    expect(response.statusCode).toBe(200)
+    expect(response.result).toEqual({ submissions: { status: 'UP' } })
+  })
+
+  test('should return error when submissions status not ok', async () => {
+    jest.spyOn(globalThis, 'fetch').mockImplementation(async (url) => {
+      expect(url).toContain('/submissions/health')
+      return new Response('Not Found', {
+        ok: false,
+        status: 404,
+      })
+    })
+
+    const response = await server.inject({
+      method: 'GET',
+      url: '/submissions_health'
+    })
+    expect(fetch).toHaveBeenCalled()
+    expect(response.statusCode).toBe(200)
+  })
+
+  test('should return error when submissions request throws exception', async () => {
+    jest.spyOn(globalThis, 'fetch').mockImplementation(async (url) => {
+      expect(url).toContain('/submissions/health')
+      throw new Error('Backend unreachable.')
+    })
+
+    const response = await server.inject({
+      method: 'GET',
+      url: '/submissions_health'
+    })
+    expect(fetch).toHaveBeenCalled()
+    expect(response.statusCode).toBe(200)
+  })
+})

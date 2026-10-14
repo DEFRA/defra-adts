@@ -57,15 +57,20 @@ describe('Healthcheck endpoint', () => {
   })
 
   test('should return error for health status of backend', async () => {
-    expect.assertions(1)
-    try {
-      await server.inject({
-        method: 'GET',
-        url: '/backend_health'
+    jest.spyOn(globalThis, 'fetch').mockImplementation(async (url) => {
+      expect(url).toContain('/backend/health')
+      return new Response('Not Found', {
+        ok: false,
+        status: 404,
       })
-    } catch (error) {
-      expect(error.message).toMatch('error')
-    }
+    })
+
+    const response = await server.inject({
+      method: 'GET',
+      url: '/backend_health'
+    })
+    expect(fetch).toHaveBeenCalled()
+    expect(response.statusCode).toBe(404)
   })
 
   test('should return the health status of submissions - statusCode 200', async () => {

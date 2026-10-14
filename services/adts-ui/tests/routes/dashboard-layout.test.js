@@ -23,7 +23,7 @@ describe('Dashboard Layout', () => {
 
   beforeAll(async () => {
     process.env.SESSION_SECRET = 'test-session-secret-with-at-least-32-characters'
-    process.env.SUBMISSIONS_SERVICE_URL = 'http://localhost:3100'
+    process.env.SUBMISSIONS_SERVICE_URL = 'http://localhost:3000'
     server = await createServer()
 
     const response = await server.inject({

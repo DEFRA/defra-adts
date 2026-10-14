@@ -17,8 +17,8 @@ describe('UI Results Card Rendering Integration Pipeline', () => {
   let server
 
   beforeAll(async () => {
-    process.env.PORT = 3000
-    process.env.SUBMISSIONS_SERVICE_URL = 'http://localhost:3100'
+    process.env.PORT = 3100
+    process.env.SUBMISSIONS_SERVICE_URL = 'http://localhost:3000'
     process.env.SESSION_SECRET = 'abcdefghijklmnopqrstuvwxyz123456'
     server = await createServer()
   })

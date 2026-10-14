@@ -37,6 +37,54 @@ const createServer = async () => {
     }
   })
 
+  server.route({
+    method: 'GET',
+    path: '/submissions_health',
+    handler: async (_request, h) => {
+      const adapterBaseUrl = process.env.SUBMISSIONS_SERVICE_URL
+      const adapterUrl = `${adapterBaseUrl}/health`
+
+      try {
+        const response = await fetch(adapterUrl)
+
+        if (!response.ok) {
+          throw new Error(`Submissions responded with status: ${response.status}`)
+        }
+
+        const payload = await response.json()
+        return h.response({ submissions: payload })
+      } catch (error) {
+        console.error('Error contacting submissions server:', error.message)
+
+        return h.response({ message: 'Unable to reach submissions at this time.' })
+      }
+    }
+  })
+
+  server.route({
+    method: 'GET',
+    path: '/ui_health',
+    handler: async (_request, h) => {
+      const adapterBaseUrl = process.env.UI_SERVICE_URL
+      const adapterUrl = `${adapterBaseUrl}/health`
+
+      try {
+        const response = await fetch(adapterUrl)
+
+        if (!response.ok) {
+          throw new Error(`UI responded with status: ${response.status}`)
+        }
+
+        const payload = await response.json()
+        return h.response({ ui: payload })
+      } catch (error) {
+        console.error('Error contacting ui server:', error.message)
+
+        return h.response({ message: 'Unable to reach ui at this time.' })
+      }
+    }
+  })
+
   return server
 }
 

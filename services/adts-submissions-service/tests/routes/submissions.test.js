@@ -6,7 +6,7 @@ describe('LIMS Backend Proxy - Network Mock Tests', () => {
 
   beforeAll(async () => {
     process.env.LIMS_BASE_URL = 'https://mock-lims.local'
-    process.env.PORT = 3100
+    process.env.PORT = 3000
     server = await createServer()
   })
 

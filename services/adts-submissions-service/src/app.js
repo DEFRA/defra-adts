@@ -31,7 +31,63 @@ const createServer = async () => {
 
   server.route({
     method: 'GET',
-    path: '/submissions',
+    path: '/health',
+    handler: (_request, h) => {
+      return h.response({ status: 'UP' })
+    }
+  })
+
+  server.route({
+    method: 'GET',
+    path: '/ui_health',
+    handler: async (_request, h) => {
+      const adapterBaseUrl = process.env.UI_SERVICE_URL
+      const adapterUrl = `${adapterBaseUrl}/health`
+
+      try {
+        const response = await fetch(adapterUrl)
+
+        if (!response.ok) {
+          throw new Error(`UI responded with status: ${response.status}`)
+        }
+
+        const payload = await response.json()
+        return h.response({ backend: payload })
+      } catch (error) {
+        console.log('Error contacting UI server:', error.message)
+
+        return h.response({ message: 'Unable to reach UI at this time.' })
+      }
+    }
+  })
+
+  server.route({
+    method: 'GET',
+    path: '/backend_health',
+    handler: async (_request, h) => {
+      const adapterBaseUrl = process.env.BACKEND_SERVICE_URL
+      const adapterUrl = `${adapterBaseUrl}/health`
+
+      try {
+        const response = await fetch(adapterUrl)
+
+        if (!response.ok) {
+          throw new Error(`Backend responded with status: ${response.status}`)
+        }
+
+        const payload = await response.json()
+        return h.response({ backend: payload })
+      } catch (error) {
+        console.log('Error contacting backend server:', error.message)
+
+        return h.response({ message: 'Unable to reach backend at this time.' })
+      }
+    }
+  })
+
+  server.route({
+    method: 'GET',
+    path: '/lims',
     handler: async (request, h) => {
       const queryParams = new URLSearchParams(request.query).toString()
       try {
@@ -44,14 +100,6 @@ const createServer = async () => {
       } catch (error) {
         return h.response({ error: 'LIMS connectivity failure' }).code(502)
       }
-    }
-  })
-
-  server.route({
-    method: 'GET',
-    path: '/health',
-    handler: (_request, h) => {
-      return h.response({ status: 'UP' })
     }
   })
 

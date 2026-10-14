@@ -76,3 +76,4 @@ jobs:
       aws-role: ${{ vars.AWS_ECR_ROLE_NAME }}
       platforms: linux
       push-main-tag: false
+      tag: v0.0.1

@@ -44,16 +44,10 @@ on:
         default: "linux/amd64"
         type: string
 
-      push-main-tag:
-        description: Publish a mutable main tag on the default branch
-        required: false
-        default: true
+      is-release:
+        description: Set true if the current image built should be a release and labeled as ':latest'
+        default: false
         type: boolean
-
-      tag:
-        description: Tag to be applied to the image
-        default: "v0.0.0"
-        type: string
 
     outputs:
       image-uri:
@@ -139,6 +133,7 @@ jobs:
 
           echo "image-uri=${image_uri}" >> "${GITHUB_OUTPUT}"
           echo "IMAGE_URI=${image_uri}" >> "${GITHUB_ENV}"
+          echo "version-tag=$(cat ${{ inputs.service-directory }}/VERSION_PREFIX).${{ github.run_number }}" >> "${GITHUB_OUTPUT}"
 
       - name: Generate container metadata
         id: metadata
@@ -146,7 +141,8 @@ jobs:
         with:
           images: ${{ steps.image.outputs.image-uri }}
           tags: |
-            type=raw,value=${{ inputs.tag }},enable=false
+            type=raw,value=${{ steps.image.outputs.version-tag }}
+            type=raw,value=latest,enable=${{ inputs.is-release }}
             type=sha,prefix=sha-,format=long
           labels: |
             org.opencontainers.image.title=${{ inputs.service-name }}
@@ -186,6 +182,10 @@ jobs:
           cache-to: type=gha,mode=max,scope=${{ inputs.service-name }}
           provenance: mode=max
           sbom: true
+
+      - name: Show images
+        run: |
+          docker images
 
       # Scan the image before it is pushed
       - name: Scan image with Trivy

@@ -6,7 +6,7 @@ describe('LIMS Backend Proxy - Network Mock Tests', () => {
 
   beforeAll(async () => {
     process.env.LIMS_BASE_URL = 'https://mock-lims.local'
-    process.env.PORT = 3100
+    process.env.PORT = 3000
     server = await createServer()
   })
 
@@ -42,7 +42,7 @@ describe('LIMS Backend Proxy - Network Mock Tests', () => {
 
     const res = await server.inject({
       method: 'GET',
-      url: '/submissions?client=TESTING'
+      url: '/lims?client=TESTING'
     })
 
     expect(res.statusCode).toBe(200)
@@ -62,7 +62,7 @@ describe('LIMS Backend Proxy - Network Mock Tests', () => {
 
     const res = await server.inject({
       method: 'GET',
-      url: '/submissions'
+      url: '/lims'
     })
     expect(res.statusCode).toBe(500)
     const data = JSON.parse(res.payload)

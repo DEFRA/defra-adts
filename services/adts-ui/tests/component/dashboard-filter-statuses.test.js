@@ -2,7 +2,7 @@
  * Component tests for the Status dropdown on the dashboard.
  *
  * Verifies the Status filter options match the behaviour expected
- * by DASH-02 AC2 and the legacy ADTS service.
+ * by DASH-02 AC2.
  *
  * @story DASH-02
  * @acs AC2
@@ -34,7 +34,7 @@ describe('Dashboard filter — Status dropdown (DASH-02 AC2)', () => {
   }
 
   const requiredStatuses = [
-    'Show All',
+    'Show all',
     'Draft',
     'Submitted',
     'In progress',
@@ -51,15 +51,31 @@ describe('Dashboard filter — Status dropdown (DASH-02 AC2)', () => {
     return match[0]
   }
 
-  requiredStatuses.forEach(status => {
-    it(`includes the "${status}" option per legacy ADTS`, () => {
-      const html = env.render('home.njk', defaultContext)
-      const statusSelectHtml = getStatusSelectHtml(html)
-      expect(statusSelectHtml).toMatch(new RegExp(`>${status}<\\/option>`))
+  const pageContexts = [
+    ['home.njk', defaultContext],
+    ['results.njk', { ...defaultContext, results: [], totalCount: 0 }]
+  ]
+
+  pageContexts.forEach(([page, context]) => {
+    requiredStatuses.forEach(status => {
+      it(`includes the "${status}" option on ${page}`, () => {
+        const html = env.render(page, context)
+        const statusSelectHtml = getStatusSelectHtml(html)
+        expect(statusSelectHtml).toMatch(new RegExp(`>${status}<\\/option>`))
+      })
     })
   })
 
-  it('contains exactly 8 status options', () => {
+  it('uses the same "Show all" label on both pages', () => {
+    const labels = pageContexts.map(([page, context]) => {
+      const html = env.render(page, context)
+      return getStatusSelectHtml(html).match(/<option[^>]*value="show_all"[^>]*>(.*?)<\/option>/)[1]
+    })
+
+    expect(labels).toEqual(['Show all', 'Show all'])
+  })
+
+  it('contains exactly 7 status options', () => {
     const html = env.render('home.njk', defaultContext)
     const statusSelectHtml = getStatusSelectHtml(html)
     const optionCount = (statusSelectHtml.match(/<option/g) || []).length

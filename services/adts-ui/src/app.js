@@ -247,9 +247,9 @@ const createServer = async () => {
         const payload = await response.json()
         return h.response(payload)
       } catch (error) {
-        console.error('Error contacting ${host}  server:', error.message)
+        console.error(`Error contacting ${host}  server:`, error.message)
 
-        return h.response({ message: 'Unable to reach ${host}  at this time.' })
+        return h.response({ message: `Unable to reach ${host}  at this time.` })
       }
     }
   })

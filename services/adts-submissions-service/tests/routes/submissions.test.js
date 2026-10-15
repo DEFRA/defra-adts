@@ -1,4 +1,5 @@
 import { afterAll, afterEach, beforeAll, describe, expect, jest, test } from '@jest/globals'
+import { constants } from 'node:http2'
 import createServer from '../../src/app.js'
 
 describe('LIMS Backend Proxy - Network Mock Tests', () => {
@@ -67,5 +68,18 @@ describe('LIMS Backend Proxy - Network Mock Tests', () => {
     expect(res.statusCode).toBe(500)
     const data = JSON.parse(res.payload)
     expect(data.error).toBe('LIMS integration error')
+  })
+
+  test('should return a bad gateway response when LIMS is unreachable', async () => {
+    jest.spyOn(globalThis, 'fetch').mockRejectedValue(new Error('LIMS connection failed'))
+
+    const res = await server.inject({
+      method: 'GET',
+      url: '/submissions'
+    })
+
+    expect(res.statusCode).toBe(constants.HTTP_STATUS_BAD_GATEWAY)
+    const data = JSON.parse(res.payload)
+    expect(data.error).toBe('LIMS connectivity failure')
   })
 })

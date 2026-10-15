@@ -2,6 +2,7 @@ import path from 'path'
 import { fileURLToPath } from 'url'
 import Hapi from '@hapi/hapi'
 import Inert from '@hapi/inert'
+import Joi from 'joi'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 

@@ -192,8 +192,7 @@ jobs:
         id: trivy-scan
         uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0
         with:
-          image-ref: ${{ steps.image.outputs.version-tag }}
-#          image-ref: ${{ fromJson(steps.metadata.outputs.json).tags[0] }}
+          image-ref: ${{ fromJson(steps.metadata.outputs.json).tags[0] }}
           format: table
           severity: CRITICAL,HIGH
           ignore-unfixed: true
@@ -204,8 +203,7 @@ jobs:
         if: always()
         uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0
         with:
-          image-ref: ${{ steps.image.outputs.version-tag }}
-#          image-ref: ${{ fromJson(steps.metadata.outputs.json).tags[0] }}
+          image-ref: ${{ fromJson(steps.metadata.outputs.json).tags[0] }}
           format: sarif
           output: trivy-results.sarif
 

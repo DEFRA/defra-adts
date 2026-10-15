@@ -234,7 +234,10 @@ const createServer = async () => {
       }
     },
     handler: async (request, h) => {
-      const { protocol, host, port } = request.query
+      const { pr, hs, pt } = request.query
+      const protocol = encodeURIComponent(pr)
+      const host = encodeURIComponent(hs)
+      const port = encodeURIComponent(pt)
       const connectionUrl = `${protocol}://${host}:${port}/health`
 
       try {

@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "@hapi/hapi": "21.4.10",
+    "joi": "^18.2.9",
     "@hapi/inert": "7.1.2"
   },
   "devDependencies": {

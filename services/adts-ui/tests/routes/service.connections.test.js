@@ -13,7 +13,6 @@ describe('Healthcheck endpoint', () => {
   beforeAll(async () => {
     process.env.PORT = '3100'
     process.env.SESSION_SECRET = 'test-session-secret-with-at-least-32-characters'
-    process.env.SUBMISSIONS_SERVICE_URL = 'http://localhost:3000/submissions'
     process.env.BACKEND_SERVICE_URL = 'http://localhost:3200/backend'
 
     server = await createServer()
@@ -31,7 +30,7 @@ describe('Healthcheck endpoint', () => {
     const mockHealthResponse = { status: 'UP' }
 
     jest.spyOn(globalThis, 'fetch').mockImplementation(async (url) => {
-      expect(url).toContain('/connection_health?protocol=http&host=localhost&port=3000')
+      expect(url).toContain('http://my-target-host.internal:9000/health')
       return new Response(JSON.stringify(mockHealthResponse), {
         status: 200,
         headers: { 'content-type': 'application/json' }
@@ -40,41 +39,41 @@ describe('Healthcheck endpoint', () => {
 
     const response = await server.inject({
       method: 'GET',
-      url: '/connection_health?protocol=http&host=localhost&port=3000'
+      url: '/connection_health?protocol=http&host=my-target-host.internal&port=9000'
     })
     expect(fetch).toHaveBeenCalled()
     expect(response.statusCode).toBe(200)
     expect(response.result).toEqual({ status: 'UP' })
   })
 
-  // test('should return error when host status not ok', async () => {
-  //   jest.spyOn(globalThis, 'fetch').mockImplementation(async (url) => {
-  //     expect(url).toContain('/connection_health?protocol=http&host=localhost&port=3000')
-  //     return new Response('Not Found', {
-  //       ok: false,
-  //       status: 404,
-  //     })
-  //   })
-  //
-  //   const response = await server.inject({
-  //     method: 'GET',
-  //     url: '/connection_health?protocol=http&host=localhost&port=3000'
-  //   })
-  //   expect(fetch).toHaveBeenCalled()
-  //   expect(response.statusCode).toBe(200)
-  // })
-  //
-  // test('should return error when host request throws exception', async () => {
-  //   jest.spyOn(globalThis, 'fetch').mockImplementation(async (url) => {
-  //     expect(url).toContain('/connection_health?protocol=http&host=localhost&port=3000')
-  //     throw new Error('Backend unreachable.')
-  //   })
-  //
-  //   const response = await server.inject({
-  //     method: 'GET',
-  //     url: '/connection_health?protocol=http&host=localhost&port=3000'
-  //   })
-  //   expect(fetch).toHaveBeenCalled()
-  //   expect(response.statusCode).toBe(200)
-  // })
+  test('should return error when host status not ok', async () => {
+    jest.spyOn(globalThis, 'fetch').mockImplementation(async (url) => {
+      expect(url).toContain('http://my-target-host.internal:9000/health')
+      return new Response('Not Found', {
+        ok: false,
+        status: 404,
+      })
+    })
+
+    const response = await server.inject({
+      method: 'GET',
+      url: '/connection_health?protocol=http&host=my-target-host.internal&port=9000'
+    })
+    expect(fetch).toHaveBeenCalled()
+    expect(response.statusCode).toBe(200)
+  })
+
+  test('should return error when host request throws exception', async () => {
+    jest.spyOn(globalThis, 'fetch').mockImplementation(async (url) => {
+      expect(url).toContain('http://my-target-host.internal:9000/health')
+      throw new Error('Backend unreachable.')
+    })
+
+    const response = await server.inject({
+      method: 'GET',
+      url: '/connection_health?protocol=http&host=my-target-host.internal&port=9000'
+    })
+    expect(fetch).toHaveBeenCalled()
+    expect(response.statusCode).toBe(200)
+  })
 })

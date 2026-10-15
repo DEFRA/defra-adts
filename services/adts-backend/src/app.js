@@ -37,50 +37,45 @@ const createServer = async () => {
     }
   })
 
+  // E.g. localhost:9181/connection_health?protocol=http&host=<host DN>&port=9180
   server.route({
     method: 'GET',
-    path: '/submissions_health',
-    handler: async (_request, h) => {
-      const adapterBaseUrl = process.env.SUBMISSIONS_SERVICE_URL
-      const adapterUrl = `${adapterBaseUrl}/health`
-
-      try {
-        const response = await fetch(adapterUrl)
-
-        if (!response.ok) {
-          throw new Error(`Submissions responded with status: ${response.status}`)
-        }
-
-        const payload = await response.json()
-        return h.response({ submissions: payload })
-      } catch (error) {
-        console.error('Error contacting submissions server:', error.message)
-
-        return h.response({ message: 'Unable to reach submissions at this time.' })
+    path: '/connection_health',
+    options: {
+      validate: {
+        query: Joi.object({
+          protocol: Joi.string()
+            .trim()
+            .required(),
+          host: Joi.string()
+            .trim()
+            .required(),
+          port: Joi.string()
+            .trim()
+            .required()
+        }).required()
       }
-    }
-  })
-
-  server.route({
-    method: 'GET',
-    path: '/ui_health',
-    handler: async (_request, h) => {
-      const adapterBaseUrl = process.env.UI_SERVICE_URL
-      const adapterUrl = `${adapterBaseUrl}/health`
+    },
+    handler: async (request, h) => {
+      const { protocol, host, port } = request.query
+      const pr = encodeURIComponent(protocol)
+      const hs = encodeURIComponent(host)
+      const pt = encodeURIComponent(port)
+      const connectionUrl = `${pr}://${hs}:${pt}/health`
 
       try {
-        const response = await fetch(adapterUrl)
+        const response = await fetch(connectionUrl)
 
         if (!response.ok) {
-          throw new Error(`UI responded with status: ${response.status}`)
+          throw new Error(`${host} responded with status: ${response.status}`)
         }
 
         const payload = await response.json()
-        return h.response({ ui: payload })
+        return h.response(payload)
       } catch (error) {
-        console.error('Error contacting ui server:', error.message)
+        console.error('Error contacting %s  server: %s', host, error.message)
 
-        return h.response({ message: 'Unable to reach ui at this time.' })
+        return h.response({ message: `Unable to reach ${host}  at this time.` })
       }
     }
   })

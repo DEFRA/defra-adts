@@ -358,8 +358,8 @@ describe('UI Results Card Rendering Integration Pipeline', () => {
     expect(response.statusCode).toBe(200)
   })
 
-  test('should render the error state when the submissions service responds unsuccessfully', async () => {
-    jest.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('Service unavailable', {
+  test('should show the empty results state when the submissions service responds unsuccessfully', async () => {
+    const fetchMock = jest.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('Service unavailable', {
       status: 503
     }))
     jest.spyOn(console, 'error').mockImplementation(() => {})
@@ -370,7 +370,10 @@ describe('UI Results Card Rendering Integration Pipeline', () => {
     })
 
     expect(response.statusCode).toBe(200)
-    expect(response.payload).toContain('Unable to load submissions at this time.')
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://localhost:3100/submissions?client=&clinician=&status=show_all&submitted-date=18_months'
+    )
+    expect(response.payload).toContain('No records found matching your query criteria.')
     expect(console.error).toHaveBeenCalledWith(
       'Error contacting backend server:',
       'Backend responded with status: 503'

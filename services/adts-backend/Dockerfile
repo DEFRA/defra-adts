@@ -1,4 +1,4 @@
-ARG PARENT_VERSION=3.2.1-node24.20.0
+ARG PARENT_VERSION=3.2.3-node24.21.0
 ARG PORT=9182
 
 FROM defradigital/node-development:$PARENT_VERSION AS development
@@ -27,6 +27,7 @@ FROM defradigital/node:$PARENT_VERSION AS production
 ENV TZ="Europe/London"
 
 ARG PORT
+ENV PORT=${PORT}
 EXPOSE ${PORT}
 
 # Switch to root temporarily to install production dependencies and lock down file permissions.
@@ -38,9 +39,10 @@ COPY --from=production-build --chown=root:root /home/node/src/ ./src/
 
 # Install node modules, remove write permissions, then drop back to the unprivileged user.
 RUN npm ci --ignore-scripts --omit=dev && chmod -R a-w /home/node
+
 USER node
 
 # This is the command that is run for the production service. The parent image has an ENTRYPOINT that uses a lightweight
 #   init program "tini" that handles signals. As long as we don't override the ENTRYPOINT the "tini" routine will handle signals and
 #   orphaned processes
-CMD [ "node", "src/index" ]
+CMD [ "node", "src/index.js" ]

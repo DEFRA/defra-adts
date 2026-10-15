@@ -73,5 +73,4 @@ jobs:
       aws-account-id: ${{ vars.AWS_ECR_ROLE_ACCOUNT_ID }}
       aws-role: ${{ vars.AWS_ECR_ROLE_NAME }}
       platforms: linux
-      push-main-tag: false
-      tag: v0.0.1
+      is-release: true

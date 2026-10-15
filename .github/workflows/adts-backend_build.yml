@@ -45,10 +45,8 @@ jobs:
       run-format-check: false
       run-tests: false
       run-sonarqube-scan: false
-      test-command: npm test -- --ci --coverage
-      build-command: npm --version
-# TODO: Replace build-command with the correct command
-#      build-command: npm run build
+      test-command: npm run test:coverage
+      build-command: npm run build
 
   container:
     name: Build and publish image
@@ -57,7 +55,7 @@ jobs:
       - validate
 
     # Pull requests validate the service but do not publish images.
-    if: ${{ github.event_name != 'pull_request' }}
+#    if: ${{ github.event_name != 'pull_request' }}
 
     uses: ./.github/workflows/_container_build.yml
 
@@ -75,5 +73,4 @@ jobs:
       aws-account-id: ${{ vars.AWS_ECR_ROLE_ACCOUNT_ID }}
       aws-role: ${{ vars.AWS_ECR_ROLE_NAME }}
       platforms: linux
-      push-main-tag: false
-      tag: v0.0.1
+      is-release: true

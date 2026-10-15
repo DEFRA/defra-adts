@@ -40,7 +40,7 @@ describe('Healthcheck endpoint', () => {
 
     const response = await server.inject({
       method: 'GET',
-      url: '/connection_health?protocol=http&host=localhost&port=3000'
+      url: '/connection_health'
     })
     expect(response.statusCode).toBe(200)
     expect(response.result).toEqual({ status: 'UP' })

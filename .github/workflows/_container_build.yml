@@ -133,7 +133,7 @@ jobs:
 
           echo "image-uri=${image_uri}" >> "${GITHUB_OUTPUT}"
           echo "IMAGE_URI=${image_uri}" >> "${GITHUB_ENV}"
-          echo "version-tag=$(cat VERSION_PREFIX).${{ github.run_number }}" >> "${GITHUB_OUTPUT}"
+          echo "version-tag=$(cat ${{ inputs.service-directory }}/VERSION_PREFIX).${{ github.run_number }}" >> "${GITHUB_OUTPUT}"
 
       - name: Generate container metadata
         id: metadata

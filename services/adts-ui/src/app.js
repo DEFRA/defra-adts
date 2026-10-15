@@ -1,5 +1,5 @@
-import path from 'path'
-import { fileURLToPath } from 'url'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 import Hapi from '@hapi/hapi'
 import Vision from '@hapi/vision'
 import Inert from '@hapi/inert'

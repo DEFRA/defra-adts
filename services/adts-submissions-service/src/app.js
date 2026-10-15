@@ -1,7 +1,8 @@
-import path from 'path'
-import { fileURLToPath } from 'url'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 import Hapi from '@hapi/hapi'
 import Inert from '@hapi/inert'
+import { constants } from 'http2'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -24,7 +25,7 @@ const createServer = async () => {
   server.route({
     method: 'GET',
     path: '/',
-    handler: async (request, h) => {
+    handler: async () => {
       return { message: 'You have hit the landing page' }
     }
   })
@@ -42,7 +43,7 @@ const createServer = async () => {
         const data = await response.json()
         return data
       } catch (error) {
-        return h.response({ error: 'LIMS connectivity failure' }).code(502)
+        return h.response({ error: 'LIMS connectivity failure' }).code(constants.HTTP_STATUS_BAD_GATEWAY)
       }
     }
   })

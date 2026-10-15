@@ -230,15 +230,15 @@ const createServer = async () => {
           port: Joi.string()
             .trim()
             .required()
-        }).required
+        }).required()
       }
     },
     handler: async (request, h) => {
-      const { pr, hs, pt } = request.query
-      const protocol = encodeURIComponent(pr)
-      const host = encodeURIComponent(hs)
-      const port = encodeURIComponent(pt)
-      const connectionUrl = `${protocol}://${host}:${port}/health`
+      const { protocol, host, port } = request.query
+      const pr = encodeURIComponent(protocol)
+      const hs = encodeURIComponent(host)
+      const pt = encodeURIComponent(port)
+      const connectionUrl = `${pr}://${hs}:${pt}/health`
 
       try {
         const response = await fetch(connectionUrl)

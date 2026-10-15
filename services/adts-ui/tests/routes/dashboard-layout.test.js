@@ -114,7 +114,6 @@ describe('Dashboard Layout', () => {
       const match = html.match(
         /<a[^>]*role="button"[^>]*>[\s\S]*?Healthy animal submission[\s\S]*?<\/a>/
       )
-      expect(match).not.toBeNull()
       expect(match[0]).not.toContain('disabled=')
       expect(match[0]).not.toContain('aria-disabled="true"')
     })

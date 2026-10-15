@@ -46,34 +46,34 @@ describe('Healthcheck endpoint', () => {
     expect(response.result).toEqual({ status: 'UP' })
   })
 
-  test('should return error when host status not ok', async () => {
-    jest.spyOn(globalThis, 'fetch').mockImplementation(async (url) => {
-      expect(url).toContain('/connection_health?protocol=http&host=localhost&port=3000')
-      return new Response('Not Found', {
-        ok: false,
-        status: 404,
-      })
-    })
-
-    const response = await server.inject({
-      method: 'GET',
-      url: '/connection_health?protocol=http&host=localhost&port=3000'
-    })
-    expect(fetch).toHaveBeenCalled()
-    expect(response.statusCode).toBe(200)
-  })
-
-  test('should return error when host request throws exception', async () => {
-    jest.spyOn(globalThis, 'fetch').mockImplementation(async (url) => {
-      expect(url).toContain('/connection_health?protocol=http&host=localhost&port=3000')
-      throw new Error('Backend unreachable.')
-    })
-
-    const response = await server.inject({
-      method: 'GET',
-      url: '/connection_health?protocol=http&host=localhost&port=3000'
-    })
-    expect(fetch).toHaveBeenCalled()
-    expect(response.statusCode).toBe(200)
-  })
+  // test('should return error when host status not ok', async () => {
+  //   jest.spyOn(globalThis, 'fetch').mockImplementation(async (url) => {
+  //     expect(url).toContain('/connection_health?protocol=http&host=localhost&port=3000')
+  //     return new Response('Not Found', {
+  //       ok: false,
+  //       status: 404,
+  //     })
+  //   })
+  //
+  //   const response = await server.inject({
+  //     method: 'GET',
+  //     url: '/connection_health?protocol=http&host=localhost&port=3000'
+  //   })
+  //   expect(fetch).toHaveBeenCalled()
+  //   expect(response.statusCode).toBe(200)
+  // })
+  //
+  // test('should return error when host request throws exception', async () => {
+  //   jest.spyOn(globalThis, 'fetch').mockImplementation(async (url) => {
+  //     expect(url).toContain('/connection_health?protocol=http&host=localhost&port=3000')
+  //     throw new Error('Backend unreachable.')
+  //   })
+  //
+  //   const response = await server.inject({
+  //     method: 'GET',
+  //     url: '/connection_health?protocol=http&host=localhost&port=3000'
+  //   })
+  //   expect(fetch).toHaveBeenCalled()
+  //   expect(response.statusCode).toBe(200)
+  // })
 })

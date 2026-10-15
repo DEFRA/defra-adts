@@ -100,6 +100,34 @@ describe('Submission client details page', () => {
     expect(response.payload).not.toContain('Select a client from the list.')
   })
 
+  test('redirects without saving a client when clients cannot be loaded on submit', async () => {
+    globalThis.fetch.mockRejectedValueOnce(new Error('Adapter unavailable'))
+    jest.spyOn(console, 'error').mockImplementation(() => {})
+
+    const response = await server.inject({
+      method: 'POST',
+      url,
+      payload: { clientId: '101' }
+    })
+
+    expect(response.statusCode).toBe(302)
+    expect(response.headers.location).toBe(url)
+    expect(console.error).toHaveBeenCalledWith('Error contacting backend server:', 'Adapter unavailable')
+
+    const revisitResponse = await server.inject({
+      method: 'GET',
+      url,
+      headers: { cookie: getCookieHeader(response) }
+    })
+
+    expect(revisitResponse.statusCode).toBe(200)
+    expect(revisitResponse.request.response.source.context.clientOptions).toEqual([
+      { value: '', text: 'Select a client', selected: true },
+      { value: '101', text: 'Acme Farm', selected: false },
+      { value: '102', text: 'Green Acres', selected: false }
+    ])
+  })
+
   test('shows an error when clients cannot be loaded', async () => {
     globalThis.fetch.mockRejectedValueOnce(new Error('Adapter unavailable'))
     jest.spyOn(console, 'error').mockImplementation(() => {})

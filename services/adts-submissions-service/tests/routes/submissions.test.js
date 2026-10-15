@@ -19,6 +19,16 @@ describe('LIMS Backend Proxy - Network Mock Tests', () => {
     jest.restoreAllMocks()
   })
 
+  test('should return the landing page message', async () => {
+    const res = await server.inject({
+      method: 'GET',
+      url: '/'
+    })
+
+    expect(res.statusCode).toBe(200)
+    expect(res.result).toEqual({ message: 'You have hit the landing page' })
+  })
+
   test('should pass downstream mock LIMS data straight back through the proxy', async () => {
     const testSubmissionsMock = [
       {

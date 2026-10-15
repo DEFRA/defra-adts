@@ -17,7 +17,7 @@ const getClients = async () => {
   }))
 }
 
-const getClientOptions = (clients, selectedClientId = '') => [
+const getClientOptions = (clients, selectedClientId) => [
   { value: '', text: 'Select a client', selected: !selectedClientId },
   ...clients.map((client) => ({
     value: client.clientId,
@@ -26,7 +26,7 @@ const getClientOptions = (clients, selectedClientId = '') => [
   }))
 ]
 
-const getClientDetailsViewContext = (formDetails, clients = []) => ({
+const getClientDetailsViewContext = (formDetails, clients) => ({
   clientOptions: getClientOptions(clients, formDetails.client?.clientId || ''),
   selectedClientName: formDetails.client?.name || '',
   formDetails
@@ -62,7 +62,7 @@ const submissionFirstPage = (server, submissionFormStateKey) => {
       },
       handler: async (request, h) => {
         const formDetails = request.yar.get(submissionFormStateKey) || {}
-        let clients
+        let clients = []
 
         try {
           clients = await getClients()

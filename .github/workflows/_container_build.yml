@@ -183,6 +183,10 @@ jobs:
           provenance: mode=max
           sbom: true
 
+      - name: Show images
+        run: |
+          docker images
+
       # Scan the image before it is pushed
       - name: Scan image with Trivy
         id: trivy-scan

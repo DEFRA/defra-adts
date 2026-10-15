@@ -214,50 +214,42 @@ const createServer = async () => {
     }
   })
 
+  // E.g. localhost:9181/connection_health?protocol=http&host=<host DN>&port=9180
   server.route({
     method: 'GET',
-    path: '/backend_health',
-    handler: async (_request, h) => {
-      const adapterBaseUrl = process.env.BACKEND_SERVICE_URL
-      const adapterUrl = `${adapterBaseUrl}/health`
-
-      try {
-        const response = await fetch(adapterUrl)
-
-        if (!response.ok) {
-          throw new Error(`Backend responded with status: ${response.status}`)
-        }
-
-        const payload = await response.json()
-        return h.response({ backend: payload })
-      } catch (error) {
-        console.log('Error contacting backend server:', error.message)
-
-        return h.response({ message: 'Unable to reach backend at this time.' })
+    path: '/connection_health',
+    options: {
+      validate: {
+        query: Joi.object({
+          protocol: Joi.string()
+            .trim()
+            .required(),
+          host: Joi.string()
+            .trim()
+            .required(),
+          port: Joi.string()
+            .trim()
+            .required()
+        }).required
       }
-    }
-  })
-
-  server.route({
-    method: 'GET',
-    path: '/submissions_health',
-    handler: async (_request, h) => {
-      const adapterBaseUrl = process.env.SUBMISSIONS_SERVICE_URL
-      const adapterUrl = `${adapterBaseUrl}/health`
+    },
+    handler: async (request, h) => {
+      const { protocol, host, port } = request.query
+      const connectionUrl = `${protocol}://${host}:${port}/health`
 
       try {
-        const response = await fetch(adapterUrl)
+        const response = await fetch(connectionUrl)
 
         if (!response.ok) {
-          throw new Error(`Submissions responded with status: ${response.status}`)
+          throw new Error(`${host} responded with status: ${response.status}`)
         }
 
         const payload = await response.json()
-        return h.response({ submissions: payload })
+        return h.response(payload)
       } catch (error) {
-        console.error('Error contacting submissions server:', error.message)
+        console.error('Error contacting ${host}  server:', error.message)
 
-        return h.response({ message: 'Unable to reach submissions at this time.' })
+        return h.response({ message: 'Unable to reach ${host}  at this time.' })
       }
     }
   })

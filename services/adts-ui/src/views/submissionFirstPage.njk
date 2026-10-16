@@ -3,6 +3,7 @@
 {% from "govuk/components/header/macro.njk" import govukHeader %}
 {% from "govuk/components/select/macro.njk" import govukSelect %}
 {% from "govuk/components/button/macro.njk" import govukButton %}
+{% from "macros/submissionProgress.njk" import submissionProgress %}
 
 {% block pageTitle %}Client details – ADTS{% endblock %}
 
@@ -30,22 +31,7 @@
     </span>
   </div>
 
-  <nav class="app-submission-progress govuk-body" aria-label="Submission progress">
-    <div class="govuk-grid-row">
-      <a class="govuk-grid-column-one-quarter govuk-link app-submission-progress__step app-submission-progress__step--current" href="#">
-        <span>1</span><span>Client details</span>
-      </a>
-      <a class="govuk-grid-column-one-quarter govuk-link app-submission-progress__step" href="#"><span>2</span><span>Animal details</span></a>
-      <a class="govuk-grid-column-one-quarter govuk-link app-submission-progress__step" href="#"><span>3</span><span>Clinical history</span></a>
-      <a class="govuk-grid-column-one-quarter govuk-link app-submission-progress__step" href="#"><span>4</span><span>Choose tests</span></a>
-    </div>
-    <div class="govuk-grid-row">
-      <a class="govuk-grid-column-one-quarter govuk-link app-submission-progress__step" href="#"><span>5</span><span>Your basket</span></a>
-      <a class="govuk-grid-column-one-quarter govuk-link app-submission-progress__step" href="#"><span>6</span><span>Delivery address</span></a>
-      <a class="govuk-grid-column-one-quarter govuk-link app-submission-progress__step" href="#"><span>7</span><span>Review and submit</span></a>
-      <a class="govuk-grid-column-one-quarter govuk-link app-submission-progress__step" href="#"><span>8</span><span>Print documents</span></a>
-    </div>
-  </nav>
+  {{ submissionProgress(1, "/submission-01-client-details") }}
 
   <h1 class="govuk-heading-l">1. Client details</h1>
   <p class="govuk-body-l">Tell us about the owner (your client) of the animal or animals you want to test.</p>
@@ -65,7 +51,7 @@
       attributes: { "data-default-value": selectedClientName },
       items: clientOptions
     }) }}
-    <p class="govuk-body-l">Or you can <a class="govuk-link" href="#">create a new client</a>.</p>
+    <p class="govuk-body-l">Or you can <a class="govuk-link" href="/create-client">create a new client</a>.</p>
     {{ govukButton({
       text: "Continue"
     }) }}

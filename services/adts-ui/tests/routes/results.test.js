@@ -48,7 +48,7 @@ describe('UI Results Card Rendering Integration Pipeline', () => {
 
   beforeAll(async () => {
     process.env.PORT = 3000
-    process.env.SUBMISSIONS_SERVICE_URL = 'http://localhost:3100'
+    process.env.BACKEND_SERVICE_URL = 'http://localhost:3200'
     process.env.SESSION_SECRET = 'abcdefghijklmnopqrstuvwxyz123456'
     server = await createServer()
   })
@@ -371,7 +371,7 @@ describe('UI Results Card Rendering Integration Pipeline', () => {
 
     expect(response.statusCode).toBe(200)
     expect(fetchMock).toHaveBeenCalledWith(
-      'http://localhost:3100/submissions?client=&clinician=&status=show_all&submitted-date=18_months'
+      'http://localhost:3200/submissions?client=&clinician=&status=show_all&submitted-date=18_months'
     )
     expect(response.payload).toContain('No records found matching your query criteria.')
     expect(console.error).toHaveBeenCalledWith(

@@ -78,19 +78,24 @@ npx playwright test --grep "AC6" --debug
 
 ## Services and auto-start
 
-Playwright's `webServer` config auto-starts `adts-ui` and `adts-submissions-service` when they aren't already running locally (`reuseExistingServer: !process.env.CI`). You don't need to start them manually unless you want to watch their logs:
+Playwright's `webServer` config auto-starts `adts-ui`, `adts-backend`, and `adts-submissions-service` when they aren't already running locally (`reuseExistingServer: !process.env.CI`). You don't need to start them manually unless you want to watch their logs:
 
 ```bash
 # Terminal A — submissions service on :3100
 PORT=3100 npm start --prefix services/adts-submissions-service
 
-# Terminal B — UI on :3000
+# Terminal B — backend on :3200
+PORT=3200 \
+SUBMISSIONS_SERVICE_URL=http://localhost:3100 \
+npm start --prefix services/adts-backend
+
+# Terminal C — UI on :3000
 PORT=3000 \
 SESSION_SECRET=e2e-test-session-secret-with-at-least-32-characters \
-SUBMISSIONS_SERVICE_URL=http://localhost:3100 \
+BACKEND_SERVICE_URL=http://localhost:3200 \
 npm start --prefix services/adts-ui
 
-# Terminal C — run tests, which will reuse the running services
+# Terminal D — run tests, which will reuse the running services
 npm run test:e2e
 ```
 

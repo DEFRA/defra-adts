@@ -7,19 +7,29 @@ const getCookieHeader = (response) => {
 }
 
 const url = '/submission-01-client-details'
+const createClientPayload = {
+  cph: '',
+  name: '',
+  farmName: '',
+  addressLine1: '',
+  addressLine2: '',
+  addressLine3: '',
+  county: '',
+  postcode: ''
+}
 
 describe('Submission client details page', () => {
   let server
 
   beforeAll(async () => {
     process.env.SESSION_SECRET = 'test-session-secret-with-at-least-32-characters'
-    process.env.SUBMISSIONS_SERVICE_URL = 'http://localhost:3100'
+    process.env.BACKEND_SERVICE_URL = 'http://localhost:3200'
     server = await createServer()
   })
 
   beforeEach(() => {
     jest.spyOn(globalThis, 'fetch').mockImplementation(async (url) => {
-      expect(url).toBe('http://localhost:3100/GetClients')
+      expect(url).toBe('http://localhost:3200/GetClients')
       return new Response(JSON.stringify([
         { clientId: 101, name: 'Acme Farm' },
         { clientId: '102', name: 'Green Acres' }
@@ -48,13 +58,14 @@ describe('Submission client details page', () => {
     expect(response.payload).toContain('1. Client details')
     expect(response.payload).toContain('Animal Disease Testing Service')
     expect(response.payload).toContain('create a new client')
+    expect(response.payload).toContain('href="/create-client">create a new client</a>')
     expect(response.payload).toContain('<form method="post" action="/submission-01-client-details">')
     expect(response.payload).toContain('<select class="govuk-select" id="client" name="clientId"')
     expect(response.payload).toMatch(/>\s*Continue\s*</)
     expect(response.payload).toContain('href="/assets/css/accessible-autocomplete.min.css"')
     expect(response.payload).toContain('<option value="101">Acme Farm</option>')
     expect(response.payload).toContain('<option value="102">Green Acres</option>')
-    expect(globalThis.fetch).toHaveBeenCalledWith('http://localhost:3100/GetClients')
+    expect(globalThis.fetch).toHaveBeenCalledWith('http://localhost:3200/GetClients')
     expect(response.request.response.source.context.formDetails).toEqual({})
     expect(response.request.response.source.context.clientOptions).toEqual([
       { value: '', text: 'Select a client', selected: true },
@@ -89,6 +100,116 @@ describe('Submission client details page', () => {
     })
     expect(revisitResponse.payload).toContain('<option value="101" selected>Acme Farm</option>')
     expect(revisitResponse.payload).toContain('data-default-value="Acme Farm"')
+  })
+
+  test.each([
+    [{ cph: '48/123/4567' }, '48/123/4567'],
+    [{}, 'New client']
+  ])('uses a fallback label for a new client', async (clientDetails, expectedLabel) => {
+    const createResponse = await server.inject({
+      method: 'POST',
+      url: '/create-client',
+      payload: { ...createClientPayload, ...clientDetails }
+    })
+
+    const response = await server.inject({
+      method: 'GET',
+      url,
+      headers: { cookie: getCookieHeader(createResponse) }
+    })
+
+    expect(response.statusCode).toBe(200)
+    expect(response.request.response.source.context.clientOptions).toContainEqual({
+      value: 'new-client',
+      text: expectedLabel,
+      selected: true
+    })
+  })
+
+  test('keeps a newly created client when it is selected on the client details page', async () => {
+    const createResponse = await server.inject({
+      method: 'POST',
+      url: '/create-client',
+      payload: { ...createClientPayload, name: 'New farm' }
+    })
+
+    const response = await server.inject({
+      method: 'POST',
+      url,
+      headers: { cookie: getCookieHeader(createResponse) },
+      payload: { clientId: 'new-client' }
+    })
+
+    expect(response.statusCode).toBe(302)
+    expect(response.headers.location).toBe(url)
+
+    const revisitResponse = await server.inject({
+      method: 'GET',
+      url,
+      headers: { cookie: getCookieHeader(response) }
+    })
+
+    expect(revisitResponse.statusCode).toBe(200)
+    expect(revisitResponse.request.response.source.context.formDetails.client).toEqual({
+      ...createClientPayload,
+      name: 'New farm'
+    })
+    expect(revisitResponse.request.response.source.context.clientOptions).toContainEqual({
+      value: 'new-client',
+      text: 'New farm',
+      selected: true
+    })
+  })
+
+  test('does not select a new client when there is no created client in the session', async () => {
+    const response = await server.inject({
+      method: 'POST',
+      url,
+      payload: { clientId: 'new-client' }
+    })
+
+    expect(response.statusCode).toBe(302)
+
+    const revisitResponse = await server.inject({
+      method: 'GET',
+      url,
+      headers: { cookie: getCookieHeader(response) }
+    })
+
+    expect(revisitResponse.statusCode).toBe(200)
+    expect(revisitResponse.request.response.source.context.formDetails.client).toBeUndefined()
+    expect(revisitResponse.request.response.source.context.clientOptions).not.toContainEqual(
+      expect.objectContaining({ value: 'new-client' })
+    )
+  })
+
+  test('does not treat an existing client as a newly created client', async () => {
+    const existingClientResponse = await server.inject({
+      method: 'POST',
+      url,
+      payload: { clientId: '101' }
+    })
+
+    const response = await server.inject({
+      method: 'POST',
+      url,
+      headers: { cookie: getCookieHeader(existingClientResponse) },
+      payload: { clientId: 'new-client' }
+    })
+
+    expect(response.statusCode).toBe(302)
+
+    const revisitResponse = await server.inject({
+      method: 'GET',
+      url,
+      headers: { cookie: getCookieHeader(response) }
+    })
+
+    expect(revisitResponse.statusCode).toBe(200)
+    expect(revisitResponse.request.response.source.context.formDetails.client).toBeUndefined()
+    expect(revisitResponse.request.response.source.context.clientOptions).not.toContainEqual(
+      expect.objectContaining({ value: 'new-client' })
+    )
   })
 
   test('does not save an id that is not present in the clients list', async () => {

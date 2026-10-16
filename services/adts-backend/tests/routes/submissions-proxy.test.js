@@ -58,4 +58,21 @@ describe('Submissions service proxy routes', () => {
     expect(response.result).toEqual({ error: 'Unable to reach submissions service' })
     expect(console.error).toHaveBeenCalledWith('Error contacting submissions service:', 'Connection refused')
   })
+
+  test('returns a gateway error when the submissions service returns invalid JSON', async () => {
+    jest.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('Not JSON', {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' }
+    }))
+    jest.spyOn(console, 'error').mockImplementation(() => {})
+
+    const response = await server.inject({ method: 'GET', url: '/submissions' })
+
+    expect(response.statusCode).toBe(502)
+    expect(response.result).toEqual({ error: 'Unable to reach submissions service' })
+    expect(console.error).toHaveBeenCalledWith(
+      'Error contacting submissions service:',
+      expect.any(String)
+    )
+  })
 })

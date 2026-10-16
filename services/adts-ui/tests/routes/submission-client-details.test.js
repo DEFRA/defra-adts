@@ -7,6 +7,16 @@ const getCookieHeader = (response) => {
 }
 
 const url = '/submission-01-client-details'
+const createClientPayload = {
+  cph: '',
+  name: '',
+  farmName: '',
+  addressLine1: '',
+  addressLine2: '',
+  addressLine3: '',
+  county: '',
+  postcode: ''
+}
 
 describe('Submission client details page', () => {
   let server
@@ -90,6 +100,116 @@ describe('Submission client details page', () => {
     })
     expect(revisitResponse.payload).toContain('<option value="101" selected>Acme Farm</option>')
     expect(revisitResponse.payload).toContain('data-default-value="Acme Farm"')
+  })
+
+  test.each([
+    [{ cph: '48/123/4567' }, '48/123/4567'],
+    [{}, 'New client']
+  ])('uses a fallback label for a new client', async (clientDetails, expectedLabel) => {
+    const createResponse = await server.inject({
+      method: 'POST',
+      url: '/create-client',
+      payload: { ...createClientPayload, ...clientDetails }
+    })
+
+    const response = await server.inject({
+      method: 'GET',
+      url,
+      headers: { cookie: getCookieHeader(createResponse) }
+    })
+
+    expect(response.statusCode).toBe(200)
+    expect(response.request.response.source.context.clientOptions).toContainEqual({
+      value: 'new-client',
+      text: expectedLabel,
+      selected: true
+    })
+  })
+
+  test('keeps a newly created client when it is selected on the client details page', async () => {
+    const createResponse = await server.inject({
+      method: 'POST',
+      url: '/create-client',
+      payload: { ...createClientPayload, name: 'New farm' }
+    })
+
+    const response = await server.inject({
+      method: 'POST',
+      url,
+      headers: { cookie: getCookieHeader(createResponse) },
+      payload: { clientId: 'new-client' }
+    })
+
+    expect(response.statusCode).toBe(302)
+    expect(response.headers.location).toBe(url)
+
+    const revisitResponse = await server.inject({
+      method: 'GET',
+      url,
+      headers: { cookie: getCookieHeader(response) }
+    })
+
+    expect(revisitResponse.statusCode).toBe(200)
+    expect(revisitResponse.request.response.source.context.formDetails.client).toEqual({
+      ...createClientPayload,
+      name: 'New farm'
+    })
+    expect(revisitResponse.request.response.source.context.clientOptions).toContainEqual({
+      value: 'new-client',
+      text: 'New farm',
+      selected: true
+    })
+  })
+
+  test('does not select a new client when there is no created client in the session', async () => {
+    const response = await server.inject({
+      method: 'POST',
+      url,
+      payload: { clientId: 'new-client' }
+    })
+
+    expect(response.statusCode).toBe(302)
+
+    const revisitResponse = await server.inject({
+      method: 'GET',
+      url,
+      headers: { cookie: getCookieHeader(response) }
+    })
+
+    expect(revisitResponse.statusCode).toBe(200)
+    expect(revisitResponse.request.response.source.context.formDetails.client).toBeUndefined()
+    expect(revisitResponse.request.response.source.context.clientOptions).not.toContainEqual(
+      expect.objectContaining({ value: 'new-client' })
+    )
+  })
+
+  test('does not treat an existing client as a newly created client', async () => {
+    const existingClientResponse = await server.inject({
+      method: 'POST',
+      url,
+      payload: { clientId: '101' }
+    })
+
+    const response = await server.inject({
+      method: 'POST',
+      url,
+      headers: { cookie: getCookieHeader(existingClientResponse) },
+      payload: { clientId: 'new-client' }
+    })
+
+    expect(response.statusCode).toBe(302)
+
+    const revisitResponse = await server.inject({
+      method: 'GET',
+      url,
+      headers: { cookie: getCookieHeader(response) }
+    })
+
+    expect(revisitResponse.statusCode).toBe(200)
+    expect(revisitResponse.request.response.source.context.formDetails.client).toBeUndefined()
+    expect(revisitResponse.request.response.source.context.clientOptions).not.toContainEqual(
+      expect.objectContaining({ value: 'new-client' })
+    )
   })
 
   test('does not save an id that is not present in the clients list', async () => {

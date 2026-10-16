@@ -15,7 +15,8 @@
   },
   "dependencies": {
     "@hapi/hapi": "21.4.10",
-    "@hapi/inert": "7.1.2"
+    "@hapi/inert": "7.1.2",
+    "joi": "^18.2.9"
   },
   "devDependencies": {
     "esbuild": "0.28.1",

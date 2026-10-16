@@ -25,6 +25,16 @@ describe('Healthcheck endpoint', () => {
     jest.restoreAllMocks()
   })
 
+  test('should return the backend landing page message', async () => {
+    const response = await server.inject({
+      method: 'GET',
+      url: '/'
+    })
+
+    expect(response.statusCode).toBe(200)
+    expect(response.result).toEqual({ message: 'You have hit the backend page' })
+  })
+
   test('should return http statusCode 200', async () => {
     const response = await server.inject({
       method: 'GET',

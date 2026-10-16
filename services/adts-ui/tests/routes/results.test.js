@@ -12,13 +12,43 @@
 
 import { afterAll, afterEach, beforeAll, describe, expect, jest, test } from '@jest/globals'
 import createServer from '../../src/app.js'
+import results from '../../src/routes/results.js'
+
+describe('Results route validation', () => {
+  test('logs validation failures and returns the localized response when present', () => {
+    let route
+    results({
+      route: (registeredRoute) => {
+        route = registeredRoute
+      }
+    })
+
+    const request = { log: jest.fn() }
+    const localizedResponse = { statusCode: 400 }
+    const h = { continue: Symbol('continue') }
+    const failAction = route.options.validate.failAction
+
+    expect(failAction(request, h, {
+      message: 'Invalid filter',
+      localised: localizedResponse
+    })).toBe(localizedResponse)
+    expect(request.log).toHaveBeenCalledWith(
+      ['results-filter', 'validation-warning'],
+      'Invalid filter'
+    )
+
+    expect(failAction(request, h, {
+      message: 'Invalid filter'
+    })).toBe(h.continue)
+  })
+})
 
 describe('UI Results Card Rendering Integration Pipeline', () => {
   let server
 
   beforeAll(async () => {
-    process.env.PORT = 3100
-    process.env.SUBMISSIONS_SERVICE_URL = 'http://localhost:3000'
+    process.env.PORT = 3000
+    process.env.SUBMISSIONS_SERVICE_URL = 'http://localhost:3100'
     process.env.SESSION_SECRET = 'abcdefghijklmnopqrstuvwxyz123456'
     server = await createServer()
   })
@@ -309,5 +339,44 @@ describe('UI Results Card Rendering Integration Pipeline', () => {
     expect(response.statusCode).toBe(200)
     expect(response.payload).toContain('0 submissions matching criteria')
     expect(response.payload).toContain('No records found matching your query criteria.')
+  })
+
+  test('should preserve an empty submitted-date filter', async () => {
+    jest.spyOn(globalThis, 'fetch').mockImplementation(async (url) => {
+      expect(url).toContain('submitted-date=')
+      return new Response(JSON.stringify({ results: [], totalCount: 0 }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      })
+    })
+
+    const response = await server.inject({
+      method: 'GET',
+      url: '/results?submitted-date='
+    })
+
+    expect(response.statusCode).toBe(200)
+  })
+
+  test('should show the empty results state when the submissions service responds unsuccessfully', async () => {
+    const fetchMock = jest.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('Service unavailable', {
+      status: 503
+    }))
+    jest.spyOn(console, 'error').mockImplementation(() => {})
+
+    const response = await server.inject({
+      method: 'GET',
+      url: '/results'
+    })
+
+    expect(response.statusCode).toBe(200)
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://localhost:3100/submissions?client=&clinician=&status=show_all&submitted-date=18_months'
+    )
+    expect(response.payload).toContain('No records found matching your query criteria.')
+    expect(console.error).toHaveBeenCalledWith(
+      'Error contacting backend server:',
+      'Backend responded with status: 503'
+    )
   })
 })

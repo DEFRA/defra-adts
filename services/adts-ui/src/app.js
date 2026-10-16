@@ -1,30 +1,18 @@
-import path from 'path'
-import { fileURLToPath } from 'url'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 import Hapi from '@hapi/hapi'
 import Vision from '@hapi/vision'
 import Inert from '@hapi/inert'
 import Yar from '@hapi/yar'
-import Joi from 'joi'
 import nunjucks from 'nunjucks'
+import staticAssets from './routes/assets.js'
+import health from './routes/health.js'
+import home from './routes/home.js'
+import results from './routes/results.js'
+import submissionFirstPage from './routes/submissionFirstPage.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
-const HOME_FILTER_STATE_KEY = 'homeFilterState'
-const CLIENT_DETAILS_STATE_KEY = 'submissionClientDetails'
-
-const homeFilterSchema = Joi.object({
-  client: Joi.string().allow('').default(''),
-  clinician: Joi.string().allow('').default(''),
-  status: Joi.string()
-    .valid('show_all', 'draft', 'submitted', 'in_progress', 'cancelled', 'samples_overdue', 'tests_complete')
-    .default('show_all'),
-  'submitted-date': Joi.string()
-    .valid('1_day', '1_week', '14_days', '1_month', '6_months', '1_year', '18_months')
-    .allow('')
-    .default('18_months')
-})
-const clientDetailsSchema = Joi.object({
-  client: Joi.string().allow('')
-})
+const SUBMISSION_FORM_STATE_KEY = 'submissionFormState'
 
 const createServer = async () => {
   const sessionSecret = process.env.SESSION_SECRET
@@ -70,192 +58,11 @@ const createServer = async () => {
     path: 'views'
   })
 
-  server.route([
-    {
-      method: 'GET',
-      path: '/assets/{param*}',
-      handler: {
-        directory: {
-          path: path.join(__dirname, '../node_modules/govuk-frontend/dist/govuk/assets')
-        }
-      }
-    },
-    {
-      method: 'GET',
-      path: '/assets/css/{param*}',
-      handler: {
-        directory: {
-          path: path.join(__dirname, 'public/css')
-        }
-      }
-    },
-    {
-      method: 'GET',
-      path: '/assets/js/{param*}',
-      handler: {
-        directory: {
-          path: path.join(__dirname, 'public/js')
-        }
-      }
-    }
-  ])
-
-  server.route({
-    method: 'GET',
-    path: '/',
-    // FIX: Removed the validate object here to prevent Joi defaults from clearing the cache
-    handler: (request, h) => {
-      // 1. Pull the cached search history parameters straight from the session store
-      const cached = request.yar.get(HOME_FILTER_STATE_KEY)
-      let filterValues
-
-      if (cached) {
-        filterValues = cached
-      } else {
-        filterValues = Joi.attempt({}, homeFilterSchema)
-      }
-
-      return h.view('home.njk', {
-        user: request.auth.credentials,
-        filteredValues: {
-          client: filterValues.client,
-          clinician: filterValues.clinician,
-          status: filterValues.status,
-          submitted_date: filterValues['submitted-date'] || ''
-        }
-      })
-    }
-  })
-
-  server.route({
-    method: 'GET',
-    path: '/submission-01-client-details',
-    options: {
-      validate: {
-        query: clientDetailsSchema
-      }
-    },
-    handler: (request, h) => {
-      if (Object.hasOwn(request.query, 'client')) {
-        request.yar.set(CLIENT_DETAILS_STATE_KEY, request.query)
-        request.yar.touch()
-      }
-
-      const clientDetails = request.yar.get(CLIENT_DETAILS_STATE_KEY) || { client: '' }
-
-      return h.view('submission-01-client-details.njk', {
-        client: clientDetails.client,
-        containerClasses: 'app-client-details-container'
-      })
-    }
-  })
-
-  server.route({
-    method: 'GET',
-    path: '/results',
-    options: {
-      validate: {
-        query: homeFilterSchema,
-        failAction: (request, h, err) => {
-          request.log(['results-filter', 'validation-warning'], err.message)
-          return err.localised || h.continue
-        }
-      }
-    },
-    handler: async (request, h) => {
-      request.yar.set(HOME_FILTER_STATE_KEY, request.query)
-      request.yar.touch()
-
-      const queryParams = new URLSearchParams(request.query).toString()
-      const adapterBaseUrl = process.env.SUBMISSIONS_SERVICE_URL
-      const adapterUrl = `${adapterBaseUrl}/submissions?${queryParams}`
-
-      const viewContext = {
-        filteredValues: {
-          client: request.query.client,
-          clinician: request.query.clinician,
-          status: request.query.status,
-          submitted_date: request.query['submitted-date'] || ''
-        }
-      }
-
-      try {
-        const response = await fetch(adapterUrl)
-
-        if (!response.ok) {
-          throw new Error(`Backend responded with status: ${response.status}`)
-        }
-
-        const payload = await response.json()
-
-        return h.view('results.njk', {
-          ...viewContext,
-          results: payload.results,
-          totalCount: payload.totalCount
-        })
-      } catch (error) {
-        console.error('Error contacting backend server:', error.message)
-
-        return h.view('results.njk', {
-          ...viewContext,
-          results: [],
-          totalCount: 0,
-          error: 'Unable to load submissions at this time.'
-        })
-      }
-    }
-  })
-
-  server.route({
-    method: 'GET',
-    path: '/health',
-    handler: (_request, h) => {
-      return h.response({ status: 'UP' })
-    }
-  })
-
-  // E.g. localhost:9181/connection_health?protocol=http&host=<host DN>&port=9180
-  server.route({
-    method: 'GET',
-    path: '/connection_health',
-    options: {
-      validate: {
-        query: Joi.object({
-          protocol: Joi.string()
-            .trim()
-            .required(),
-          host: Joi.string()
-            .trim()
-            .required(),
-          port: Joi.string()
-            .trim()
-            .required()
-        }).required()
-      }
-    },
-    handler: async (request, h) => {
-      const { protocol, host, port } = request.query
-      const pr = encodeURIComponent(protocol)
-      const hs = encodeURIComponent(host)
-      const pt = encodeURIComponent(port)
-      const connectionUrl = `${pr}://${hs}:${pt}/health`
-
-      try {
-        const response = await fetch(connectionUrl)
-
-        if (!response.ok) {
-          throw new Error(`${host} responded with status: ${response.status}`)
-        }
-
-        const payload = await response.json()
-        return h.response(payload)
-      } catch (error) {
-        console.error('Error contacting %s  server: %s', host, error.message)
-
-        return h.response({ message: `Unable to reach ${host}  at this time.` })
-      }
-    }
-  })
+  staticAssets(server)
+  home(server)
+  submissionFirstPage(server, SUBMISSION_FORM_STATE_KEY)
+  results(server)
+  health(server)
 
   return server
 }

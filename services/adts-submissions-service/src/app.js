@@ -1,8 +1,9 @@
-import path from 'path'
-import { fileURLToPath } from 'url'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 import Hapi from '@hapi/hapi'
 import Inert from '@hapi/inert'
 import Joi from 'joi'
+import { constants } from 'http2'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -25,7 +26,7 @@ const createServer = async () => {
   server.route({
     method: 'GET',
     path: '/',
-    handler: async (request, h) => {
+    handler: async () => {
       return { message: 'You have hit the landing page' }
     }
   })
@@ -38,31 +39,21 @@ const createServer = async () => {
     }
   })
 
-  // E.g. localhost:9181/connection_health?protocol=http&host=<host DN>&port=9180
   server.route({
     method: 'GET',
     path: '/connection_health',
     options: {
       validate: {
         query: Joi.object({
-          protocol: Joi.string()
-            .trim()
-            .required(),
-          host: Joi.string()
-            .trim()
-            .required(),
-          port: Joi.string()
-            .trim()
-            .required()
+          protocol: Joi.string().trim().required(),
+          host: Joi.string().trim().required(),
+          port: Joi.string().trim().required()
         }).required()
       }
     },
     handler: async (request, h) => {
       const { protocol, host, port } = request.query
-      const pr = encodeURIComponent(protocol)
-      const hs = encodeURIComponent(host)
-      const pt = encodeURIComponent(port)
-      const connectionUrl = `${pr}://${hs}:${pt}/health`
+      const connectionUrl = `${encodeURIComponent(protocol)}://${encodeURIComponent(host)}:${encodeURIComponent(port)}/health`
 
       try {
         const response = await fetch(connectionUrl)
@@ -71,19 +62,17 @@ const createServer = async () => {
           throw new Error(`${host} responded with status: ${response.status}`)
         }
 
-        const payload = await response.json()
-        return h.response(payload)
+        return h.response(await response.json())
       } catch (error) {
-        console.error('Error contacting %s  server: %s', host, error.message)
-
-        return h.response({ message: `Unable to reach ${host}  at this time.` })
+        console.error('Error contacting %s server: %s', host, error.message)
+        return h.response({ message: `Unable to reach ${host} at this time.` })
       }
     }
   })
 
   server.route({
     method: 'GET',
-    path: '/lims',
+    path: '/submissions',
     handler: async (request, h) => {
       const queryParams = new URLSearchParams(request.query).toString()
       try {
@@ -94,11 +83,10 @@ const createServer = async () => {
         const data = await response.json()
         return data
       } catch (error) {
-        return h.response({ error: 'LIMS connectivity failure' }).code(502)
+        return h.response({ error: 'LIMS connectivity failure' }).code(constants.HTTP_STATUS_BAD_GATEWAY)
       }
     }
   })
-
   return server
 }
 

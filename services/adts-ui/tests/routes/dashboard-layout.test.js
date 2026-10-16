@@ -14,7 +14,7 @@
  * @acs AC1, AC5
  */
 
-import { afterAll, beforeAll, describe, expect, test } from '@jest/globals'
+import { afterAll, beforeAll, describe, expect, jest, test } from '@jest/globals'
 import createServer from '../../src/app.js'
 
 describe('Dashboard Layout', () => {
@@ -23,7 +23,11 @@ describe('Dashboard Layout', () => {
 
   beforeAll(async () => {
     process.env.SESSION_SECRET = 'test-session-secret-with-at-least-32-characters'
-    process.env.SUBMISSIONS_SERVICE_URL = 'http://localhost:3000'
+    process.env.SUBMISSIONS_SERVICE_URL = 'http://localhost:3100'
+    jest.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify([]), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' }
+    }))
     server = await createServer()
 
     const response = await server.inject({
@@ -36,6 +40,7 @@ describe('Dashboard Layout', () => {
   })
 
   afterAll(async () => {
+    jest.restoreAllMocks()
     await server.stop()
   })
 
@@ -109,7 +114,6 @@ describe('Dashboard Layout', () => {
       const match = html.match(
         /<a[^>]*role="button"[^>]*>[\s\S]*?Healthy animal submission[\s\S]*?<\/a>/
       )
-      expect(match).not.toBeNull()
       expect(match[0]).not.toContain('disabled=')
       expect(match[0]).not.toContain('aria-disabled="true"')
     })

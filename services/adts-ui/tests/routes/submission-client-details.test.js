@@ -48,6 +48,7 @@ describe('Submission client details page', () => {
     expect(response.payload).toContain('1. Client details')
     expect(response.payload).toContain('Animal Disease Testing Service')
     expect(response.payload).toContain('create a new client')
+    expect(response.payload).toContain('href="/create-client">create a new client</a>')
     expect(response.payload).toContain('<form method="post" action="/submission-01-client-details">')
     expect(response.payload).toContain('<select class="govuk-select" id="client" name="clientId"')
     expect(response.payload).toMatch(/>\s*Continue\s*</)

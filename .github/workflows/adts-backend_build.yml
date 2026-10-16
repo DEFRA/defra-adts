@@ -44,11 +44,9 @@ jobs:
       run-lint: false
       run-format-check: false
       run-tests: false
-      run-sonarqube-scan: true
-      test-command: npm test -- --ci --coverage
-      build-command: npm --version
-# TODO: Replace build-command with the correct command
-#      build-command: npm run build
+      run-sonarqube-scan: false
+      test-command: npm run test:coverage
+      build-command: npm run build
 
   container:
     name: Build and publish image
@@ -75,4 +73,4 @@ jobs:
       aws-account-id: ${{ vars.AWS_ECR_ROLE_ACCOUNT_ID }}
       aws-role: ${{ vars.AWS_ECR_ROLE_NAME }}
       platforms: linux
-      push-main-tag: false
+      is-release: true

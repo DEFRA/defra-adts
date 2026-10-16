@@ -14,7 +14,7 @@ describe('Healthcheck endpoint', () => {
   beforeAll(async () => {
     process.env.PORT = '3000'
     process.env.SESSION_SECRET = 'test-session-secret-with-at-least-32-characters'
-    process.env.SUBMISSIONS_SERVICE_URL = 'http://localhost:3100'
+    process.env.BACKEND_SERVICE_URL = 'http://localhost:3200'
     process.env.BACKEND_SERVICE_URL = 'http://localhost:3200/backend'
 
     server = await createServer()

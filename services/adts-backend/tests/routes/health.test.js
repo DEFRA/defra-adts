@@ -12,7 +12,7 @@ describe('Healthcheck endpoint', () => {
 
   beforeAll(async () => {
     process.env.PORT = '3200'
-    process.env.SUBMISSIONS_SERVICE_URL = 'http://localhost:3000/submissions'
+    process.env.SUBMISSIONS_SERVICE_URL = 'http://localhost:3100'
 
     server = await createServer()
   })

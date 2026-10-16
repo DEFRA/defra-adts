@@ -8,8 +8,8 @@ const submissionClientSchema = Joi.object({
 })
 
 const getClients = async () => {
-  const adapterBaseUrl = process.env.SUBMISSIONS_SERVICE_URL
-  const response = await fetch(`${adapterBaseUrl}/GetClients`)
+  const backendBaseUrl = process.env.BACKEND_SERVICE_URL
+  const response = await fetch(`${backendBaseUrl}/GetClients`)
   const clients = await response.json()
 
   return clients.map((client) => ({

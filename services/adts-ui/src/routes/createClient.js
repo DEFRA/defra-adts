@@ -15,8 +15,8 @@ const createClientSchema = Joi.object({
 })
 
 const getCounties = async () => {
-  const adapterBaseUrl = process.env.SUBMISSIONS_SERVICE_URL
-  const response = await fetch(`${adapterBaseUrl}/GetCounties`)
+  const backendBaseUrl = process.env.BACKEND_SERVICE_URL
+  const response = await fetch(`${backendBaseUrl}/GetCounties`)
 
   if (!response.ok) {
     throw new Error(`County lookup returned status: ${response.status}`)

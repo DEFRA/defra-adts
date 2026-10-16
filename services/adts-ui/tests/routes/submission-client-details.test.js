@@ -13,13 +13,13 @@ describe('Submission client details page', () => {
 
   beforeAll(async () => {
     process.env.SESSION_SECRET = 'test-session-secret-with-at-least-32-characters'
-    process.env.SUBMISSIONS_SERVICE_URL = 'http://localhost:3100'
+    process.env.BACKEND_SERVICE_URL = 'http://localhost:3200'
     server = await createServer()
   })
 
   beforeEach(() => {
     jest.spyOn(globalThis, 'fetch').mockImplementation(async (url) => {
-      expect(url).toBe('http://localhost:3100/GetClients')
+      expect(url).toBe('http://localhost:3200/GetClients')
       return new Response(JSON.stringify([
         { clientId: 101, name: 'Acme Farm' },
         { clientId: '102', name: 'Green Acres' }
@@ -55,7 +55,7 @@ describe('Submission client details page', () => {
     expect(response.payload).toContain('href="/assets/css/accessible-autocomplete.min.css"')
     expect(response.payload).toContain('<option value="101">Acme Farm</option>')
     expect(response.payload).toContain('<option value="102">Green Acres</option>')
-    expect(globalThis.fetch).toHaveBeenCalledWith('http://localhost:3100/GetClients')
+    expect(globalThis.fetch).toHaveBeenCalledWith('http://localhost:3200/GetClients')
     expect(response.request.response.source.context.formDetails).toEqual({})
     expect(response.request.response.source.context.clientOptions).toEqual([
       { value: '', text: 'Select a client', selected: true },

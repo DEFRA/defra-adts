@@ -40,10 +40,11 @@ npm run lint
 npm run kill
 ```
 
-The UI expects `adts-submissions-service` on port 3100. Start it in a separate terminal:
+The UI expects `adts-backend` on port 3200. The backend expects `adts-submissions-service` on port 3100. Start both services in separate terminals:
 
 ```bash
-npm start --prefix services/adts-submissions-service
+PORT=3100 npm start --prefix services/adts-submissions-service
+PORT=3200 SUBMISSIONS_SERVICE_URL=http://localhost:3100 npm start --prefix services/adts-backend
 ```
 
 ## Running tests

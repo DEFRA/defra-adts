@@ -8,7 +8,7 @@ describe('Create client page', () => {
 
   beforeAll(async () => {
     process.env.SESSION_SECRET = 'test-session-secret-with-at-least-32-characters'
-    process.env.SUBMISSIONS_SERVICE_URL = 'http://localhost:3100'
+    process.env.BACKEND_SERVICE_URL = 'http://localhost:3200'
     server = await createServer()
   })
 
@@ -22,7 +22,7 @@ describe('Create client page', () => {
 
   test('renders the page with counties returned by the backend lookup', async () => {
     jest.spyOn(globalThis, 'fetch').mockImplementation(async (url) => {
-      expect(url).toBe('http://localhost:3100/GetCounties')
+      expect(url).toBe('http://localhost:3200/GetCounties')
       return new Response(JSON.stringify([
         { countyId: 1, name: 'Northshire' },
         { countyId: 2, name: 'Southshire' }
@@ -39,15 +39,15 @@ describe('Create client page', () => {
     expect(response.payload).toContain('id="cph" name="cph" type="text"')
     expect(response.payload).toContain('<option value="1">Northshire</option>')
     expect(response.payload).toContain('<option value="2">Southshire</option>')
-    expect(globalThis.fetch).toHaveBeenCalledWith('http://localhost:3100/GetCounties')
+    expect(globalThis.fetch).toHaveBeenCalledWith('http://localhost:3200/GetCounties')
   })
 
   test('stores the client details in submission form state and redirects to the first page', async () => {
     jest.spyOn(globalThis, 'fetch').mockImplementation(async (url) => {
-      if (url === 'http://localhost:3100/GetCounties') {
+      if (url === 'http://localhost:3200/GetCounties') {
         return new Response(JSON.stringify([]), { status: 200 })
       }
-      if (url === 'http://localhost:3100/GetClients') {
+      if (url === 'http://localhost:3200/GetClients') {
         return new Response(JSON.stringify([]), { status: 200 })
       }
       throw new Error(`Unexpected backend URL: ${url}`)

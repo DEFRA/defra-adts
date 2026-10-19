@@ -139,6 +139,19 @@ jobs:
           set -euo pipefail
           eval "${BUILD_COMMAND}"
 
+      - name: Set SonarQube Variables
+        shell: bash
+        run: |
+          ./scripts/get_sonarqube_properties.sh
+
+      - name: Check whether SonarQube project exists
+        id: sonar-project
+        shell: bash
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          ./scripts/find_sonarqube_project.sh
+
       - name: SonarQube Scan
         if: ${{ inputs.run-sonarqube-scan }}
         uses: sonarSource/sonarqube-scan-action@ba9859eae8dd6bd29e412f25ddbbef3d032000f4  # v8.2.2

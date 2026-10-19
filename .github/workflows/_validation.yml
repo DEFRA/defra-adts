@@ -72,6 +72,9 @@ jobs:
     permissions:
       contents: read
 
+    env:
+      WORKFLOW_SCRIPTS_DIR: .github/workflows/scripts
+
     defaults:
       run:
         shell: bash
@@ -142,7 +145,7 @@ jobs:
       - name: Set SonarQube Variables
         shell: bash
         run: |
-          ./scripts/get_sonarqube_properties.sh
+          ${WORKFLOW_SCRIPTS_DIR}/get_sonarqube_properties.sh
 
       - name: Check whether SonarQube project exists
         id: sonar-project
@@ -150,7 +153,7 @@ jobs:
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
-          ./scripts/find_sonarqube_project.sh
+          ${WORKFLOW_SCRIPTS_DIR}/find_sonarqube_project.sh
 
       - name: SonarQube Scan
         if: ${{ inputs.run-sonarqube-scan }}

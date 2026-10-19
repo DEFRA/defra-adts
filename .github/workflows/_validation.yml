@@ -73,7 +73,7 @@ jobs:
       contents: read
 
     env:
-      WORKFLOW_SCRIPTS_DIR: .github/workflows/scripts
+      WORKFLOW_SCRIPTS_DIR: ../../.github/workflows/scripts
 
     defaults:
       run:
@@ -145,6 +145,7 @@ jobs:
       - name: Set SonarQube Variables
         shell: bash
         run: |
+          pwd
           ${WORKFLOW_SCRIPTS_DIR}/get_sonarqube_properties.sh
 
       - name: Check whether SonarQube project exists

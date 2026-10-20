@@ -34,7 +34,7 @@ jobs:
     permissions:
       contents: read
 
-    secrets: inherit
+#    secrets: inherit
 
     with:
       service-name: adts-backend

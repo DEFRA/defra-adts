@@ -142,79 +142,12 @@ jobs:
           set -euo pipefail
           eval "${BUILD_COMMAND}"
 
-      - name: Set SonarQube Variables
-        shell: bash
-        run: |
-          pwd
-          # ${WORKFLOW_SCRIPTS_DIR}/get_sonarqube_properties.sh
-          PROPERTIES_FILE="sonar-project.properties"
-          
-          SONAR_PROJECT_KEY=$(grep '^sonar.projectKey=' "$PROPERTIES_FILE" | cut -d'=' -f2-)
-          SONAR_ORGANIZATION=$(grep '^sonar.organization=' "$PROPERTIES_FILE" | cut -d'=' -f2-)
-          SONAR_PROJECT_NAME=$(grep '^sonar.projectName=' "$PROPERTIES_FILE" | cut -d'=' -f2-)
-          
-          echo "SONAR_PROJECT_KEY=${SONAR_PROJECT_KEY}" >> "$GITHUB_ENV"
-          echo "SONAR_ORGANIZATION=${SONAR_ORGANIZATION}" >> "$GITHUB_ENV"
-          echo "SONAR_PROJECT_NAME=${SONAR_PROJECT_NAME}" >> "$GITHUB_ENV"
-
-      - name: Check whether SonarQube project exists
-        id: sonar-project
-        shell: bash
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_PROJECT_KEY: ${{ env.SONAR_PROJECT_KEY }}
-          SONAR_ORGANIZATION: ${{ env.SONAR_ORGANIZATION }}
-        run: |
-          echo Project Key ${SONAR_PROJECT_KEY}
-          HTTP_STATUS=$(curl --request GET \
-          --silent \
-          --output /dev/null \
-          --write-out "%{http_code}" \
-          --header "Authorization: Bearer ${SONAR_TOKEN}" \
-          "https://sonarcloud.io/api/projects/search?organization=${SONAR_ORGANIZATION}&projects=${SONAR_PROJECT_KEY}")
-          
-          if [[ "${HTTP_STATUS}" != "200" ]]; then
-            echo "SonarQube API returned HTTP ${HTTP_STATUS}"
-            exit 1
-          fi
-          
-          RESPONSE=$(curl \
-          --silent \
-          --fail \
-          --header "Authorization: Bearer ${SONAR_TOKEN}" \
-          "https://sonarcloud.io/api/projects/search?organization=${SONAR_ORGANIZATION}&projects=${SONAR_PROJECT_KEY}")
-
-          COUNT=$(echo "${RESPONSE}" | jq '.paging.total')
-
-          if [[ "${COUNT}" -eq 0 ]]; then
-          echo "exists=false" >> "${GITHUB_OUTPUT}"
-          echo "Project ${SONAR_PROJECT_KEY} does not exist."
-          else
-          echo "exists=true" >> "${GITHUB_OUTPUT}"
-          echo "Project ${SONAR_PROJECT_KEY} exists."
-          fi
-
-      - name: Create SonarQube project
-        if: steps.sonar-project.outputs.exists == 'false'
-        shell: bash
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_PROJECT_KEY: ${{ env.SONAR_PROJECT_KEY }}
-          SONAR_ORGANIZATION: ${{ env.SONAR_ORGANIZATION }}
-          SONAR_PROJECT_NAME: ${{ env.SONAR_PROJECT_NAME }}
-        run: |
-          echo "Creating SonarQube project ${SONAR_PROJECT_KEY}"
-          
-          curl \
-          --fail-with-body \
-          --request POST \
-          --header "Authorization: Bearer ${SONAR_TOKEN}" \
-          --header "Content-Type: application/x-www-form-urlencoded" \
-          --data-urlencode "organization=${SONAR_ORGANIZATION}" \
-          --data-urlencode "project=${SONAR_PROJECT_KEY}" \
-          --data-urlencode "name=${SONAR_PROJECT_NAME}" \
-          --data-urlencode "visibility=public" \
-          "https://sonarcloud.io/api/projects/create"
+      - name: Cache SonarQube packages
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.sonar/cache
+          key: ${{ runner.os }}-sonar
+          restore-keys: ${{ runner.os }}-sonar
 
       - name: SonarQube Scan
         if: ${{ inputs.run-sonarqube-scan }}

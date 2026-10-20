@@ -34,19 +34,19 @@ jobs:
     permissions:
       contents: read
 
-    secrets: inherit
-
     with:
       service-name: adts-backend
       service-directory: services/adts-backend
       node-version: "24"
       run-audit: false
-      run-lint: false
+      run-lint: true
       run-format-check: false
-      run-tests: false
-      run-sonarqube-scan: false
+      run-tests: true
+      run-sonarqube-scan: true
       test-command: npm run test:coverage
       build-command: npm run build
+    secrets:
+      SQ_ACCESS_TOKEN: ${{ secrets.BACKEND_SONAR_TOKEN }}
 
   container:
     name: Build and publish image

@@ -34,8 +34,6 @@ jobs:
     permissions:
       contents: read
 
-    secrets: inherit
-
     with:
       service-name: adts-ui
       service-directory: services/adts-ui
@@ -47,6 +45,8 @@ jobs:
       run-sonarqube-scan: true
       test-command: npm run test:coverage
       build-command: npm run build
+    secrets:
+      SQ_ACCESS_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
   container:
     name: Build and publish image

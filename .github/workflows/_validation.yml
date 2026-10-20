@@ -163,13 +163,14 @@ jobs:
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_PROJECT_KEY: ${{ env.SONAR_PROJECT_KEY }}
+          SONAR_ORGANIZATION: ${{ env.SONAR_ORGANIZATION }}
         run: |
           # ${WORKFLOW_SCRIPTS_DIR}/find_sonarqube_project.sh
           echo Project Key ${SONAR_PROJECT_KEY}
           HTTP_STATUS=$(curl --request GET \
           --silent \
           --header "Authorization: Bearer ${SONAR_TOKEN}" \
-          "https://sonarcloud.io/api/projects/search?projects=${SONAR_PROJECT_KEY}")
+          "https://sonarcloud.io/api/projects/search?organization=${SONAR_ORGANIZATION}&projects=${SONAR_PROJECT_KEY}")
           
           if [[ "${HTTP_STATUS}" != "200" ]]; then
             echo "SonarQube API returned HTTP ${HTTP_STATUS}"

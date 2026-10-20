@@ -147,7 +147,7 @@ jobs:
         run: |
           pwd
           # ${WORKFLOW_SCRIPTS_DIR}/get_sonarqube_properties.sh
-          PROPERTIES_FILE="services/${{ inputs.service-directory }}/sonar-project.properties"
+          PROPERTIES_FILE="sonar-project.properties"
           
           SONAR_PROJECT_KEY=$(grep '^sonar.projectKey=' "$PROPERTIES_FILE" | cut -d'=' -f2-)
           SONAR_ORGANIZATION=$(grep '^sonar.organization=' "$PROPERTIES_FILE" | cut -d'=' -f2-)

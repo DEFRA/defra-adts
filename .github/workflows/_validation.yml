@@ -61,6 +61,7 @@ on:
         default: "npm run build"
         type: string
 
+    secrets:
       sonar-token:
         description: SonarQube access token for the project
         required: true

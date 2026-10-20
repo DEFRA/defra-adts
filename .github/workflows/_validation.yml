@@ -194,6 +194,28 @@ jobs:
           echo "Project ${SONAR_PROJECT_KEY} exists."
           fi
 
+      - name: Create SonarQube project
+        if: steps.sonar-project.outputs.exists == 'false'
+        shell: bash
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_PROJECT_KEY: ${{ env.SONAR_PROJECT_KEY }}
+          SONAR_ORGANIZATION: ${{ env.SONAR_ORGANIZATION }}
+          SONAR_PROJECT_NAME: ${{ env.SONAR_PROJECT_NAME }}
+        run: |
+          echo "Creating SonarQube project ${SONAR_PROJECT_KEY}"
+          
+          curl \
+          --fail-with-body \
+          --request POST \
+          --header "Authorization: Bearer ${SONAR_TOKEN}" \
+          --header "Content-Type: application/x-www-form-urlencoded" \
+          --data-urlencode "organization=${SONAR_ORGANIZATION}" \
+          --data-urlencode "project=${SONAR_PROJECT_KEY}" \
+          --data-urlencode "name=${SONAR_PROJECT_NAME}" \
+          --data-urlencode "visibility=public" \
+          "https://sonarcloud.io/api/projects/create"
+
       - name: SonarQube Scan
         if: ${{ inputs.run-sonarqube-scan }}
         uses: sonarSource/sonarqube-scan-action@ba9859eae8dd6bd29e412f25ddbbef3d032000f4  # v8.2.2

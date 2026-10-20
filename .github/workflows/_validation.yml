@@ -171,7 +171,7 @@ jobs:
           --output /dev/null \
           --write-out "%{http_code}" \
           --header "Authorization: Bearer ${SONAR_TOKEN}" \
-          "https://api.sonarcloud.io/project-keys/${SONAR_PROJECT_KEY}")
+          "https://sonarcloud.io/api/projects/search?projects=${SONAR_PROJECT_KEY}")
           
           if [[ "${HTTP_STATUS}" != "200" ]]; then
             echo "SonarQube API returned HTTP ${HTTP_STATUS}"

@@ -166,33 +166,38 @@ jobs:
         run: |
           # ${WORKFLOW_SCRIPTS_DIR}/find_sonarqube_project.sh
           echo Project Key ${SONAR_PROJECT_KEY}
-          HTTP_STATUS=$(curl \
+          HTTP_STATUS=$(curl --request GET \
           --silent \
           --output /dev/null \
           --write-out "%{http_code}" \
           --header "Authorization: Bearer ${SONAR_TOKEN}" \
-          "https://sonarcloud.io/api/projects/search?projects=${SONAR_PROJECT_KEY}")
+          "https://api.sonarcloud.io/project-keys/${SONAR_PROJECT_KEY}")
           
           if [[ "${HTTP_STATUS}" != "200" ]]; then
-          echo "SonarQube API returned HTTP ${HTTP_STATUS}"
-          exit 1
-          fi
-          
-          RESPONSE=$(curl \
-          --silent \
-          --fail \
-          --header "Authorization: Bearer ${SONAR_TOKEN}" \
-          "https://sonarcloud.io/api/projects/search?projects=${SONAR_PROJECT_KEY}")
-          
-          COUNT=$(echo "${RESPONSE}" | jq '.paging.total')
-          
-          if [[ "${COUNT}" -eq 0 ]]; then
-          echo "exists=false" >> "${GITHUB_OUTPUT}"
-          echo "Project ${SONAR_PROJECT_KEY} does not exist."
+            echo "SonarQube API returned HTTP ${HTTP_STATUS}"
+              if [[ "${HTTP_STATUS}" = "404" ]]; then
+                echo "Project not found"
+              fi
+            exit 1
           else
-          echo "exists=true" >> "${GITHUB_OUTPUT}"
-          echo "Project ${SONAR_PROJECT_KEY} exists."
+            echo "Project already exists"
           fi
+          
+#          RESPONSE=$(curl \
+#          --silent \
+#          --fail \
+#          --header "Authorization: Bearer ${SONAR_TOKEN}" \
+#          "https://sonarcloud.io/api/projects/search?projects=${SONAR_PROJECT_KEY}")
+#
+#          COUNT=$(echo "${RESPONSE}" | jq '.paging.total')
+#
+#          if [[ "${COUNT}" -eq 0 ]]; then
+#          echo "exists=false" >> "${GITHUB_OUTPUT}"
+#          echo "Project ${SONAR_PROJECT_KEY} does not exist."
+#          else
+#          echo "exists=true" >> "${GITHUB_OUTPUT}"
+#          echo "Project ${SONAR_PROJECT_KEY} exists."
+#          fi
 
       - name: SonarQube Scan
         if: ${{ inputs.run-sonarqube-scan }}

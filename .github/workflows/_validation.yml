@@ -162,8 +162,10 @@ jobs:
         shell: bash
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_PROJECT_KEY: ${{ env.SONAR_PROJECT_KEY }}
         run: |
           # ${WORKFLOW_SCRIPTS_DIR}/find_sonarqube_project.sh
+          echo Project Key ${SONAR_PROJECT_KEY}
           HTTP_STATUS=$(curl \
           --silent \
           --output /dev/null \

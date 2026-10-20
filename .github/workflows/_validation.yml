@@ -63,7 +63,7 @@ on:
 
     secrets:
       SQ_ACCESS_TOKEN:
-        description: SonarQube access token for the project
+        description: Access token for the SonarQube project
         required: true
 
 jobs:

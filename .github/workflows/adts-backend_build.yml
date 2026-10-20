@@ -47,7 +47,8 @@ jobs:
       run-sonarqube-scan: true
       test-command: npm run test:coverage
       build-command: npm run build
-      sonar-token: ${{ secrets.SONAR_TOKEN }}
+    secrets:
+      SQ_ACCESS_TOKEN: ${{ secrets.BACKEND_SONAR_TOKEN }}
 
   container:
     name: Build and publish image

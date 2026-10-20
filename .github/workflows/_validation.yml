@@ -168,8 +168,6 @@ jobs:
           echo Project Key ${SONAR_PROJECT_KEY}
           HTTP_STATUS=$(curl --request GET \
           --silent \
-          --output /dev/null \
-          --write-out "%{http_code}" \
           --header "Authorization: Bearer ${SONAR_TOKEN}" \
           "https://sonarcloud.io/api/projects/search?projects=${SONAR_PROJECT_KEY}")
           

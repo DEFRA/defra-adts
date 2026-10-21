@@ -30,12 +30,12 @@ jobs:
         uses: actions/setup-node@v7
         with:
           node-version: "24"
-          cache: npm
-          cache-dependency-path: |
-            package-lock.json
-            services/adts-ui/package-lock.json
-            services/adts-backend/package-lock.json
-            services/adts-submissions-service/package-lock.json
+#          cache: npm
+#          cache-dependency-path: |
+#            package-lock.json
+#            services/adts-ui/package-lock.json
+#            services/adts-backend/package-lock.json
+#            services/adts-submissions-service/package-lock.json
 
       - name: Install root dependencies
         run: npm ci

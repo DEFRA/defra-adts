@@ -38,12 +38,12 @@ jobs:
         id: filter
         uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d  #v4.0.3
         with:
+#              - ".github/workflows/adts-services_build.yml"
+#              - ".github/workflows/_container_build.yml"
           filters: |
             ui_service:
               - 'services/adts-ui/**'
-              - ".github/workflows/adts-services_build.yml"
               - ".github/workflows/_validation.yml"
-              - ".github/workflows/_container_build.yml"
 
             backend_service:
               - 'services/adts-backend/**'

@@ -18,7 +18,7 @@
 
   .govuk-tag {
     flex: 0 0 auto;
-    background-color: #f47738;
+    background-color: govuk-colour("orange");
     color: govuk-colour("white");
   }
 }
@@ -61,8 +61,8 @@
   }
 
   &--current {
-    border-bottom: 5px solid #929900;
-    color: #859900;
+    border-bottom: 5px solid govuk-colour("green");
+    color: govuk-colour("green");
   }
 }
 

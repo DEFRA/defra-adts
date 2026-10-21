@@ -1,4 +1,4 @@
-name: Validate and build services
+name: Build
 
 on:
   push:
@@ -188,7 +188,7 @@ jobs:
     uses: ./.github/workflows/_e2e-tests.yml
 
   build_ui_container:
-    name: Build and publish UI container image
+    name: Publish UI container image
 
     needs:
       - detect_changes
@@ -197,13 +197,12 @@ jobs:
 
     if: |
       ${{
-        !cancelled() &&
-        needs.detect_changes.outputs.ui_service == 'true' &&
-        needs.validate_ui_service.result == 'success' &&
-        needs.e2e_testing.result == 'success'
+        !cancelled()
+        && needs.detect_changes.outputs.ui_service == 'true'
+        && needs.validate_ui_service.result == 'success'
+        && needs.e2e_testing.result == 'success'
+        && github.event_name != 'pull_request'
       }}
-#        github.event_name != 'pull_request'
-
     permissions:
       contents: read
       id-token: write
@@ -223,7 +222,7 @@ jobs:
       is-release: true
 
   build_backend_container:
-    name: Build and publish Backend container image
+    name: Publish Backend container image
 
     needs:
       - detect_changes
@@ -232,12 +231,12 @@ jobs:
 
     if: |
       ${{
-        !cancelled() &&
-        needs.detect_changes.outputs.backend_service == 'true' &&
-        needs.validate_backend_service.result == 'success' &&
-        needs.e2e_testing.result == 'success'
+        !cancelled()
+        && needs.detect_changes.outputs.backend_service == 'true'
+        && needs.validate_backend_service.result == 'success'
+        && eeds.e2e_testing.result == 'success'
+        && github.event_name != 'pull_request'
       }}
-#        github.event_name != 'pull_request'
 
     permissions:
       contents: read
@@ -258,7 +257,7 @@ jobs:
       is-release: true
 
   build_submissions_container:
-    name: Build and publish Submissions container image
+    name: Publish Submissions container image
 
     needs:
       - detect_changes
@@ -267,12 +266,12 @@ jobs:
 
     if: |
       ${{
-        !cancelled() &&
-        needs.detect_changes.outputs.submissions_service == 'true' &&
-        needs.validate_submissions_service.result == 'success' &&
-        needs.e2e_testing.result == 'success'
+        !cancelled()
+        && needs.detect_changes.outputs.submissions_service == 'true'
+        && needs.validate_submissions_service.result == 'success'
+        && needs.e2e_testing.result == 'success'
+        && github.event_name != 'pull_request'
       }}
-#        github.event_name != 'pull_request'
 
     permissions:
       contents: read

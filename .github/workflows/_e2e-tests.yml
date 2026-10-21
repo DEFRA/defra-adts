@@ -1,0 +1,80 @@
+name: End to End Testing
+
+on:
+  workflow_call:
+    inputs:
+      commit-sha:
+        description: Commit being validated
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  e2e:
+    name: Run Playwright E2E
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+
+    steps:
+      - name: Check out coordinated commit
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.commit-sha }}
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            services/adts-ui/package-lock.json
+            services/adts-backend/package-lock.json
+            services/adts-submissions-service/package-lock.json
+
+      - name: Install root dependencies
+        run: npm ci
+
+      - name: Install adts-ui dependencies
+        run: npm ci --prefix services/adts-ui
+
+      - name: Install adts-submissions-service dependencies
+        run: npm ci --prefix services/adts-submissions-service
+
+      - name: Install adts-backend dependencies
+        run: npm ci --prefix services/adts-backend
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Announce End to End test run
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          echo "Running end to end tests for:"
+          echo "${{ inputs.commit_sha }}"
+
+      - name: Run Playwright tests (Chromium)
+        run: npm run test:e2e:chromium
+
+      - name: Upload Playwright report on failure
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7
+
+      - name: Upload Playwright report on success (last 3 kept)
+        if: success()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-report-success
+          path: playwright-report/
+          retention-days: 3

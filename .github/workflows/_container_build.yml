@@ -3,6 +3,11 @@ name: ECR container build
 on:
   workflow_call:
     inputs:
+      commit-sha:
+        description: Commit to build
+        required: true
+        type: string
+
       service-name:
         description: Name of the service
         required: true
@@ -86,6 +91,7 @@ jobs:
       - name: Check out source code
         uses: actions/checkout@v7
         with:
+          ref: ${{ inputs.commit-sha }}
           persist-credentials: false
 
       - name: Validate container build inputs
@@ -220,10 +226,10 @@ jobs:
           exit 1
 
       # Push image to ECR.
-      - name: Push container image
-        run: |
-          echo "Image destination is ${{ fromJson(steps.metadata.outputs.json).tags[0] }}"
-          docker push ${{ fromJson(steps.metadata.outputs.json).tags[0] }}
+#      - name: Push container image
+#        run: |
+#          echo "Image destination is ${{ fromJson(steps.metadata.outputs.json).tags[0] }}"
+#          docker push ${{ fromJson(steps.metadata.outputs.json).tags[0] }}
 
       - name: Set immutable image reference
         id: result

@@ -147,9 +147,6 @@ jobs:
 
     uses: ./.github/workflows/_e2e-tests.yml
 
-    with:
-      commit-sha: ${{ github.sha }}
-
   build_ui_container:
     name: Build and publish UI container image
 
@@ -175,7 +172,6 @@ jobs:
     uses: ./.github/workflows/_container_build.yml
 
     with:
-      commit-sha: ${{ github.sha }}
       service-name: adts-ui
       service-directory: services/adts-ui
       dockerfile: services/adts-ui/Dockerfile
@@ -211,7 +207,6 @@ jobs:
     uses: ./.github/workflows/_container_build.yml
 
     with:
-      commit-sha: ${{ github.sha }}
       service-name: adts-backend
       service-directory: services/adts-backend
       dockerfile: services/adts-backend/Dockerfile

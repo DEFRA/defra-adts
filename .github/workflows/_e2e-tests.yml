@@ -2,11 +2,6 @@ name: End to End Testing
 
 on:
   workflow_call:
-    inputs:
-      commit-sha:
-        description: Commit being validated
-        required: true
-        type: string
 
 permissions:
   contents: read
@@ -23,7 +18,6 @@ jobs:
       - name: Check out coordinated commit
         uses: actions/checkout@v7
         with:
-          ref: ${{ inputs.commit-sha }}
           persist-credentials: false
 
       - name: Set up Node.js
@@ -51,14 +45,6 @@ jobs:
 
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
-
-      - name: Announce End to End test run
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          echo "Running end to end tests for:"
-          echo "${{ inputs.commit_sha }}"
 
       - name: Run Playwright tests (Chromium)
         run: npm run test:e2e:chromium

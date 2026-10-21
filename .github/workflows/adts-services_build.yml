@@ -45,7 +45,7 @@ jobs:
               - ".github/workflows/_container_build.yml"
 
             backend_service:
-               - 'services/adts-backend/**'
+              - 'services/adts-backend/**'
               - ".github/workflows/adts-services_build.yml"
               - ".github/workflows/_validation.yml"
               - ".github/workflows/_container_build.yml"

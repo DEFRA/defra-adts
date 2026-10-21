@@ -195,13 +195,13 @@ jobs:
       - validate_ui_service
       - e2e_testing
 
+#        && github.event_name != 'pull_request'
     if: |
       ${{
         !cancelled()
         && needs.detect_changes.outputs.ui_service == 'true'
         && needs.validate_ui_service.result == 'success'
         && needs.e2e_testing.result == 'success'
-        && github.event_name != 'pull_request'
       }}
     permissions:
       contents: read

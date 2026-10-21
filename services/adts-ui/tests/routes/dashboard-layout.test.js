@@ -23,7 +23,7 @@ describe('Dashboard Layout', () => {
 
   beforeAll(async () => {
     process.env.SESSION_SECRET = 'test-session-secret-with-at-least-32-characters'
-    process.env.SUBMISSIONS_SERVICE_URL = 'http://localhost:3100'
+    process.env.BACKEND_SERVICE_URL = 'http://localhost:3200'
     jest.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify([]), {
       status: 200,
       headers: { 'Content-Type': 'application/json' }

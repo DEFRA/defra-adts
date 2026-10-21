@@ -1,14 +1,15 @@
 import Joi from 'joi'
 
 const pageName = 'submission-01-client-details'
+const newClientOptionId = 'new-client'
 
 const submissionClientSchema = Joi.object({
   clientId: Joi.string().allow('').required()
 })
 
 const getClients = async () => {
-  const adapterBaseUrl = process.env.SUBMISSIONS_SERVICE_URL
-  const response = await fetch(`${adapterBaseUrl}/GetClients`)
+  const backendBaseUrl = process.env.BACKEND_SERVICE_URL
+  const response = await fetch(`${backendBaseUrl}/GetClients`)
   const clients = await response.json()
 
   return clients.map((client) => ({
@@ -17,8 +18,15 @@ const getClients = async () => {
   }))
 }
 
-const getClientOptions = (clients, selectedClientId) => [
+const getClientOptions = (clients, selectedClientId, newClient) => [
   { value: '', text: 'Select a client', selected: !selectedClientId },
+  ...(newClient
+    ? [{
+        value: newClientOptionId,
+        text: newClient.name || newClient.cph || 'New client',
+        selected: true
+      }]
+    : []),
   ...clients.map((client) => ({
     value: client.clientId,
     text: client.name,
@@ -26,11 +34,19 @@ const getClientOptions = (clients, selectedClientId) => [
   }))
 ]
 
-const getClientDetailsViewContext = (formDetails, clients) => ({
-  clientOptions: getClientOptions(clients, formDetails.client?.clientId || ''),
-  selectedClientName: formDetails.client?.name || '',
-  formDetails
-})
+const getClientDetailsViewContext = (formDetails, clients) => {
+  const isNewClient = Boolean(formDetails.client && !formDetails.client.clientId)
+
+  return {
+    clientOptions: getClientOptions(
+      clients,
+      isNewClient ? newClientOptionId : formDetails.client?.clientId || '',
+      isNewClient ? formDetails.client : undefined
+    ),
+    selectedClientName: formDetails.client?.name || '',
+    formDetails
+  }
+}
 
 const submissionFirstPage = (server, submissionFormStateKey) => {
   server.route([
@@ -70,7 +86,11 @@ const submissionFirstPage = (server, submissionFormStateKey) => {
           console.error('Error contacting backend server:', error.message)
         }
 
-        const selectedClient = clients.find((client) => client.clientId === request.payload.clientId)
+        const selectedClient = request.payload.clientId === newClientOptionId &&
+          formDetails.client &&
+          !formDetails.client.clientId
+          ? formDetails.client
+          : clients.find((client) => client.clientId === request.payload.clientId)
 
         request.yar.set(submissionFormStateKey, {
           ...formDetails,

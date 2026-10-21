@@ -31,6 +31,16 @@ webServer: [
     }
   },
   {
+    command: 'npm start --prefix services/adts-backend',
+    url: 'http://localhost:3200/health',
+    reuseExistingServer: !process.env.CI,
+    timeout: 60 * 1000,
+    env: {
+      PORT: '3200',
+      SUBMISSIONS_SERVICE_URL: 'http://localhost:3100'
+    }
+  },
+  {
     command: 'npm start --prefix services/adts-ui',
     url: 'http://localhost:3000',
     reuseExistingServer: !process.env.CI,
@@ -38,7 +48,7 @@ webServer: [
     env: {
       PORT: '3000',
       SESSION_SECRET: 'e2e-test-session-secret-with-at-least-32-characters',
-      SUBMISSIONS_SERVICE_URL: 'http://localhost:3100'
+      BACKEND_SERVICE_URL: 'http://localhost:3200'
     }
   }
 ],

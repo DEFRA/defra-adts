@@ -18,7 +18,7 @@ const results = (server) => {
       request.yar.touch()
 
       const queryParams = new URLSearchParams(request.query).toString()
-      const adapterUrl = `${process.env.SUBMISSIONS_SERVICE_URL}/submissions?${queryParams}`
+      const backendUrl = `${process.env.BACKEND_SERVICE_URL}/submissions?${queryParams}`
       const viewContext = {
         filteredValues: {
           client: request.query.client,
@@ -29,7 +29,7 @@ const results = (server) => {
       }
 
       try {
-        const response = await fetch(adapterUrl)
+        const response = await fetch(backendUrl)
 
         if (!response.ok) {
           throw new Error(`Backend responded with status: ${response.status}`)

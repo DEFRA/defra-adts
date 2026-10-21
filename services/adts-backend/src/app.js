@@ -3,6 +3,7 @@ import { fileURLToPath } from 'url'
 import Hapi from '@hapi/hapi'
 import Inert from '@hapi/inert'
 import Joi from 'joi'
+import { constants } from 'http2'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -80,6 +81,39 @@ const createServer = async () => {
       }
     }
   })
+
+  const proxyGet = (path) => async (request, h) => {
+    const queryParams = new URLSearchParams(request.query).toString()
+    const url = `${process.env.SUBMISSIONS_SERVICE_URL}/${path}${queryParams ? `?${queryParams}` : ''}`
+
+    try {
+      const response = await fetch(url)
+      const payload = await response.json()
+      return h.response(payload).code(response.status)
+    } catch (error) {
+      console.error('Error contacting submissions service:', error.message)
+      return h.response({ error: 'Unable to reach submissions service' })
+        .code(constants.HTTP_STATUS_BAD_GATEWAY)
+    }
+  }
+
+  server.route([
+    {
+      method: 'GET',
+      path: '/GetClients',
+      handler: proxyGet('GetClients')
+    },
+    {
+      method: 'GET',
+      path: '/GetCounties',
+      handler: proxyGet('GetCounties')
+    },
+    {
+      method: 'GET',
+      path: '/submissions',
+      handler: proxyGet('submissions')
+    }
+  ])
 
   return server
 }

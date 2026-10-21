@@ -1,0 +1,95 @@
+{% extends "govuk/template.njk" %}
+
+{% from "govuk/components/header/macro.njk" import govukHeader %}
+{% from "macros/submissionProgress.njk" import submissionProgress %}
+
+{% block pageTitle %}Create a new client – ADTS{% endblock %}
+
+{% block head %}
+  <link rel="stylesheet" href="/assets/css/application.css">
+{% endblock %}
+
+{% block header %}
+  {{ govukHeader({
+    serviceName: "Animal Disease Testing Service",
+    serviceUrl: "/",
+    navigation: [
+      { text: "My Account", href: "#" },
+      { text: "Sign out", href: "#" }
+    ]
+  }) }}
+{% endblock %}
+
+{% block content %}
+  <div class="govuk-phase-banner app-phase-banner govuk-body-l">
+    <strong class="govuk-tag govuk-phase-banner__content__tag">BETA</strong>
+    <span class="govuk-phase-banner__text">
+      This is a new service – your <a class="govuk-link" href="#">feedback</a> will help us to improve it.
+    </span>
+  </div>
+
+  {{ submissionProgress(1, "/submission-01-client-details") }}
+
+  <h1 class="govuk-heading-l">1. Client details</h1>
+  <p class="govuk-body-l">Tell us about the owner (your client) of the animal or animals you want to test.</p>
+
+  <hr class="govuk-section-break govuk-section-break--visible app-client-details-divider">
+
+  <form method="post" action="/create-client">
+    <h2 class="govuk-heading-l">Client</h2>
+    <p class="govuk-body-l">Enter the details of your client - if you have the full CPH this can be used to retrieve the client record.</p>
+
+    <div class="govuk-form-group">
+      <label class="govuk-label" for="cph">CPH number eg 48/234/2348:</label>
+      <input class="govuk-input govuk-!-width-one-half" id="cph" name="cph" type="text" value="{{ client.cph or '' }}">
+    </div>
+
+    <div class="govuk-form-group">
+      <label class="govuk-label" for="name">Name:</label>
+      <input class="govuk-input govuk-!-width-one-half" id="name" name="name" type="text" value="{{ client.name or '' }}">
+    </div>
+
+    <div class="govuk-form-group">
+      <label class="govuk-label" for="farm-name">Farm name:</label>
+      <input class="govuk-input govuk-!-width-one-half" id="farm-name" name="farmName" type="text" value="{{ client.farmName or '' }}">
+    </div>
+
+    <fieldset class="govuk-fieldset">
+      <legend class="govuk-fieldset__legend">Address:</legend>
+      <div class="govuk-form-group">
+        <label class="govuk-label govuk-visually-hidden" for="address-line-1">Address line 1</label>
+        <input class="govuk-input govuk-!-width-one-half" id="address-line-1" name="addressLine1" type="text" autocomplete="address-line1" value="{{ client.addressLine1 or '' }}">
+      </div>
+      <div class="govuk-form-group">
+        <label class="govuk-label govuk-visually-hidden" for="address-line-2">Address line 2</label>
+        <input class="govuk-input govuk-!-width-one-half" id="address-line-2" name="addressLine2" type="text" autocomplete="address-line2" value="{{ client.addressLine2 or '' }}">
+      </div>
+      <div class="govuk-form-group">
+        <label class="govuk-label govuk-visually-hidden" for="address-line-3">Address line 3</label>
+        <input class="govuk-input govuk-!-width-one-half" id="address-line-3" name="addressLine3" type="text" autocomplete="address-line3" value="{{ client.addressLine3 or '' }}">
+      </div>
+    </fieldset>
+
+    <div class="govuk-form-group">
+      <label class="govuk-label" for="county">County:</label>
+      <select class="govuk-select govuk-!-width-one-half" id="county" name="county">
+        <option value=""{% if not client.county %} selected{% endif %}></option>
+        {% for county in countyOptions %}
+          <option value="{{ county.value }}"{% if county.selected %} selected{% endif %}>{{ county.text }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="govuk-form-group">
+      <label class="govuk-label" for="postcode">Postcode:</label>
+      <input class="govuk-input govuk-!-width-one-half" id="postcode" name="postcode" type="text" autocomplete="postal-code" value="{{ client.postcode or '' }}">
+    </div>
+
+    <button class="govuk-button" data-module="govuk-button" type="submit">Save</button>
+    <a class="govuk-link govuk-!-margin-left-3" href="/submission-01-client-details">Cancel</a>
+  </form>
+{% endblock %}
+
+{% block bodyEnd %}
+  <script type="module" src="/assets/js/all.js"></script>
+{% endblock %}

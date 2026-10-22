@@ -64,6 +64,39 @@ const getEditedClientDetails = async (selectedClient, clientDetails) => {
   }
 }
 
+const getClientFormHandler = async (request, h, submissionFormStateKey) => {
+  const submissionFormState = request.yar.get(submissionFormStateKey) || {}
+  const client = getClientDetails(submissionFormState)
+
+  if (request.query.mode === editMode && !client?.clientId) {
+    return h.redirect(clientDetailsPagePath)
+  }
+
+  return renderClientForm(h, client, request.query.mode)
+}
+
+const saveClientHandler = async (request, h, submissionFormStateKey) => {
+  const submissionFormState = request.yar.get(submissionFormStateKey) || {}
+  const mode = request.query.mode
+  const selectedClient = getClientDetails(submissionFormState)
+
+  if (mode === editMode && !selectedClient?.clientId) {
+    return h.redirect(clientDetailsPagePath)
+  }
+
+  const clientDetails = mode === editMode
+    ? await getEditedClientDetails(selectedClient, request.payload)
+    : request.payload
+
+  request.yar.set(
+    submissionFormStateKey,
+    withClientDetails(submissionFormState, clientDetails)
+  )
+  request.yar.touch()
+
+  return h.redirect(clientDetailsPagePath)
+}
+
 const createEditClient = (server, submissionFormStateKey) => {
   server.route([
     {
@@ -74,16 +107,7 @@ const createEditClient = (server, submissionFormStateKey) => {
           query: clientFormQuerySchema
         }
       },
-      handler: async (request, h) => {
-        const submissionFormState = request.yar.get(submissionFormStateKey) || {}
-        const client = getClientDetails(submissionFormState)
-
-        if (request.query.mode === editMode && !client?.clientId) {
-          return h.redirect(clientDetailsPagePath)
-        }
-
-        return renderClientForm(h, client, request.query.mode)
-      }
+      handler: (request, h) => getClientFormHandler(request, h, submissionFormStateKey)
     },
     {
       method: 'POST',
@@ -94,27 +118,7 @@ const createEditClient = (server, submissionFormStateKey) => {
           payload: createEditClientSchema
         }
       },
-      handler: async (request, h) => {
-        const submissionFormState = request.yar.get(submissionFormStateKey) || {}
-        const mode = request.query.mode
-        const selectedClient = getClientDetails(submissionFormState)
-
-        if (mode === editMode && !selectedClient?.clientId) {
-          return h.redirect(clientDetailsPagePath)
-        }
-
-        const clientDetails = mode === editMode
-          ? await getEditedClientDetails(selectedClient, request.payload)
-          : request.payload
-
-        request.yar.set(
-          submissionFormStateKey,
-          withClientDetails(submissionFormState, clientDetails)
-        )
-        request.yar.touch()
-
-        return h.redirect(clientDetailsPagePath)
-      }
+      handler: (request, h) => saveClientHandler(request, h, submissionFormStateKey)
     }
   ])
 }

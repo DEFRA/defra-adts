@@ -32,23 +32,14 @@ describe('Create/edit client page', () => {
       })
     })
 
-    const response = await server.inject({ method: 'GET', url: '/create-edit-client?mode=create' })
+    const response = await server.inject({ method: 'GET', url: '/create-client' })
 
     expect(response.statusCode).toBe(200)
-    expect(response.payload).toContain('<form method="post" action="/create-edit-client?mode=create">')
+    expect(response.payload).toContain('<form method="post" action="/create-client">')
     expect(response.payload).toContain('id="cph" name="cph" type="text"')
     expect(response.payload).toContain('<option value="1">Northshire</option>')
     expect(response.payload).toContain('<option value="2">Southshire</option>')
     expect(globalThis.fetch).toHaveBeenCalledWith('http://localhost:3200/GetCounties')
-  })
-
-  test.each([
-    '/create-edit-client',
-    '/create-edit-client?mode=unknown'
-  ])('requires a valid form mode for %s', async (url) => {
-    const response = await server.inject({ method: 'GET', url })
-
-    expect(response.statusCode).toBe(400)
   })
 
   test('stores the client details in submission form state and redirects to the first page', async () => {
@@ -64,7 +55,7 @@ describe('Create/edit client page', () => {
 
     const response = await server.inject({
       method: 'POST',
-      url: '/create-edit-client?mode=create',
+      url: '/create-client',
       payload: {
         cph: '48/234/2348',
         name: 'Jane Smith',
@@ -132,12 +123,12 @@ describe('Create/edit client page', () => {
 
     const editResponse = await server.inject({
       method: 'GET',
-      url: '/create-edit-client?mode=edit',
+      url: '/edit-client',
       headers: { cookie }
     })
 
     expect(editResponse.statusCode).toBe(200)
-    expect(editResponse.payload).toContain('<form method="post" action="/create-edit-client?mode=edit">')
+    expect(editResponse.payload).toContain('<form method="post" action="/edit-client">')
     expect(editResponse.payload).toContain('value="Old McDonald"')
     expect(editResponse.payload).toContain('value="Animal Farm"')
     expect(editResponse.payload).toContain('value="1 Farm Road"')
@@ -146,7 +137,7 @@ describe('Create/edit client page', () => {
 
     const saveResponse = await server.inject({
       method: 'POST',
-      url: '/create-edit-client?mode=edit',
+      url: '/edit-client',
       headers: { cookie },
       payload: {
         cph: '12/123/1234',
@@ -187,11 +178,11 @@ describe('Create/edit client page', () => {
     expect(revisitResponse.payload).toContain('2 Farm Road, New Farmsville')
     expect(revisitResponse.payload).toContain('Merseyside')
     expect(revisitResponse.payload).toContain('L21 7EC')
-    expect(revisitResponse.payload).toContain('href="/create-edit-client?mode=edit">Edit</a>')
+    expect(revisitResponse.payload).toContain('href="/edit-client">Edit</a>')
   })
 
   test('redirects to client selection when edit is opened without an existing selected client', async () => {
-    const response = await server.inject({ method: 'GET', url: '/create-edit-client?mode=edit' })
+    const response = await server.inject({ method: 'GET', url: '/edit-client' })
 
     expect(response.statusCode).toBe(302)
     expect(response.headers.location).toBe('/submission-01-client-details')

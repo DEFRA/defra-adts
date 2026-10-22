@@ -9,7 +9,8 @@ import staticAssets from './routes/assets.js'
 import health from './routes/health.js'
 import home from './routes/home.js'
 import results from './routes/results.js'
-import createEditClient from './routes/createEditClient.js'
+import createClient from './routes/createClient.js'
+import editClient from './routes/editClient.js'
 import selectClient from './routes/selectClient.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -61,7 +62,8 @@ const createServer = async () => {
 
   staticAssets(server)
   home(server)
-  createEditClient(server, SUBMISSION_FORM_STATE_KEY)
+  createClient(server, SUBMISSION_FORM_STATE_KEY)
+  editClient(server, SUBMISSION_FORM_STATE_KEY)
   selectClient(server, SUBMISSION_FORM_STATE_KEY)
   results(server)
   health(server)

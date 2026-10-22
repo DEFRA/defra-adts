@@ -24,52 +24,82 @@ const getClients = async () => {
   })
 }
 
+const getNewClientOption = (newClient) => ({
+  value: newClientOptionId,
+  text: newClient.name || newClient.cph || 'New client',
+  selected: true
+})
+
 const getClientOptions = (clients, selectedClientId, newClient, selectedClientName) => [
   { value: '', text: 'Select a client', selected: !selectedClientId },
-  ...(newClient
-    ? [{
-        value: newClientOptionId,
-        text: newClient.name || newClient.cph || 'New client',
-        selected: true
-      }]
-    : []),
-  ...clients.map((client) => ({
-    value: String(client.clientId),
-    text: String(client.clientId) === String(selectedClientId) && selectedClientName
-      ? selectedClientName
-      : client.name,
-    selected: String(client.clientId) === String(selectedClientId)
-  }))
+  ...(newClient ? [getNewClientOption(newClient)] : []),
+  ...clients.map((client) => {
+    const selected = String(client.clientId) === String(selectedClientId)
+
+    return {
+      value: String(client.clientId),
+      text: (selected && selectedClientName) || client.name,
+      selected
+    }
+  })
 ]
 
+const isNewClient = (clientDetails) => Boolean(clientDetails && !clientDetails.clientId)
+
+const getCountyText = (client) => {
+  if (client.countyName) {
+    return client.countyName
+  }
+
+  return Number.isNaN(Number(client.county)) ? client.county || '' : ''
+}
+
+const getSelectedClientView = (client) => {
+  if (!client?.clientId) {
+    return undefined
+  }
+
+  return {
+    ...client,
+    address: [client.addressLine1, client.addressLine2, client.addressLine3]
+      .filter(Boolean)
+      .join(', '),
+    county: getCountyText(client)
+  }
+}
+
 const getClientDetailsViewContext = (submissionFormState, clients) => {
-  const formData = submissionFormState.formData || {}
-  const isNewClient = Boolean(formData.clientDetails && !formData.clientDetails.clientId)
-  const selectedClient = formData.clientDetails
+  const selectedClient = submissionFormState.formData?.clientDetails
+  const newClient = isNewClient(selectedClient) ? selectedClient : undefined
 
   return {
     clientOptions: getClientOptions(
       clients,
-      isNewClient ? newClientOptionId : selectedClient?.clientId || '',
-      isNewClient ? selectedClient : undefined,
+      newClient ? newClientOptionId : selectedClient?.clientId || '',
+      newClient,
       selectedClient?.name
     ),
     selectedClientName: selectedClient?.name || '',
-    selectedClient: selectedClient?.clientId && {
-      ...selectedClient,
-      address: [
-        selectedClient.addressLine1,
-        selectedClient.addressLine2,
-        selectedClient.addressLine3
-      ].filter(Boolean).join(', '),
-      county: selectedClient.countyName || (
-        selectedClient.county && Number.isNaN(Number(selectedClient.county))
-          ? selectedClient.county
-          : ''
-      )
-    },
+    selectedClient: getSelectedClientView(selectedClient),
     submissionFormState
   }
+}
+
+const loadClients = async () => {
+  try {
+    return await getClients()
+  } catch (error) {
+    console.error('Error contacting backend server:', error.message)
+    return []
+  }
+}
+
+const findSelectedClient = (clients, clientId, currentClientDetails) => {
+  if (clientId === newClientOptionId && isNewClient(currentClientDetails)) {
+    return currentClientDetails
+  }
+
+  return clients.find((client) => String(client.clientId) === clientId)
 }
 
 const selectClient = (server, submissionFormStateKey) => {
@@ -79,13 +109,7 @@ const selectClient = (server, submissionFormStateKey) => {
       path: `/${pageName}`,
       handler: async (request, h) => {
         const submissionFormState = request.yar.get(submissionFormStateKey) || {}
-        let clients = []
-
-        try {
-          clients = await getClients()
-        } catch (error) {
-          console.error('Error contacting backend server:', error.message)
-        }
+        const clients = await loadClients()
 
         return h.view('select-client.njk', {
           ...getClientDetailsViewContext(submissionFormState, clients)
@@ -103,19 +127,12 @@ const selectClient = (server, submissionFormStateKey) => {
       handler: async (request, h) => {
         const submissionFormState = request.yar.get(submissionFormStateKey) || {}
         const formData = submissionFormState.formData || {}
-        let clients = []
-
-        try {
-          clients = await getClients()
-        } catch (error) {
-          console.error('Error contacting backend server:', error.message)
-        }
-
-        const selectedClient = request.payload.clientId === newClientOptionId &&
-          formData.clientDetails &&
-          !formData.clientDetails.clientId
-          ? formData.clientDetails
-          : clients.find((client) => String(client.clientId) === request.payload.clientId)
+        const clients = await loadClients()
+        const selectedClient = findSelectedClient(
+          clients,
+          request.payload.clientId,
+          formData.clientDetails
+        )
 
         request.yar.set(submissionFormStateKey, {
           ...submissionFormState,

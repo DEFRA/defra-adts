@@ -9,39 +9,53 @@
  * @journey Start submissions for Sick and Healthy animals
  */
 import { test, expect } from '@playwright/test'
-import { checkAccessibility } from '../utils/axe.js'
+import { DashboardPage } from '../pages/dashboard.page.js'
 
-test.describe('DASH-07 — Start submission for Sick animal', () => {
+test.describe('DASH-07 DASH-08 — Start submission for Sick and Healthy animals', () => {
+
+  /** @type {DashboardPage} */
+  let dashboard
+
   test.beforeEach(async ({ page }) => {
-    await page.goto('/')
+    dashboard = new DashboardPage(page)
+    await dashboard.goto()
   })
 
   test('AC1, AC2: Display Sick Animal Submission Button and test it is selectable', async ({ page }) => {
-    await page.getByRole('button', { name: 'Sick animal submission' }).isVisible()
-    await page.getByRole('button', { name: 'Sick animal submission' }).isEnabled()
+    await expect(dashboard.sickSubmission).toBeVisible()
+    await expect(dashboard.sickSubmission).toBeEnabled()
   })
-   test('AC3: Start Sick Animal Submission Journey', async ({ page }) => {
-    await page.getByRole('button', { name: 'Sick animal submission' }).click()
+  test('AC3: Start Sick Animal Submission Journey', async ({ page }) => {
+    //await expect(dashboard.sickSubmission).click
+    await dashboard.sickSubmission.click()
     await expect(page).toHaveURL(/\/submission-01-client-details/)
-  })
-
-
-})
-
-test.describe('DASH-08 — Start submission for Healthy animal', () => {
-  test.beforeEach(async ({ page }) => {
-    await page.goto('/')
   })
 
   test('AC1, AC2: Display Healthy Animal Submission Button and test it is selectable', async ({ page }) => {
-    await page.getByRole('button', { name: 'Healthy animal submission' }).isVisible()
-    await page.getByRole('button', { name: 'Healthy animal submission' }).isEnabled()
+    await expect(dashboard.healthySubmission).toBeVisible()
+    await expect(dashboard.healthySubmission).toBeEnabled()
   })
-  
+
   test('AC3: Start Healthy Animal Submission Journey', async ({ page }) => {
-    await page.getByRole('button', { name: 'Healthy animal submission' }).click()
+    await dashboard.healthySubmission.click()
     await expect(page).toHaveURL(/\/submission-01-client-details/)
   })
 
+  test('Accessibility: all filter controls are reachable by keyboard', async ({ page }) => {
+    // Accessibility for the whole page covered in dash-02-filter-persistence.spec.js test
+    //keyboard accessibility for sick submission button
+    const sickSubmissionButton = dashboard.sickSubmission
+    await sickSubmissionButton.focus()
+    await expect(sickSubmissionButton).toBeFocused()
+
+    //keyboard accessibility for healthy submission button
+    const healthySubmissionButton = dashboard.healthySubmission
+    await healthySubmissionButton.focus()
+    await expect(healthySubmissionButton).toBeFocused()
+  })
 
 })
+
+
+
+

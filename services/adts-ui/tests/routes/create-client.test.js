@@ -163,6 +163,7 @@ describe('Create client page', () => {
     const updatedClient = revisitResponse.request.response.source.context.submissionFormState.formData.clientDetails
     expect(updatedClient).toEqual({
       ...selectedClient,
+      clientId: '101',
       name: 'Old McDonald Updated',
       farmName: 'New Animal Farm',
       addressLine1: '2 Farm Road',

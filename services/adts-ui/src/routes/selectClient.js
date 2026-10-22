@@ -17,6 +17,7 @@ const getClients = async () => {
 
     return {
       ...client,
+      clientId: String(client.clientId),
       name: client.name,
       ...(county === undefined || county === null ? {} : { county: String(county) })
     }

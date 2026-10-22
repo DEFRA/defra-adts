@@ -10,24 +10,24 @@
 
 ## Requirement Completeness
 
-- [ ] CHK001 Are all eight stages clearly distinguished as pre-submission stages or post-submission document access? [Completeness, Spec §FR-001–FR-002, FR-017]
-- [ ] CHK002 Does the draft journey define how a user finds a saved draft when returning in a new session, not only how a known draft is retrieved? [Gap, Spec §FR-009, Contract §`getDraft`]
-- [ ] CHK003 Are the approved ADTS/APHA field definitions identified or explicitly tracked as a prerequisite for defining required answers and validation? [Dependency, Spec §FR-003, FR-016]
-- [ ] CHK004 Are requirements for obtaining every named lookup dataset represented, including client, county, species, animal-detail, and test information? [Completeness, Contract §`getClients`, `getCounties`, `getSpecies`, `getAnimalDetails`, `getTests`]
+- [x] CHK001 Are all eight stages clearly distinguished as pre-submission stages or post-submission document access? [Completeness, Spec §FR-001–FR-002, FR-017]
+- [x] CHK002 Does the draft journey define how a user finds a saved draft when returning in a new session, not only how a known draft is retrieved? [Gap, Spec §FR-009, Contract §`getDraft`]
+- [x] CHK003 Are the approved ADTS/APHA field definitions identified or explicitly tracked as a prerequisite for defining required answers and validation? [Dependency, Spec §FR-003, FR-016]
+- [x] CHK004 Are requirements for obtaining every named lookup dataset represented, including client, county, species, animal-detail, and test information? [Completeness, Contract §`getClients`, `getCounties`, `getSpecies`, `getAnimalDetails`, `getTests`]
 
 ## Requirement Clarity
 
-- [ ] CHK005 Is the exact point at which each page's answers become a saved draft unambiguous, including whether a failed save leaves the user on the current page? [Clarity, Plan §Constraints, Contract §Cross-cutting behavior]
-- [ ] CHK006 Are the inputs, outputs, and user-relevant failure outcomes sufficiently defined for `createUpdateDraft` and `getDraft`? [Clarity, Contract §`createUpdateDraft`, §`getDraft`]
-- [ ] CHK007 Is the information `getAnimalDetails` supplies distinguished clearly from animal information entered by the user? [Ambiguity, Contract §`getAnimalDetails`]
-- [ ] CHK008 Is the meaning of “required print documents” defined sufficiently to identify which documents users must access after submission? [Ambiguity, Spec §FR-010, Key Entities]
+- [x] CHK005 Is the exact point at which each page's answers become a saved draft unambiguous, including whether a failed save leaves the user on the current page? [Clarity, Plan §Constraints, Contract §Cross-cutting behavior]
+- [x] CHK006 Are the inputs, outputs, and user-relevant failure outcomes sufficiently defined for `createUpdateDraft` and `getDraft`? [Clarity, Contract §`createUpdateDraft`, §`getDraft`]
+- [x] CHK007 Is the information `getAnimalDetails` supplies distinguished clearly from animal information entered by the user? [Ambiguity, Contract §`getAnimalDetails`]
+- [x] CHK008 Is the meaning of “required print documents” defined sufficiently to identify which documents users must access after submission? [Ambiguity, Spec §FR-010, Key Entities]
 
 ## Requirement Consistency
 
-- [ ] CHK009 Are the requirements for mandatory pre-submission stages consistent with the rule that Print documents follows successful submission? [Consistency, Spec §FR-001–FR-002, FR-017]
-- [ ] CHK010 Are the one-species-per-submission and multiple-animals-per-submission rules consistent across animal details, clinical history, test selection, and review? [Consistency, Spec §FR-014, User Story 1]
-- [ ] CHK011 Are “tests,” “test kits,” and “basket items” used consistently enough to distinguish selectable tests from the mandatory orderable kit items? [Terminology, Spec §FR-004–FR-007, Contract §`getTests`]
-- [ ] CHK012 Are draft status and submitted status defined consistently between the user-facing requirements and the backend method contract? [Consistency, Spec §FR-008–FR-011, Contract §`getDraft`, §`completeSubmission`]
+- [x] CHK009 Are the requirements for mandatory pre-submission stages consistent with the rule that Print documents follows successful submission? [Consistency, Spec §FR-001–FR-002, FR-017]
+- [x] CHK010 Are the one-species-per-submission and multiple-animals-per-submission rules consistent across animal details, clinical history, test selection, and review? [Consistency, Spec §FR-014, User Story 1]
+- [x] CHK011 Does the specification consistently describe tests as selectable items users add to a submission, with at least one test required? [Terminology, Spec §FR-004–FR-007, Contract §`getTests`]
+- [x] CHK012 Are draft status and submitted status defined consistently between the user-facing requirements and the backend method contract? [Consistency, Spec §FR-008–FR-011, Contract §`getDraft`, §`completeSubmission`]
 
 ## Acceptance Criteria Quality
 

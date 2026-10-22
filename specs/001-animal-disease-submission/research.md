@@ -33,8 +33,8 @@
 
 ### Complete-submission delivery and retries
 
-- **Decision**: Submit only after all pre-submission stages are complete. The backend passes the completed report and required kit order to the submissions service; the service posts it to LIMS. Use the stable draft/submission identifier as an idempotency key through the boundary.
-- **Rationale**: The submission service is the existing LIMS integration boundary, and stable identifiers make retry behavior explicit when a downstream response is lost.
+- **Decision**: Submit only after all pre-submission stages are complete. The backend passes the completed report and required test selection to the submissions service; the service posts it to LIMS. Use the stable backend-generated `draftId` as the idempotency key through the boundary. LIMS creates and returns the `submissionId` after successful submission; the UI does not need to know it.
+- **Rationale**: The submission service is the existing LIMS integration boundary. A stable draft ID makes retries explicit when a downstream response is lost, without requiring a LIMS submission ID before LIMS creates the submission.
 - **Alternatives considered**: Calling LIMS directly from the UI or backend was rejected because it bypasses the established service boundary. Treating a timeout as success was rejected because the UI must not claim submission without confirmation.
 - **Integration dependency**: The current adapter demonstrates GET `/submissions`, but no LIMS create-submission contract is present in the repository. Confirm the LIMS POST path, required payload, idempotency behavior, and returned document references before implementing the adapter.
 

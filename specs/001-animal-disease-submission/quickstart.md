@@ -5,7 +5,7 @@
 - Node.js 24.x and npm.
 - Dependencies installed for `services/adts-ui`, `services/adts-backend`, and `services/adts-submissions-service`.
 - The backend's own configured draft-storage dependency. The UI requires only a reachable backend service and has no DynamoDB configuration.
-- A LIMS test endpoint or deterministic mock that supports submission creation and stable idempotency keys.
+- A LIMS test endpoint or deterministic mock that supports submission creation, LIMS-generated submission IDs, and stable idempotency keys.
 - A configured `SESSION_SECRET` of at least 32 characters for the UI and service URLs:
   - UI `BACKEND_SERVICE_URL`
   - Backend `SUBMISSIONS_SERVICE_URL` and its own storage configuration
@@ -29,8 +29,8 @@ Configure backend-owned storage separately according to the backend service's de
 2. Complete the mandatory stages in order, add at least one test kit, enter a delivery address, and review the report.
 3. Verify the UI obtains form options through the appropriate lookup methods, and each successful progression calls `createUpdateDraft` with the complete form snapshot and saved page.
 4. Start a new browser session, call `getDraft` to reopen the draft, and verify the report and last saved page are restored from the backend.
-5. Submit the report using `completeSubmission` and verify the LIMS test double receives one report and kit order with a stable submission ID, with no payment request.
-6. Verify a confirmed submission displays document references; a failure must not display a success confirmation and must be safely retryable.
+5. Submit the report using `completeSubmission` and verify the LIMS test double receives one report and the selected tests with a stable draft ID as the idempotency key, then returns its LIMS-generated submission ID, with no payment request.
+6. Verify a confirmed submission displays document references without requiring the UI to know the submission ID; a failure must not display a success confirmation and must be safely retryable.
 7. Repeat with an empty basket, invalid report answers, unavailable kit, stale revision, backend draft-service outage, and LIMS outage. Ensure the user cannot bypass required steps and receives actionable errors without losing the last confirmed draft.
 
 ## Test commands

@@ -14,7 +14,6 @@ A user's in-progress report. The backend owns the durable draft; Yar may cache t
 | `revision` | Monotonic version of the persisted snapshot | Conditional writes reject stale revisions to prevent silent lost updates |
 | `createdAt` | Draft creation time | Set by backend |
 | `updatedAt` | Most recent successful save time | Set by backend |
-| `submissionId` | Stable identifier used to submit to LIMS | Created before first submit attempt and reused for retries |
 | `documentReferences` | References returned after successful submission | Populated only after confirmed submission; content/format follows LIMS contract |
 
 ## Report Data (`formData`)
@@ -39,7 +38,7 @@ No draft
        ├─ save conflict ─> draft unchanged; user reloads latest version
        └─ submit request ─> submitting
             ├─ confirmed by LIMS ─> submitted
-            └─ recoverable/failed response ─> retry or recover using same submissionId
+            └─ recoverable/failed response ─> retry or recover using the same draftId as the idempotency key
 ```
 
 Only confirmed successful saves advance `lastSavedPage` and `revision`. The UI must not show a progression as saved if the backend write fails.
@@ -53,7 +52,7 @@ The following persistence details describe the backend's implementation boundary
 - **Create draft**: write an item with backend-generated `draftId`, trusted `ownerId`, initial `formData`, `lastSavedPage`, `status`, and revision.
 - **List user's drafts**: query a user-keyed index, ordered by update time; do not scan the table.
 - **Load or update a draft**: fetch by `draftId`, then enforce owner equality. Rebuild and write the complete item with a condition requiring the trusted owner and expected revision; preserve server-managed fields such as `createdAt`.
-- **Submit**: transition state conditionally and reuse the stable `submissionId` for LIMS retries.
+- **Submit**: transition state conditionally and use the stable `draftId` as the idempotency key for LIMS retries. LIMS creates and returns the `submissionId` after successful submission; the UI does not need to receive or store it.
 - **Item size**: The complete snapshot must remain within DynamoDB's item-size quota. Reject oversized writes explicitly; revisit data shape if confirmed report fields approach the limit.
 - **Region behavior**: Use a single write region for optimistic revision checks unless the hosting platform explicitly requires multi-region writes; global-table last-writer-wins replication does not preserve cross-region optimistic locking.
 

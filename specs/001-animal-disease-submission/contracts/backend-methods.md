@@ -63,7 +63,7 @@ Completes submission of the fully validated report and mandatory test-kit order 
 
 - **Input**: Draft ID, current revision, and any final confirmation data required by the backend method contract.
 - **Behavior**: Submit the completed report through `adts-submissions-service` to LIMS, safely supporting retries without creating duplicate submissions. No payment is taken in this journey.
-- **Output**: Confirmed submission identifier/status and print-document references required for the final stage.
+- **Output**: Confirmed submission status and print-document references required for the final stage. The UI does not require the LIMS-generated submission identifier.
 - **Errors**: Incomplete report/order, revision or lifecycle conflict, or downstream failure. The UI must not show a success confirmation unless completion is confirmed.
 
 ## Cross-cutting behavior

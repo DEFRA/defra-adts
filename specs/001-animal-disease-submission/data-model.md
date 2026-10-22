@@ -17,46 +17,18 @@ For each page, record the field, user-facing label, requiredness, validation, so
 |---|---|---|---|---|
 | `clientId` | Client | Not specified | Search/select an existing client. The prompt says a user can search by client name, address, or CPH. Existing clients are loaded through `GetClients`; the UI enhances the select with accessible autocomplete. A result is presented with client name, farm name/address, county, postcode, and CPH as shown in the screenshot. | Screenshot and current implementation. The route accepts an empty selection, so the implementation does not currently enforce selecting a client before continuing. Whether selection should be mandatory remains unspecified. |
 
-The page heading is “1. Client details”; its introduction says “Tell us about the owner (your client) of the animal or animals you want to test.” The client search prompt is “Enter the name of your client, their address, or the County Parish Holding (CPH) eg 48/234/2348:”. A user can follow a separate link to Step 1a to enter new client details.
+The page heading is “1. Client details”; its introduction says “Tell us about the owner (your client) of the animal or animals you want to test.” The client search prompt is “Enter the name of your client, their address, or the County Parish Holding (CPH) eg 48/234/2348:”. Step 1 only selects an existing client returned by the backend (`GetClients`); it does not link to, or create/edit, clients. Creating or editing a client is a separate, standalone capability (see below) that is not part of the submission journey or its session state.
 
-### Step 1a: Enter new client details
+### Standalone client management (outside the submission journey)
 
-**Evidence**
+Authorised users can create or edit clients, but this is deliberately **not** wired into the submission pages. Step 1 only selects an existing client, which avoids pushing duplicate clients to the backend from within a submission.
 
-- Azure DevOps ticket: “Create a new client from Step 1” (ticket ID not supplied).
-- Screenshot supplied with the ticket.
-- Current implementation: `services/adts-ui/src/views/create-edit-client.njk`, `services/adts-ui/src/routes/createEditClient.js`, and `services/adts-ui/tests/routes/create-client.test.js`.
+- Current implementation: `services/adts-ui/src/routes/createClient.js`, `services/adts-ui/src/routes/editClient.js`, `services/adts-ui/src/routes/clientForm.js`, `services/adts-ui/src/views/create-edit-client.njk`, and `services/adts-ui/tests/routes/create-client.test.js`.
+- Routes: `/create-client` and `/edit-client/{clientId}` (the client is looked up from `GetClients`; unknown clients return 404).
+- These pages neither read nor write submission form state, show no submission progress, and redirect to `/` after saving.
+- Persistence is not implemented: the backend exposes no create/update client endpoint, so the POST handlers validate the payload and carry a TODO.
 
-| Field | User-facing label | Requiredness | Validation / notes | Evidence and status |
-|---|---|---|---|---|
-| `cph` | CPH number eg 48/234/2348 | Optional | Format and validation rules are not specified by the ticket. | Ticket explicitly says optional; shown in screenshot and implemented. |
-| `name` | Name | Not specified | Ticket says to capture it; whether blank is allowed is not specified. Current Joi schema allows blank. | Ticket, screenshot, and implementation. |
-| `farmName` | Farm name | Not specified | Whether blank is allowed is not specified. Current Joi schema allows blank. | Ticket, screenshot, and implementation. |
-| `addressLine1` | Address line 1 | Not specified | Ticket names address; screenshot and implementation provide three address lines. Whether each line is optional or required is not specified. | Ticket, screenshot, and implementation. |
-| `addressLine2` | Address line 2 | Not specified | Whether blank is allowed is not specified. Current Joi schema allows blank. | Screenshot and implementation; ticket does not specify address-line count. |
-| `addressLine3` | Address line 3 | Not specified | Whether blank is allowed is not specified. Current Joi schema allows blank. | Screenshot and implementation; ticket does not specify address-line count. |
-| `county` | County | Not specified | County options are loaded from the backend; whether a selection is required is not specified. Current Joi schema allows blank. | Ticket, screenshot, and implementation. |
-| `postcode` | Postcode | Not specified | Format and whether blank is allowed are not specified. Current Joi schema allows blank. | Ticket, screenshot, and implementation. |
-
-**Acceptance behavior and implementation evidence**
-
-| Acceptance criterion | Requirement captured | Current implementation evidence | Status / open question |
-|---|---|---|---|
-| AC1: When no client is found, the user can enter new client details. | Capture optional CPH, name, farm name, address, county, and postcode. | The page presents these inputs; address is represented by three lines. The POST route validates each value as a string but allows empty strings. | Fields are present. Requiredness other than optional CPH and field-specific validation are unspecified by the ticket. |
-| AC2: After the new client details are saved, return to Step 1 with that client selected for the submission. | Return to `/submission-01-client-details` with the entered client details selected. | The POST route stores the entered details in Yar submission form state. The first-page route displays them as the selected `new-client` option. | This is submission form data, not creation of a durable client record. The flow does not call a `createClient` endpoint; whether a third party later creates or deduplicates a client is outside this form's responsibility. |
-
-### Edit selected client details
-
-**Evidence**
-
-- Azure DevOps ticket: “SUB-03 - Edit selected client details”.
-- Screenshots supplied with the ticket.
-- Current implementation: `services/adts-ui/src/routes/selectClient.js`, `services/adts-ui/src/routes/createEditClient.js`, `services/adts-ui/src/views/select-client.njk`, and `services/adts-ui/src/views/create-edit-client.njk`.
-
-| Acceptance criterion | Requirement captured | Implementation behavior |
-|---|---|---|
-| AC1: When a selected client is edited, pre-populate the edit form with its existing details. | Reuse the client fields above; keep the existing client selected while editing. | `/create-edit-client?mode=edit` reads the selected client's details from the submission form state and populates the form, including the county selection. |
-| AC2: When the user updates name, farm, address, county, or postcode and saves, the selected client details are updated and persisted. | Save the edited details without turning an existing client into a new client. | The edit POST replaces those values in the session's submission form state while preserving `clientId`; the client summary and selected option show the updated values on return to Step 1. This updates this submission's selected client data; it does not update a durable client record. |
+Fields (all optional strings; unspecified validation is not inferred): `cph`, `name`, `farmName`, `addressLine1`, `addressLine2`, `addressLine3`, `county` (displayed as returned by the backend; blank if absent), `postcode`.
 
 ## Submission Draft
 
@@ -82,27 +54,19 @@ Concrete field names and validation are captured incrementally in the living fie
 {
   "formData": {
     "clientDetails": {
-      "clientId": "",
-      "cph": "",
-      "name": "",
-      "farmName": "",
-      "addressLine1": "",
-      "addressLine2": "",
-      "addressLine3": "",
-      "county": "",
-      "postcode": ""
+      "clientId": ""
     }
   }
 }
 ```
 
-`clientId` identifies a selected existing client and is empty for a client entered through Step 1a. `county` stores the selected county option value (county ID); the county name is presentation data obtained from the county lookup, not a separate submitted client field. The form also retains the source client's `countyId` and a looked-up `countyName` in session state for displaying the selected client; these are derived/lookup values and are not part of the canonical `clientDetails` snapshot above.
+`clientId` identifies the selected existing client; a submission can only reference an existing client. Only the `clientId` is persisted. Display details (name, farm, address, county, postcode, CPH) are read from the client record returned by `GetClients` each time they are shown and are never copied into the submission. The backend returns fully formed client records, so the UI makes no separate county lookup.
 
 The UI stores this object in the Yar value keyed by `submissionFormState`, under `formData.clientDetails`. Each submission page should preserve the existing `submissionFormState` properties and update only its own section of `formData`.
 
 | Concept | Cardinality | Validation / notes |
 |---|---:|---|
-| `clientDetails` | One per report | Field-level requiredness and validation are listed under Step 1 and Step 1a above; do not infer unspecified requirements. |
+| `clientDetails` | One per report | Field-level requiredness and validation are listed under Step 1 above; do not infer unspecified requirements. |
 | Species | One per report | Required; all animals in the report must match it |
 | Animal | One or more per report | Each animal belongs to the single report species |
 | Clinical history | Report and/or animal-associated answers, according to approved field definitions | Required fields follow existing ADTS/APHA requirements |

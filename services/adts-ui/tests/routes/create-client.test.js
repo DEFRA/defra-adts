@@ -3,7 +3,38 @@ import createServer from '../../src/app.js'
 
 const getCookieHeader = (response) => response.headers['set-cookie']?.[0]?.split(';')[0] || ''
 
-describe('Create/edit client page', () => {
+const existingClient = {
+  clientId: 101,
+  name: 'Old McDonald',
+  farmName: 'Animal Farm',
+  addressLine1: '1 Farm Road',
+  addressLine2: 'Farmsville',
+  addressLine3: '',
+  county: 'Merseyside',
+  postcode: 'L20 6EC',
+  cph: '12/123/1234'
+}
+
+const clientPayload = {
+  cph: '48/234/2348',
+  name: 'Jane Smith',
+  farmName: 'Green Farm',
+  addressLine1: '1 Farm Lane',
+  addressLine2: 'Village',
+  addressLine3: '',
+  county: 'Northshire',
+  postcode: 'AB1 2CD'
+}
+
+const mockBackend = () =>
+  jest.spyOn(globalThis, 'fetch').mockImplementation(async (url) => {
+    if (url === 'http://localhost:3200/GetClients') {
+      return new Response(JSON.stringify([existingClient]), { status: 200 })
+    }
+    throw new Error(`Unexpected backend URL: ${url}`)
+  })
+
+describe('Standalone create/edit client pages', () => {
   let server
 
   beforeAll(async () => {
@@ -20,99 +51,61 @@ describe('Create/edit client page', () => {
     await server.stop()
   })
 
-  test('renders the page with counties returned by the backend lookup', async () => {
-    jest.spyOn(globalThis, 'fetch').mockImplementation(async (url) => {
-      expect(url).toBe('http://localhost:3200/GetCounties')
-      return new Response(JSON.stringify([
-        { countyId: 1, name: 'Northshire' },
-        { countyId: 2, name: 'Southshire' }
-      ]), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' }
-      })
-    })
+  test('renders the create page without a county lookup or submission journey', async () => {
+    mockBackend()
 
     const response = await server.inject({ method: 'GET', url: '/create-client' })
 
     expect(response.statusCode).toBe(200)
+    expect(response.payload).toContain('Create a new client')
     expect(response.payload).toContain('<form method="post" action="/create-client">')
     expect(response.payload).toContain('id="cph" name="cph" type="text"')
-    expect(response.payload).toContain('<option value="1">Northshire</option>')
-    expect(response.payload).toContain('<option value="2">Southshire</option>')
-    expect(globalThis.fetch).toHaveBeenCalledWith('http://localhost:3200/GetCounties')
+    expect(response.payload).toContain('id="county" name="county" type="text"')
+    expect(globalThis.fetch).not.toHaveBeenCalled()
+    expect(response.payload).not.toContain('Submission progress')
+    expect(response.payload).not.toContain('submission-01-client-details')
   })
 
-  test('stores the client details in submission form state and redirects to the first page', async () => {
-    jest.spyOn(globalThis, 'fetch').mockImplementation(async (url) => {
-      if (url === 'http://localhost:3200/GetCounties') {
-        return new Response(JSON.stringify([]), { status: 200 })
-      }
-      if (url === 'http://localhost:3200/GetClients') {
-        return new Response(JSON.stringify([]), { status: 200 })
-      }
-      throw new Error(`Unexpected backend URL: ${url}`)
-    })
+  test('create does not touch submission state and does not redirect into the submission', async () => {
+    mockBackend()
 
-    const response = await server.inject({
-      method: 'POST',
-      url: '/create-client',
-      payload: {
-        cph: '48/234/2348',
-        name: 'Jane Smith',
-        farmName: 'Green Farm',
-        addressLine1: '1 Farm Lane',
-        addressLine2: 'Village',
-        addressLine3: '',
-        county: '1',
-        postcode: 'AB1 2CD'
-      }
-    })
+    const response = await server.inject({ method: 'POST', url: '/create-client', payload: clientPayload })
 
     expect(response.statusCode).toBe(302)
-    expect(response.headers.location).toBe('/submission-01-client-details')
+    expect(response.headers.location).toBe('/')
 
-    const revisitResponse = await server.inject({
+    const stepOneResponse = await server.inject({
       method: 'GET',
       url: '/submission-01-client-details',
       headers: { cookie: getCookieHeader(response) }
     })
 
-    expect(revisitResponse.statusCode).toBe(200)
-    expect(revisitResponse.request.response.source.context.submissionFormState.formData.clientDetails).toEqual({
-      cph: '48/234/2348',
-      name: 'Jane Smith',
-      farmName: 'Green Farm',
-      addressLine1: '1 Farm Lane',
-      addressLine2: 'Village',
-      addressLine3: '',
-      county: '1',
-      postcode: 'AB1 2CD'
-    })
-    expect(revisitResponse.payload).toContain('<option value="new-client" selected>Jane Smith</option>')
+    expect(stepOneResponse.request.response.source.context.submissionFormState).toEqual({})
+    expect(stepOneResponse.request.response.source.context.clientOptions).toEqual([
+      { value: '', text: 'Select a client', selected: true },
+      { value: '101', text: 'Old McDonald', selected: false }
+    ])
   })
 
-  test('pre-populates the edit form and saves changes to the selected existing client', async () => {
-    const selectedClient = {
-      clientId: 101,
-      name: 'Old McDonald',
-      farmName: 'Animal Farm',
-      addressLine1: '1 Farm Road',
-      addressLine2: 'Farmsville',
-      addressLine3: '',
-      countyId: 2,
-      postcode: 'L20 6EC',
-      cph: '12/123/1234'
-    }
+  test('pre-populates the edit form for the client in the URL', async () => {
+    mockBackend()
 
-    jest.spyOn(globalThis, 'fetch').mockImplementation(async (url) => {
-      if (url === 'http://localhost:3200/GetCounties') {
-        return new Response(JSON.stringify([{ countyId: 2, name: 'Merseyside' }]), { status: 200 })
-      }
-      if (url === 'http://localhost:3200/GetClients') {
-        return new Response(JSON.stringify([selectedClient]), { status: 200 })
-      }
-      throw new Error(`Unexpected backend URL: ${url}`)
-    })
+    const response = await server.inject({ method: 'GET', url: '/edit-client/101' })
+
+    expect(response.statusCode).toBe(200)
+    expect(response.payload).toContain('Edit client details')
+    expect(response.payload).toContain('<form method="post" action="/edit-client/101">')
+    expect(response.payload).toContain('value="Old McDonald"')
+    expect(response.payload).toContain('value="Animal Farm"')
+    expect(response.payload).toContain('value="1 Farm Road"')
+    expect(response.payload).toContain('id="county" name="county" type="text" autocomplete="address-level1" value="Merseyside"')
+    expect(globalThis.fetch).not.toHaveBeenCalledWith('http://localhost:3200/GetCounties')
+    expect(response.payload).toContain('value="L20 6EC"')
+    expect(response.payload).not.toContain('Submission progress')
+  })
+
+  test('edit does not touch submission state and redirects away from the submission', async () => {
+    mockBackend()
 
     const selectionResponse = await server.inject({
       method: 'POST',
@@ -121,70 +114,45 @@ describe('Create/edit client page', () => {
     })
     const cookie = getCookieHeader(selectionResponse)
 
-    const editResponse = await server.inject({
+    const response = await server.inject({
+      method: 'POST',
+      url: '/edit-client/101',
+      headers: { cookie },
+      payload: { ...clientPayload, name: 'Changed Name' }
+    })
+
+    expect(response.statusCode).toBe(302)
+    expect(response.headers.location).toBe('/')
+
+    const stepOneResponse = await server.inject({
       method: 'GET',
-      url: '/edit-client',
+      url: '/submission-01-client-details',
       headers: { cookie }
     })
 
-    expect(editResponse.statusCode).toBe(200)
-    expect(editResponse.payload).toContain('<form method="post" action="/edit-client">')
-    expect(editResponse.payload).toContain('value="Old McDonald"')
-    expect(editResponse.payload).toContain('value="Animal Farm"')
-    expect(editResponse.payload).toContain('value="1 Farm Road"')
-    expect(editResponse.payload).toContain('<option value="2" selected>Merseyside</option>')
-    expect(editResponse.payload).toContain('value="L20 6EC"')
-
-    const saveResponse = await server.inject({
-      method: 'POST',
-      url: '/edit-client',
-      headers: { cookie },
-      payload: {
-        cph: '12/123/1234',
-        name: 'Old McDonald Updated',
-        farmName: 'New Animal Farm',
-        addressLine1: '2 Farm Road',
-        addressLine2: 'New Farmsville',
-        addressLine3: '',
-        county: '2',
-        postcode: 'L21 7EC'
-      }
-    })
-
-    expect(saveResponse.statusCode).toBe(302)
-    expect(saveResponse.headers.location).toBe('/submission-01-client-details')
-
-    const revisitResponse = await server.inject({
-      method: 'GET',
-      url: '/submission-01-client-details',
-      headers: { cookie: getCookieHeader(saveResponse) }
-    })
-
-    const updatedClient = revisitResponse.request.response.source.context.submissionFormState.formData.clientDetails
-    expect(updatedClient).toEqual({
-      ...selectedClient,
-      clientId: '101',
-      name: 'Old McDonald Updated',
-      farmName: 'New Animal Farm',
-      addressLine1: '2 Farm Road',
-      addressLine2: 'New Farmsville',
-      county: '2',
-      countyId: '2',
-      countyName: 'Merseyside',
-      postcode: 'L21 7EC'
-    })
-    expect(revisitResponse.payload).toContain('Old McDonald Updated')
-    expect(revisitResponse.payload).toContain('New Animal Farm')
-    expect(revisitResponse.payload).toContain('2 Farm Road, New Farmsville')
-    expect(revisitResponse.payload).toContain('Merseyside')
-    expect(revisitResponse.payload).toContain('L21 7EC')
-    expect(revisitResponse.payload).toContain('href="/edit-client">Edit</a>')
+    expect(stepOneResponse.request.response.source.context.submissionFormState.formData.clientDetails).toEqual({ clientId: '101' })
   })
 
-  test('redirects to client selection when edit is opened without an existing selected client', async () => {
+  test.each(['GET', 'POST'])('%s edit returns 404 for an unknown client', async (method) => {
+    mockBackend()
+
+    const response = await server.inject({ method, url: '/edit-client/999', payload: clientPayload })
+
+    expect(response.statusCode).toBe(404)
+  })
+
+  test('edit returns 404 when clients cannot be loaded', async () => {
+    jest.spyOn(globalThis, 'fetch').mockRejectedValue(new Error('Adapter unavailable'))
+    jest.spyOn(console, 'error').mockImplementation(() => {})
+
+    const response = await server.inject({ method: 'GET', url: '/edit-client/101' })
+
+    expect(response.statusCode).toBe(404)
+  })
+
+  test('the old session-based edit route no longer exists', async () => {
     const response = await server.inject({ method: 'GET', url: '/edit-client' })
 
-    expect(response.statusCode).toBe(302)
-    expect(response.headers.location).toBe('/submission-01-client-details')
+    expect(response.statusCode).toBe(404)
   })
 })

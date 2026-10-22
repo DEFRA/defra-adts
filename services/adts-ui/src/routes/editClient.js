@@ -1,30 +1,45 @@
-import {
-  clientDetailsPagePath,
-  clientDetailsSchema,
-  getClientDetails,
-  getEditedClientDetails,
-  renderClientForm,
-  withClientDetails
-} from './clientForm.js'
+import Joi from 'joi'
+import { getClients } from '../backend/clients.js'
+import { clientDetailsSchema, renderClientForm } from './clientForm.js'
 
-const pagePath = '/edit-client'
+const pagePath = '/edit-client/{clientId}'
 
-const editClient = (server, submissionFormStateKey) => {
+const clientParamsSchema = Joi.object({
+  clientId: Joi.string().required()
+})
+
+const findClient = async (clientId) => {
+  try {
+    const clients = await getClients()
+    return clients.find((client) => client.clientId === clientId)
+  } catch (error) {
+    console.error('Error contacting backend server:', error.message)
+    return undefined
+  }
+}
+
+// Standalone page: independent of the submission journey and its session state.
+const editClient = (server) => {
   server.route([
     {
       method: 'GET',
       path: pagePath,
+      options: {
+        validate: {
+          params: clientParamsSchema
+        }
+      },
       handler: async (request, h) => {
-        const submissionFormState = request.yar.get(submissionFormStateKey) || {}
-        const client = getClientDetails(submissionFormState)
+        const { clientId } = request.params
+        const client = await findClient(clientId)
 
-        if (!client?.clientId) {
-          return h.redirect(clientDetailsPagePath)
+        if (!client) {
+          return h.response('Client not found').code(404)
         }
 
         return renderClientForm(h, client, {
           isEdit: true,
-          formAction: pagePath
+          formAction: `/edit-client/${encodeURIComponent(clientId)}`
         })
       }
     },
@@ -33,25 +48,19 @@ const editClient = (server, submissionFormStateKey) => {
       path: pagePath,
       options: {
         validate: {
+          params: clientParamsSchema,
           payload: clientDetailsSchema
         }
       },
       handler: async (request, h) => {
-        const submissionFormState = request.yar.get(submissionFormStateKey) || {}
-        const selectedClient = getClientDetails(submissionFormState)
+        const client = await findClient(request.params.clientId)
 
-        if (!selectedClient?.clientId) {
-          return h.redirect(clientDetailsPagePath)
+        if (!client) {
+          return h.response('Client not found').code(404)
         }
 
-        const clientDetails = await getEditedClientDetails(selectedClient, request.payload)
-        request.yar.set(
-          submissionFormStateKey,
-          withClientDetails(submissionFormState, clientDetails)
-        )
-        request.yar.touch()
-
-        return h.redirect(clientDetailsPagePath)
+        // TODO: persist the changes once the backend exposes an update client endpoint.
+        return h.redirect('/')
       }
     }
   ])

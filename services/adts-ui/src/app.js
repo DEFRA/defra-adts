@@ -62,8 +62,8 @@ const createServer = async () => {
 
   staticAssets(server)
   home(server)
-  createClient(server, SUBMISSION_FORM_STATE_KEY)
-  editClient(server, SUBMISSION_FORM_STATE_KEY)
+  createClient(server)
+  editClient(server)
   selectClient(server, SUBMISSION_FORM_STATE_KEY)
   results(server)
   health(server)

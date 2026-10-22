@@ -1,61 +1,23 @@
 import Joi from 'joi'
+import { getClients } from '../backend/clients.js'
 
 const pageName = 'submission-01-client-details'
-const newClientOptionId = 'new-client'
 
 const submissionClientSchema = Joi.object({
   clientId: Joi.string().allow('').required()
 })
 
-const getClients = async () => {
-  const backendBaseUrl = process.env.BACKEND_SERVICE_URL
-  const response = await fetch(`${backendBaseUrl}/GetClients`)
-  const clients = await response.json()
-
-  return clients.map((client) => {
-    const county = client.county ?? client.countyId
-
-    return {
-      ...client,
-      clientId: String(client.clientId),
-      name: client.name,
-      ...(county === undefined || county === null ? {} : { county: String(county) })
-    }
-  })
-}
-
-const getNewClientOption = (newClient) => ({
-  value: newClientOptionId,
-  text: newClient.name || newClient.cph || 'New client',
-  selected: true
-})
-
-const getClientOptions = (clients, selectedClientId, newClient, selectedClientName) => [
+const getClientOptions = (clients, selectedClientId) => [
   { value: '', text: 'Select a client', selected: !selectedClientId },
-  ...(newClient ? [getNewClientOption(newClient)] : []),
-  ...clients.map((client) => {
-    const selected = String(client.clientId) === String(selectedClientId)
-
-    return {
-      value: String(client.clientId),
-      text: (selected && selectedClientName) || client.name,
-      selected
-    }
-  })
+  ...clients.map((client) => ({
+    value: client.clientId,
+    text: client.name,
+    selected: client.clientId === selectedClientId
+  }))
 ]
 
-const isNewClient = (clientDetails) => Boolean(clientDetails && !clientDetails.clientId)
-
-const getCountyText = (client) => {
-  if (client.countyName) {
-    return client.countyName
-  }
-
-  return Number.isNaN(Number(client.county)) ? client.county || '' : ''
-}
-
 const getSelectedClientView = (client) => {
-  if (!client?.clientId) {
+  if (!client) {
     return undefined
   }
 
@@ -63,22 +25,17 @@ const getSelectedClientView = (client) => {
     ...client,
     address: [client.addressLine1, client.addressLine2, client.addressLine3]
       .filter(Boolean)
-      .join(', '),
-    county: getCountyText(client)
+      .join(', ')
   }
 }
 
+// Only the clientId is persisted; display details always come from the backend client record.
 const getClientDetailsViewContext = (submissionFormState, clients) => {
-  const selectedClient = submissionFormState.formData?.clientDetails
-  const newClient = isNewClient(selectedClient) ? selectedClient : undefined
+  const selectedClientId = submissionFormState.formData?.clientDetails?.clientId || ''
+  const selectedClient = clients.find((client) => client.clientId === selectedClientId)
 
   return {
-    clientOptions: getClientOptions(
-      clients,
-      newClient ? newClientOptionId : selectedClient?.clientId || '',
-      newClient,
-      selectedClient?.name
-    ),
+    clientOptions: getClientOptions(clients, selectedClientId),
     selectedClientName: selectedClient?.name || '',
     selectedClient: getSelectedClientView(selectedClient),
     submissionFormState
@@ -92,14 +49,6 @@ const loadClients = async () => {
     console.error('Error contacting backend server:', error.message)
     return []
   }
-}
-
-const findSelectedClient = (clients, clientId, currentClientDetails) => {
-  if (clientId === newClientOptionId && isNewClient(currentClientDetails)) {
-    return currentClientDetails
-  }
-
-  return clients.find((client) => String(client.clientId) === clientId)
 }
 
 const selectClient = (server, submissionFormStateKey) => {
@@ -128,17 +77,13 @@ const selectClient = (server, submissionFormStateKey) => {
         const submissionFormState = request.yar.get(submissionFormStateKey) || {}
         const formData = submissionFormState.formData || {}
         const clients = await loadClients()
-        const selectedClient = findSelectedClient(
-          clients,
-          request.payload.clientId,
-          formData.clientDetails
-        )
+        const selectedClient = clients.find((client) => client.clientId === request.payload.clientId)
 
         request.yar.set(submissionFormStateKey, {
           ...submissionFormState,
           formData: {
             ...formData,
-            clientDetails: selectedClient
+            clientDetails: selectedClient ? { clientId: selectedClient.clientId } : undefined
           }
         })
         request.yar.touch()

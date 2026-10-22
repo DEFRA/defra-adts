@@ -1,27 +1,14 @@
-import {
-  clientDetailsPagePath,
-  clientDetailsSchema,
-  getClientDetails,
-  renderClientForm,
-  withClientDetails
-} from './clientForm.js'
+import { clientDetailsSchema, renderClientForm } from './clientForm.js'
 
 const pagePath = '/create-client'
 
-const createClient = (server, submissionFormStateKey) => {
+// Standalone page: independent of the submission journey and its session state.
+const createClient = (server) => {
   server.route([
     {
       method: 'GET',
       path: pagePath,
-      handler: async (request, h) => {
-        const submissionFormState = request.yar.get(submissionFormStateKey) || {}
-        const client = getClientDetails(submissionFormState)
-
-        return renderClientForm(h, client, {
-          isEdit: false,
-          formAction: pagePath
-        })
-      }
+      handler: (request, h) => renderClientForm(h, {}, { isEdit: false, formAction: pagePath })
     },
     {
       method: 'POST',
@@ -32,14 +19,8 @@ const createClient = (server, submissionFormStateKey) => {
         }
       },
       handler: (request, h) => {
-        const submissionFormState = request.yar.get(submissionFormStateKey) || {}
-        request.yar.set(
-          submissionFormStateKey,
-          withClientDetails(submissionFormState, request.payload)
-        )
-        request.yar.touch()
-
-        return h.redirect(clientDetailsPagePath)
+        // TODO: persist the new client once the backend exposes a create client endpoint.
+        return h.redirect('/')
       }
     }
   ])

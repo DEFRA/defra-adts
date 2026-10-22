@@ -11,7 +11,7 @@ For each page, record the field, user-facing label, requiredness, validation, so
 **Evidence**
 
 - Screenshot supplied for Step 1.
-- Current implementation: `services/adts-ui/src/routes/submissionFirstPage.js`, `services/adts-ui/src/views/select-client.njk`, and `services/adts-ui/tests/routes/submission-client-details.test.js`.
+- Current implementation: `services/adts-ui/src/routes/selectClient.js`, `services/adts-ui/src/views/select-client.njk`, and `services/adts-ui/tests/routes/submission-client-details.test.js`.
 
 | Field | User-facing label | Requiredness | Validation / notes | Evidence and status |
 |---|---|---|---|---|
@@ -51,7 +51,7 @@ The page heading is “1. Client details”; its introduction says “Tell us ab
 
 - Azure DevOps ticket: “SUB-03 - Edit selected client details”.
 - Screenshots supplied with the ticket.
-- Current implementation: `services/adts-ui/src/routes/submissionFirstPage.js`, `services/adts-ui/src/routes/createClient.js`, `services/adts-ui/src/views/select-client.njk`, and `services/adts-ui/src/views/create-edit-client.njk`.
+- Current implementation: `services/adts-ui/src/routes/selectClient.js`, `services/adts-ui/src/routes/createClient.js`, `services/adts-ui/src/views/select-client.njk`, and `services/adts-ui/src/views/create-edit-client.njk`.
 
 | Acceptance criterion | Requirement captured | Implementation behavior |
 |---|---|---|

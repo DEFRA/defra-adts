@@ -17,7 +17,6 @@ const getClients = async () => {
 
     return {
       ...client,
-      clientId: String(client.clientId),
       name: client.name,
       ...(county === undefined || county === null ? {} : { county: String(county) })
     }
@@ -34,11 +33,11 @@ const getClientOptions = (clients, selectedClientId, newClient, selectedClientNa
       }]
     : []),
   ...clients.map((client) => ({
-    value: client.clientId,
-    text: client.clientId === selectedClientId && selectedClientName
+    value: String(client.clientId),
+    text: String(client.clientId) === String(selectedClientId) && selectedClientName
       ? selectedClientName
       : client.name,
-    selected: client.clientId === selectedClientId
+    selected: String(client.clientId) === String(selectedClientId)
   }))
 ]
 
@@ -72,7 +71,7 @@ const getClientDetailsViewContext = (submissionFormState, clients) => {
   }
 }
 
-const submissionFirstPage = (server, submissionFormStateKey) => {
+const selectClient = (server, submissionFormStateKey) => {
   server.route([
     {
       method: 'GET',
@@ -115,7 +114,7 @@ const submissionFirstPage = (server, submissionFormStateKey) => {
           formData.clientDetails &&
           !formData.clientDetails.clientId
           ? formData.clientDetails
-          : clients.find((client) => client.clientId === request.payload.clientId)
+          : clients.find((client) => String(client.clientId) === request.payload.clientId)
 
         request.yar.set(submissionFormStateKey, {
           ...submissionFormState,
@@ -132,4 +131,4 @@ const submissionFirstPage = (server, submissionFormStateKey) => {
   ])
 }
 
-export default submissionFirstPage
+export default selectClient

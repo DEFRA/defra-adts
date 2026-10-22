@@ -1,7 +1,7 @@
 import Joi from 'joi'
 
 const pageName = 'create-client'
-const submissionFirstPage = '/submission-01-client-details'
+const clientDetailsPagePath = '/submission-01-client-details'
 
 const createClientSchema = Joi.object({
   cph: Joi.string().allow('').required(),
@@ -58,7 +58,7 @@ const createClient = (server, submissionFormStateKey) => {
         const client = getClientDetails(submissionFormState)
 
         if (!client?.clientId) {
-          return h.redirect(submissionFirstPage)
+          return h.redirect(clientDetailsPagePath)
         }
 
         return renderClientForm(h, client, true)
@@ -81,7 +81,7 @@ const createClient = (server, submissionFormStateKey) => {
         )
         request.yar.touch()
 
-        return h.redirect(submissionFirstPage)
+        return h.redirect(clientDetailsPagePath)
       }
     },
     {
@@ -97,7 +97,7 @@ const createClient = (server, submissionFormStateKey) => {
         const selectedClient = getClientDetails(submissionFormState)
 
         if (!selectedClient?.clientId) {
-          return h.redirect(submissionFirstPage)
+          return h.redirect(clientDetailsPagePath)
         }
 
         let counties = []
@@ -120,7 +120,7 @@ const createClient = (server, submissionFormStateKey) => {
         )
         request.yar.touch()
 
-        return h.redirect(submissionFirstPage)
+        return h.redirect(clientDetailsPagePath)
       }
     }
   ])

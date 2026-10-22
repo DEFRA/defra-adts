@@ -5,7 +5,7 @@
 {% from "govuk/components/button/macro.njk" import govukButton %}
 {% from "macros/submissionProgress.njk" import submissionProgress %}
 
-{% block pageTitle %}Client details – ADTS{% endblock %}
+{% block pageTitle %}Select a client – ADTS{% endblock %}
 
 {% block head %}
   <link rel="stylesheet" href="/assets/css/application.css">
@@ -52,6 +52,27 @@
       items: clientOptions
     }) }}
     <p class="govuk-body-l">Or you can <a class="govuk-link" href="/create-client">create a new client</a>.</p>
+    {% if selectedClient %}
+      <div class="govuk-inset-text">
+        <h2 class="govuk-heading-m">Selected client</h2>
+        <p class="govuk-body">{{ selectedClient.name }}</p>
+        {% if selectedClient.farmName %}
+          <p class="govuk-body">{{ selectedClient.farmName }}</p>
+        {% endif %}
+        {% if selectedClient.address %}
+          <p class="govuk-body">{{ selectedClient.address }}</p>
+        {% endif %}
+        {% if selectedClient.county or selectedClient.postcode %}
+          <p class="govuk-body">{{ selectedClient.county }}{% if selectedClient.county and selectedClient.postcode %}, {% endif %}{{ selectedClient.postcode }}</p>
+        {% endif %}
+        {% if selectedClient.cph %}
+          <p class="govuk-body">{{ selectedClient.cph }}</p>
+        {% endif %}
+        {% if selectedClient.clientId %}
+          <a class="govuk-link" href="/edit-client">Edit</a>
+        {% endif %}
+      </div>
+    {% endif %}
     {{ govukButton({
       text: "Continue"
     }) }}

@@ -66,7 +66,7 @@ describe('Submission client details page', () => {
     expect(response.payload).toContain('<option value="101">Acme Farm</option>')
     expect(response.payload).toContain('<option value="102">Green Acres</option>')
     expect(globalThis.fetch).toHaveBeenCalledWith('http://localhost:3200/GetClients')
-    expect(response.request.response.source.context.formDetails).toEqual({})
+    expect(response.request.response.source.context.submissionFormState).toEqual({})
     expect(response.request.response.source.context.clientOptions).toEqual([
       { value: '', text: 'Select a client', selected: true },
       { value: '101', text: 'Acme Farm', selected: false },
@@ -94,7 +94,7 @@ describe('Submission client details page', () => {
     })
 
     expect(revisitResponse.statusCode).toBe(200)
-    expect(revisitResponse.request.response.source.context.formDetails.client).toEqual({
+    expect(revisitResponse.request.response.source.context.submissionFormState.formData.clientDetails).toEqual({
       clientId: '101',
       name: 'Acme Farm'
     })
@@ -150,7 +150,7 @@ describe('Submission client details page', () => {
     })
 
     expect(revisitResponse.statusCode).toBe(200)
-    expect(revisitResponse.request.response.source.context.formDetails.client).toEqual({
+    expect(revisitResponse.request.response.source.context.submissionFormState.formData.clientDetails).toEqual({
       ...createClientPayload,
       name: 'New farm'
     })
@@ -177,7 +177,7 @@ describe('Submission client details page', () => {
     })
 
     expect(revisitResponse.statusCode).toBe(200)
-    expect(revisitResponse.request.response.source.context.formDetails.client).toBeUndefined()
+    expect(revisitResponse.request.response.source.context.submissionFormState.formData.clientDetails).toBeUndefined()
     expect(revisitResponse.request.response.source.context.clientOptions).not.toContainEqual(
       expect.objectContaining({ value: 'new-client' })
     )
@@ -206,7 +206,7 @@ describe('Submission client details page', () => {
     })
 
     expect(revisitResponse.statusCode).toBe(200)
-    expect(revisitResponse.request.response.source.context.formDetails.client).toBeUndefined()
+    expect(revisitResponse.request.response.source.context.submissionFormState.formData.clientDetails).toBeUndefined()
     expect(revisitResponse.request.response.source.context.clientOptions).not.toContainEqual(
       expect.objectContaining({ value: 'new-client' })
     )

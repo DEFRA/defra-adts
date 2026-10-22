@@ -30,30 +30,38 @@ const getCounties = async () => {
   }))
 }
 
+const getClientDetails = (submissionFormState) => submissionFormState.formData?.clientDetails || {}
+
+const withClientDetails = (submissionFormState, clientDetails) => ({
+  ...submissionFormState,
+  formData: {
+    ...submissionFormState.formData,
+    clientDetails
+  }
+})
+
 const createClient = (server, submissionFormStateKey) => {
   server.route([
     {
       method: 'GET',
       path: `/${pageName}`,
       handler: async (request, h) => {
-        const formDetails = request.yar.get(submissionFormStateKey) || {}
-        let countyOptions = []
+        const submissionFormState = request.yar.get(submissionFormStateKey) || {}
+        return renderClientForm(h, getClientDetails(submissionFormState), false)
+      }
+    },
+    {
+      method: 'GET',
+      path: '/edit-client',
+      handler: async (request, h) => {
+        const submissionFormState = request.yar.get(submissionFormStateKey) || {}
+        const client = getClientDetails(submissionFormState)
 
-        try {
-          countyOptions = await getCounties()
-        } catch (error) {
-          console.error('Error contacting backend server:', error.message)
+        if (!client?.clientId) {
+          return h.redirect(submissionFirstPage)
         }
 
-        const client = formDetails.client || {}
-
-        return h.view('create-client.njk', {
-          client,
-          countyOptions: countyOptions.map((county) => ({
-            ...county,
-            selected: county.value === client.county
-          }))
-        })
+        return renderClientForm(h, client, true)
       }
     },
     {
@@ -65,18 +73,79 @@ const createClient = (server, submissionFormStateKey) => {
         }
       },
       handler: (request, h) => {
-        const formDetails = request.yar.get(submissionFormStateKey) || {}
+        const submissionFormState = request.yar.get(submissionFormStateKey) || {}
 
-        request.yar.set(submissionFormStateKey, {
-          ...formDetails,
-          client: request.payload
-        })
+        request.yar.set(
+          submissionFormStateKey,
+          withClientDetails(submissionFormState, request.payload)
+        )
+        request.yar.touch()
+
+        return h.redirect(submissionFirstPage)
+      }
+    },
+    {
+      method: 'POST',
+      path: '/edit-client',
+      options: {
+        validate: {
+          payload: createClientSchema
+        }
+      },
+      handler: async (request, h) => {
+        const submissionFormState = request.yar.get(submissionFormStateKey) || {}
+        const selectedClient = getClientDetails(submissionFormState)
+
+        if (!selectedClient?.clientId) {
+          return h.redirect(submissionFirstPage)
+        }
+
+        let counties = []
+        try {
+          counties = await getCounties()
+        } catch (error) {
+          console.error('Error contacting backend server:', error.message)
+        }
+
+        const countyName = counties.find((county) => county.value === request.payload.county)?.text
+
+        request.yar.set(
+          submissionFormStateKey,
+          withClientDetails(submissionFormState, {
+            ...selectedClient,
+            ...request.payload,
+            countyId: request.payload.county,
+            countyName: countyName || ''
+          })
+        )
         request.yar.touch()
 
         return h.redirect(submissionFirstPage)
       }
     }
   ])
+}
+
+const renderClientForm = async (h, client, isEdit) => {
+  let countyOptions = []
+
+  try {
+    countyOptions = await getCounties()
+  } catch (error) {
+    console.error('Error contacting backend server:', error.message)
+  }
+
+  return h.view('create-edit-client.njk', {
+    client,
+    isEdit,
+    formAction: isEdit ? '/edit-client' : `/${pageName}`,
+    submitText: isEdit ? 'Save changes' : 'Save',
+    countyOptions: countyOptions.map((county) => ({
+      ...county,
+      selected: county.value === String(client.county ?? client.countyId ?? '') ||
+        county.text === client.county
+    }))
+  })
 }
 
 export default createClient

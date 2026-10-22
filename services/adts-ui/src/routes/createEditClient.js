@@ -46,6 +46,24 @@ const withClientDetails = (submissionFormState, clientDetails) => ({
   }
 })
 
+const getEditedClientDetails = async (selectedClient, clientDetails) => {
+  let counties = []
+  try {
+    counties = await getCounties()
+  } catch (error) {
+    console.error('Error contacting backend server:', error.message)
+  }
+
+  const countyName = counties.find((county) => county.value === clientDetails.county)?.text
+
+  return {
+    ...selectedClient,
+    ...clientDetails,
+    countyId: clientDetails.county,
+    countyName: countyName || ''
+  }
+}
+
 const createEditClient = (server, submissionFormStateKey) => {
   server.route([
     {
@@ -85,24 +103,9 @@ const createEditClient = (server, submissionFormStateKey) => {
           return h.redirect(clientDetailsPagePath)
         }
 
-        let clientDetails = request.payload
-
-        if (mode === editMode) {
-          let counties = []
-          try {
-            counties = await getCounties()
-          } catch (error) {
-            console.error('Error contacting backend server:', error.message)
-          }
-
-          const countyName = counties.find((county) => county.value === request.payload.county)?.text
-          clientDetails = {
-            ...selectedClient,
-            ...request.payload,
-            countyId: request.payload.county,
-            countyName: countyName || ''
-          }
-        }
+        const clientDetails = mode === editMode
+          ? await getEditedClientDetails(selectedClient, request.payload)
+          : request.payload
 
         request.yar.set(
           submissionFormStateKey,

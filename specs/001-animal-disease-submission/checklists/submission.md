@@ -31,9 +31,8 @@
 
 ## Acceptance Criteria Quality
 
-- [ ] CHK013 Is the participant group and evaluation method for the 90% successful-completion target defined well enough to make the result reproducible? [Measurability, Spec §SC-001]
-- [ ] CHK014 Is “information and progress saved by the user” defined sufficiently to assess the 100% draft-restoration target? [Measurability, Spec §SC-002, FR-009]
-- [ ] CHK015 Are the evidence and success conditions for access to required print documents defined beyond an unambiguous confirmation? [Measurability, Spec §SC-005, FR-010]
+- [ ] CHK014 Is “information and progress saved by the user” defined sufficiently to assess the 100% draft-restoration target? [Measurability, Spec §SC-001, FR-009]
+- [ ] CHK015 Are the evidence and success conditions for access to required print documents defined beyond an unambiguous confirmation? [Measurability, Spec §SC-003, FR-010]
 
 ## Scenario and Edge Case Coverage
 

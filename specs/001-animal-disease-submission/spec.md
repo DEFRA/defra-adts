@@ -121,11 +121,9 @@ A user saves an incomplete report and returns to it later to continue and submit
 
 ### Measurable Outcomes
 
-- **SC-001**: At least 90% of representative users can complete and submit a valid report with at least one selected test and a delivery address without assistance.
-- **SC-002**: 100% of saved drafts used in acceptance testing restore the information and progress saved by the user.
-- **SC-003**: In usability testing, at least 90% of users can identify the current stage and the next action on every form page.
-- **SC-004**: 100% of test submissions with missing or invalid required information are prevented from being submitted and present a clear route to correct the issue.
-- **SC-005**: After each successful test submission, the user sees an unambiguous confirmation and can access the required print documents.
+- **SC-001**: 100% of saved drafts used in acceptance testing restore the information and progress saved by the user.
+- **SC-002**: 100% of test submissions with missing or invalid required information are prevented from being submitted and present a clear route to correct the issue.
+- **SC-003**: After each successful test submission, the user sees an unambiguous confirmation and can access the required print documents.
 
 ## Assumptions
 

@@ -25,7 +25,7 @@ The page heading is “1. Client details”; its introduction says “Tell us ab
 
 - Azure DevOps ticket: “Create a new client from Step 1” (ticket ID not supplied).
 - Screenshot supplied with the ticket.
-- Current implementation: `services/adts-ui/src/views/create-edit-client.njk`, `services/adts-ui/src/routes/createClient.js`, and `services/adts-ui/tests/routes/create-client.test.js`.
+- Current implementation: `services/adts-ui/src/views/create-edit-client.njk`, `services/adts-ui/src/routes/createEditClient.js`, and `services/adts-ui/tests/routes/create-client.test.js`.
 
 | Field | User-facing label | Requiredness | Validation / notes | Evidence and status |
 |---|---|---|---|---|
@@ -51,11 +51,11 @@ The page heading is “1. Client details”; its introduction says “Tell us ab
 
 - Azure DevOps ticket: “SUB-03 - Edit selected client details”.
 - Screenshots supplied with the ticket.
-- Current implementation: `services/adts-ui/src/routes/selectClient.js`, `services/adts-ui/src/routes/createClient.js`, `services/adts-ui/src/views/select-client.njk`, and `services/adts-ui/src/views/create-edit-client.njk`.
+- Current implementation: `services/adts-ui/src/routes/selectClient.js`, `services/adts-ui/src/routes/createEditClient.js`, `services/adts-ui/src/views/select-client.njk`, and `services/adts-ui/src/views/create-edit-client.njk`.
 
 | Acceptance criterion | Requirement captured | Implementation behavior |
 |---|---|---|
-| AC1: When a selected client is edited, pre-populate the edit form with its existing details. | Reuse the client fields above; keep the existing client selected while editing. | `/edit-client` reads the selected client's details from the submission form state and populates the form, including the county selection. |
+| AC1: When a selected client is edited, pre-populate the edit form with its existing details. | Reuse the client fields above; keep the existing client selected while editing. | `/create-edit-client?mode=edit` reads the selected client's details from the submission form state and populates the form, including the county selection. |
 | AC2: When the user updates name, farm, address, county, or postcode and saves, the selected client details are updated and persisted. | Save the edited details without turning an existing client into a new client. | The edit POST replaces those values in the session's submission form state while preserving `clientId`; the client summary and selected option show the updated values on return to Step 1. This updates this submission's selected client data; it does not update a durable client record. |
 
 ## Submission Draft

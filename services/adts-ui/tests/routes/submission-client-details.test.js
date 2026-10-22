@@ -58,7 +58,7 @@ describe('Submission client details page', () => {
     expect(response.payload).toContain('1. Client details')
     expect(response.payload).toContain('Animal Disease Testing Service')
     expect(response.payload).toContain('create a new client')
-    expect(response.payload).toContain('href="/create-client">create a new client</a>')
+    expect(response.payload).toContain('href="/create-edit-client?mode=create">create a new client</a>')
     expect(response.payload).toContain('<form method="post" action="/submission-01-client-details">')
     expect(response.payload).toContain('<select class="govuk-select" id="client" name="clientId"')
     expect(response.payload).toMatch(/>\s*Continue\s*</)
@@ -108,7 +108,7 @@ describe('Submission client details page', () => {
   ])('uses a fallback label for a new client', async (clientDetails, expectedLabel) => {
     const createResponse = await server.inject({
       method: 'POST',
-      url: '/create-client',
+      url: '/create-edit-client?mode=create',
       payload: { ...createClientPayload, ...clientDetails }
     })
 
@@ -129,7 +129,7 @@ describe('Submission client details page', () => {
   test('keeps a newly created client when it is selected on the client details page', async () => {
     const createResponse = await server.inject({
       method: 'POST',
-      url: '/create-client',
+      url: '/create-edit-client?mode=create',
       payload: { ...createClientPayload, name: 'New farm' }
     })
 

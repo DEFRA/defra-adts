@@ -1,9 +1,11 @@
 import Joi from 'joi'
 
-const pageName = 'create-client'
+const pagePath = '/create-edit-client'
+const createMode = 'create'
+const editMode = 'edit'
 const clientDetailsPagePath = '/submission-01-client-details'
 
-const createClientSchema = Joi.object({
+const createEditClientSchema = Joi.object({
   cph: Joi.string().allow('').required(),
   name: Joi.string().allow('').required(),
   farmName: Joi.string().allow('').required(),
@@ -12,6 +14,10 @@ const createClientSchema = Joi.object({
   addressLine3: Joi.string().allow('').required(),
   county: Joi.string().allow('').required(),
   postcode: Joi.string().allow('').required()
+})
+
+const clientFormQuerySchema = Joi.object({
+  mode: Joi.string().valid(createMode, editMode).required()
 })
 
 const getCounties = async () => {
@@ -40,83 +46,67 @@ const withClientDetails = (submissionFormState, clientDetails) => ({
   }
 })
 
-const createClient = (server, submissionFormStateKey) => {
+const createEditClient = (server, submissionFormStateKey) => {
   server.route([
     {
       method: 'GET',
-      path: `/${pageName}`,
-      handler: async (request, h) => {
-        const submissionFormState = request.yar.get(submissionFormStateKey) || {}
-        return renderClientForm(h, getClientDetails(submissionFormState), false)
-      }
-    },
-    {
-      method: 'GET',
-      path: '/edit-client',
+      path: pagePath,
+      options: {
+        validate: {
+          query: clientFormQuerySchema
+        }
+      },
       handler: async (request, h) => {
         const submissionFormState = request.yar.get(submissionFormStateKey) || {}
         const client = getClientDetails(submissionFormState)
 
-        if (!client?.clientId) {
+        if (request.query.mode === editMode && !client?.clientId) {
           return h.redirect(clientDetailsPagePath)
         }
 
-        return renderClientForm(h, client, true)
+        return renderClientForm(h, client, request.query.mode)
       }
     },
     {
       method: 'POST',
-      path: `/${pageName}`,
+      path: pagePath,
       options: {
         validate: {
-          payload: createClientSchema
-        }
-      },
-      handler: (request, h) => {
-        const submissionFormState = request.yar.get(submissionFormStateKey) || {}
-
-        request.yar.set(
-          submissionFormStateKey,
-          withClientDetails(submissionFormState, request.payload)
-        )
-        request.yar.touch()
-
-        return h.redirect(clientDetailsPagePath)
-      }
-    },
-    {
-      method: 'POST',
-      path: '/edit-client',
-      options: {
-        validate: {
-          payload: createClientSchema
+          query: clientFormQuerySchema,
+          payload: createEditClientSchema
         }
       },
       handler: async (request, h) => {
         const submissionFormState = request.yar.get(submissionFormStateKey) || {}
+        const mode = request.query.mode
         const selectedClient = getClientDetails(submissionFormState)
 
-        if (!selectedClient?.clientId) {
+        if (mode === editMode && !selectedClient?.clientId) {
           return h.redirect(clientDetailsPagePath)
         }
 
-        let counties = []
-        try {
-          counties = await getCounties()
-        } catch (error) {
-          console.error('Error contacting backend server:', error.message)
-        }
+        let clientDetails = request.payload
 
-        const countyName = counties.find((county) => county.value === request.payload.county)?.text
+        if (mode === editMode) {
+          let counties = []
+          try {
+            counties = await getCounties()
+          } catch (error) {
+            console.error('Error contacting backend server:', error.message)
+          }
 
-        request.yar.set(
-          submissionFormStateKey,
-          withClientDetails(submissionFormState, {
+          const countyName = counties.find((county) => county.value === request.payload.county)?.text
+          clientDetails = {
             ...selectedClient,
             ...request.payload,
             countyId: request.payload.county,
             countyName: countyName || ''
-          })
+          }
+        }
+
+        request.yar.set(
+          submissionFormStateKey,
+          withClientDetails(submissionFormState, clientDetails)
         )
         request.yar.touch()
 
@@ -126,7 +116,7 @@ const createClient = (server, submissionFormStateKey) => {
   ])
 }
 
-const renderClientForm = async (h, client, isEdit) => {
+const renderClientForm = async (h, client, mode) => {
   let countyOptions = []
 
   try {
@@ -137,9 +127,9 @@ const renderClientForm = async (h, client, isEdit) => {
 
   return h.view('create-edit-client.njk', {
     client,
-    isEdit,
-    formAction: isEdit ? '/edit-client' : `/${pageName}`,
-    submitText: isEdit ? 'Save changes' : 'Save',
+    isEdit: mode === editMode,
+    formAction: `${pagePath}?mode=${mode}`,
+    submitText: mode === editMode ? 'Save changes' : 'Save',
     countyOptions: countyOptions.map((county) => ({
       ...county,
       selected: county.value === String(client.county ?? client.countyId ?? '') ||
@@ -148,4 +138,4 @@ const renderClientForm = async (h, client, isEdit) => {
   })
 }
 
-export default createClient
+export default createEditClient

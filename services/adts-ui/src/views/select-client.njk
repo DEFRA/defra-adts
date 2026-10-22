@@ -51,7 +51,7 @@
       attributes: { "data-default-value": selectedClientName },
       items: clientOptions
     }) }}
-    <p class="govuk-body-l">Or you can <a class="govuk-link" href="/create-client">create a new client</a>.</p>
+    <p class="govuk-body-l">Or you can <a class="govuk-link" href="/create-edit-client?mode=create">create a new client</a>.</p>
     {% if selectedClient %}
       <div class="govuk-inset-text">
         <h2 class="govuk-heading-m">Selected client</h2>
@@ -69,7 +69,7 @@
           <p class="govuk-body">{{ selectedClient.cph }}</p>
         {% endif %}
         {% if selectedClient.clientId %}
-          <a class="govuk-link" href="/edit-client">Edit</a>
+          <a class="govuk-link" href="/create-edit-client?mode=edit">Edit</a>
         {% endif %}
       </div>
     {% endif %}

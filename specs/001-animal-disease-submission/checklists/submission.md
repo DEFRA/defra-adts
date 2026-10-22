@@ -31,30 +31,30 @@
 
 ## Acceptance Criteria Quality
 
-- [ ] CHK014 Is “information and progress saved by the user” defined sufficiently to assess the 100% draft-restoration target? [Measurability, Spec §SC-001, FR-009]
-- [ ] CHK015 Are the evidence and success conditions for access to required print documents defined beyond an unambiguous confirmation? [Measurability, Spec §SC-003, FR-010]
+- [x] CHK014 Is “information and progress saved by the user” defined sufficiently to assess the 100% draft-restoration target? [Measurability, Spec §SC-001, FR-009]
+- [x] CHK015 Are the evidence and success conditions for access to required print documents defined beyond an unambiguous confirmation? [Measurability, Spec §SC-003, FR-010]
 
 ## Scenario and Edge Case Coverage
 
-- [ ] CHK016 Are failure outcomes specified for unavailable client, county, species, animal-detail, or test lookup data, including whether progression is blocked? [Coverage, Contract §`getClients`, §`getCounties`, §`getSpecies`, §`getAnimalDetails`, §`getTests`]
-- [ ] CHK017 Are draft-save timeout or ambiguous-response scenarios covered so users know whether their latest page and answers were saved? [Recovery, Spec §FR-008–FR-011, Plan §Constraints]
-- [ ] CHK018 Are concurrent draft edits and stale-revision conflicts covered with a clear user recovery path? [Coverage, Plan §Constraints, Data Model §Lifecycle]
-- [ ] CHK019 Are LIMS timeout and retry outcomes defined for cases where the service cannot tell whether the submission was accepted? [Recovery, Spec §Edge Cases, Contract §`completeSubmission`, LIMS Contract §`POST /submissions`]
-- [ ] CHK020 Are the consequences of an unavailable or changed kit during draft resumption and final submission defined consistently? [Edge Case, Spec §Edge Cases, FR-012, Contract §`getTests`]
+- [x] CHK016 Are failure outcomes specified for unavailable client, county, species, animal-detail, or test lookup data, including whether progression is blocked? [Coverage, Contract §`getClients`, §`getCounties`, §`getSpecies`, §`getAnimalDetails`, §`getTests`]
+- [x] CHK017 Are draft-save timeout or ambiguous-response scenarios covered so users know whether their latest page and answers were saved? [Recovery, Spec §FR-008–FR-011, Plan §Constraints]
+- [x] CHK018 Are concurrent draft edits and stale-revision conflicts covered with a clear user recovery path? [Coverage, Plan §Constraints, Data Model §Lifecycle]
+- [x] CHK019 Are LIMS timeout and retry outcomes defined for cases where the service cannot tell whether the submission was accepted? [Recovery, Spec §Edge Cases, Contract §`completeSubmission`, LIMS Contract §`POST /submissions`]
+- [x] CHK020 Are the consequences of an unavailable or changed kit during draft resumption and final submission defined consistently? [Edge Case, Spec §Edge Cases, FR-012, Contract §`getTests`]
 
 ## Non-Functional Requirements
 
-- [ ] CHK021 Are accessibility expectations explicitly stated for all form stages, validation messages, progress information, and print-document access? [Coverage, Spec §FR-013, Assumptions; Constitution §Accessible and Inclusive Service]
-- [ ] CHK022 Are measurable response-time, availability, or recovery expectations required for draft saving and submission, or is relying on existing service targets an explicit product decision? [Gap, Plan §Technical Context]
-- [ ] CHK023 Are privacy and security requirements for sensitive client, animal, and clinical information stated at the feature level, including access restrictions and diagnostic-data limits? [Coverage, Plan §Constraints; Constitution §Privacy and Security by Design]
-- [ ] CHK024 Are retry safety and duplicate-prevention requirements consistent between the feature requirements, backend contract, and LIMS contract? [Consistency, Spec §Edge Cases, FR-011; Contract §`completeSubmission`; LIMS Contract §`POST /submissions`]
+- [x] CHK021 Are accessibility expectations explicitly stated for all form stages, validation messages, progress information, and print-document access? [Coverage, Spec §FR-013, Assumptions; Constitution §Accessible and Inclusive Service]
+- x ] CHK022 Are measurable response-time, availability, or recovery expectations required for draft saving and submission, or is relying on existing service targets an explicit product decision? [Gap, Plan §Technical Context]
+- [x] CHK023 Are privacy and security requirements for sensitive client, animal, and clinical information stated at the feature level, including access restrictions and diagnostic-data limits? [Coverage, Plan §Constraints; Constitution §Privacy and Security by Design]
+- [x] CHK024 Are retry safety and duplicate-prevention requirements consistent between the feature requirements, backend contract, and LIMS contract? [Consistency, Spec §Edge Cases, FR-011; Contract §`completeSubmission`; LIMS Contract §`POST /submissions`]
 
 ## Dependencies and Assumptions
 
-- [ ] CHK025 Is the trusted user identity source and its availability to UI/backend draft operations identified as a prerequisite rather than left implicit? [Dependency, Plan §Constitution Check; Contract §Cross-cutting behavior]
-- [ ] CHK026 Are the UI-to-backend method names separated clearly from the still-to-be-agreed invocation details and wire contract? [Clarity, Plan §Technical Context; Contract introduction]
-- [ ] CHK027 Is the ownership of the LIMS request/response schema and idempotency behavior assigned to a confirmed integration contract? [Dependency, Research §Complete-submission delivery and retries; LIMS Contract]
-- [ ] CHK028 Are the existing draft-retention and print-document policies identified as dependencies with a clear owner or resolution point? [Assumption, Spec §Assumptions]
+- [x] CHK025 Is the trusted user identity source and its availability to UI/backend draft operations identified as a prerequisite rather than left implicit? [Dependency, Plan §Constitution Check; Contract §Cross-cutting behavior]
+- [x] CHK026 Are the UI-to-backend method names separated clearly from the still-to-be-agreed invocation details and wire contract? [Clarity, Plan §Technical Context; Contract introduction]
+- [x] CHK027 Is the ownership of the LIMS request/response schema and idempotency behavior assigned to a confirmed integration contract? [Dependency, Research §Complete-submission delivery and retries; LIMS Contract]
+- [x] CHK028 Are the existing draft-retention and print-document policies identified as dependencies with a clear owner or resolution point? [Assumption, Spec §Assumptions]
 
 ## Notes
 

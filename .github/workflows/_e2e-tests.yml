@@ -1,33 +1,10 @@
-name:  E2E tests (Playwright)
+name: End to End Testing
 
 on:
-  pull_request:
-    branches: [main]
-    paths:
-      - 'tests/e2e/**'
-      - 'playwright.config.js'
-      - 'package.json'
-      - 'package-lock.json'
-      - 'services/adts-ui/**'
-      - 'services/adts-backend/**'
-      - 'services/adts-submissions-service/**'
-      - '.github/workflows/e2e-tests.yml'
-  push:
-    branches: [main]
-    paths:
-      - 'tests/e2e/**'
-      - 'playwright.config.js'
-      - 'package.json'
-      - 'package-lock.json'
-      - 'services/adts-ui/**'
-      - 'services/adts-backend/**'
-      - 'services/adts-submissions-service/**'
-      - '.github/workflows/e2e-tests.yml'
-  workflow_dispatch:
+  workflow_call:
 
-concurrency:
-  group: e2e-${{ github.ref }}
-  cancel-in-progress: true
+permissions:
+  contents: read
 
 jobs:
   e2e:
@@ -38,8 +15,8 @@ jobs:
       contents: read
 
     steps:
-      - name: Check out code
-        uses: actions/checkout@v6
+      - name: Check out coordinated commit
+        uses: actions/checkout@v7
         with:
           persist-credentials: false
 
@@ -47,12 +24,6 @@ jobs:
         uses: actions/setup-node@v7
         with:
           node-version: "24"
-          cache: npm
-          cache-dependency-path: |
-            package-lock.json
-            services/adts-ui/package-lock.json
-            services/adts-backend/package-lock.json
-            services/adts-submissions-service/package-lock.json
 
       - name: Install root dependencies
         run: npm ci
@@ -74,7 +45,7 @@ jobs:
 
       - name: Upload Playwright report on failure
         if: failure()
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: playwright-report
           path: playwright-report/
@@ -82,7 +53,7 @@ jobs:
 
       - name: Upload Playwright report on success (last 3 kept)
         if: success()
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: playwright-report-success
           path: playwright-report/

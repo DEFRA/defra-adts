@@ -1,4 +1,4 @@
-{% macro submissionProgress(currentStep, currentHref) %}
+{% macro submissionProgress(currentStep) %}
   {% set steps = [
     { number: 1, label: "Client details" },
     { number: 2, label: "Animal details" },
@@ -16,10 +16,9 @@
           </div>
           <div class="govuk-grid-row">
         {% endif %}
-        <a class="govuk-grid-column-one-quarter govuk-link app-submission-progress__step{% if step.number == currentStep %} app-submission-progress__step--current{% endif %}"
-           href="{% if step.number == currentStep %}{{ currentHref }}{% else %}#{% endif %}">
+        <div class="govuk-grid-column-one-quarter govuk-body app-submission-progress__step{% if step.number == currentStep %} app-submission-progress__step--current{% endif %}"{% if step.number == currentStep %} aria-current="step"{% endif %}>
           <span>{{ step.number }}</span><span>{{ step.label }}</span>
-        </a>
+        </div>
       {% endfor %}
     </div>
   </nav>

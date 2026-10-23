@@ -62,34 +62,31 @@ describe('Dashboard Layout', () => {
     })
   })
 
-  describe('New submission section', () => {
-    test('renders the "New submission" heading as h1', () => {
-      expect(html).toMatch(/<h1[^>]*class="[^"]*govuk-heading-l[^"]*"[^>]*>\s*New submission\s*<\/h1>/)
+  describe('Homepage links', () => {
+    test('does not render redundant submission or client headings', () => {
+      expect(html).not.toContain('New submission')
+      expect(html).not.toContain('>Clients<')
     })
 
-    test('displays guidance text explaining submission options', () => {
-      expect(html).toContain(
-        'Start a new sick animal submission or healthy animal submission.'
-      )
+    test('does not display redundant guidance text for the submission links', () => {
+      expect(html).not.toContain('Start a new sick animal submission or healthy animal submission.')
     })
 
-    test('renders "Sick animal submission" as a GOV.UK homepage link', () => {
-      expect(html).toMatch(/>\s*Sick animal submission\s*</)
-      expect(html).toMatch(/<a class="govuk-link govuk-!-font-size-24" href="\/submission-01-client-details">Sick animal submission<\/a>/)
+    test('renders "Create a sick animal submission" as a standard GOV.UK link', () => {
+      expect(html).toMatch(/<p class="govuk-body"><a class="govuk-link" href="\/submission-01-client-details">Create a sick animal submission<\/a><\/p>/)
     })
 
-    test('renders "Healthy animal submission" as a GOV.UK homepage link', () => {
-      expect(html).toMatch(/>\s*Healthy animal submission\s*</)
-      expect(html).toMatch(/<a class="govuk-link govuk-!-font-size-24" href="\/submission-01-client-details">Healthy animal submission<\/a>/)
+    test('renders "Create a healthy animal submission" as a standard GOV.UK link', () => {
+      expect(html).toMatch(/<p class="govuk-body"><a class="govuk-link" href="\/submission-01-client-details">Create a healthy animal submission<\/a><\/p>/)
     })
 
-    test('both submission buttons navigate to the client details page', async () => {
-      for (const buttonText of ['Sick animal submission', 'Healthy animal submission']) {
-        const button = [...html.matchAll(/<a\b([^>]*)>([\s\S]*?)<\/a>/g)]
-          .find(([, , content]) => content.includes(buttonText))
+    test('both submission links navigate to the client details page', async () => {
+      for (const linkText of ['Create a sick animal submission', 'Create a healthy animal submission']) {
+        const link = [...html.matchAll(/<a\b([^>]*)>([\s\S]*?)<\/a>/g)]
+          .find(([, , content]) => content.includes(linkText))
 
-        expect(button).toBeDefined()
-        expect(button[1]).toContain('href="/submission-01-client-details"')
+        expect(link).toBeDefined()
+        expect(link[1]).toContain('href="/submission-01-client-details"')
       }
 
       const destinationResponse = await server.inject({
@@ -101,9 +98,11 @@ describe('Dashboard Layout', () => {
       expect(destinationResponse.payload).toContain('1. Client details')
     })
 
-    test('renders separate create and update client links', () => {
-      expect(html).toMatch(/<a class="govuk-link govuk-!-font-size-24" href="\/create-client">Create a new client<\/a>/)
-      expect(html).toMatch(/<a class="govuk-link govuk-!-font-size-24" href="\/update-client">Update an existing client's details<\/a>/)
+    test('renders separate create and update client action links', () => {
+      expect(html).toMatch(/<p class="govuk-body"><a class="govuk-link" href="\/create-client">Create a new client<\/a><\/p>/)
+      expect(html).toMatch(/<p class="govuk-body"><a class="govuk-link" href="\/update-client">Update an existing client's details<\/a><\/p>/)
+      expect(html).not.toContain('govuk-!-font-size-24')
+      expect(html).not.toContain('<ul class="govuk-list')
     })
   })
 })

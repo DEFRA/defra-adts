@@ -1,5 +1,6 @@
 {% extends "govuk/template.njk" %}
 
+{% from "govuk/components/button/macro.njk" import govukButton %}
 {% from "govuk/components/header/macro.njk" import govukHeader %}
 {% from "macros/submissionSearchForm.njk" import submissionSearchForm %}
 
@@ -33,10 +34,10 @@
     <div class="govuk-grid-column-full">
       <p class="govuk-body">Signed in as Test User 2</p>
       <ul class="govuk-list">
-        <li><a class="govuk-link govuk-link--no-underline" href="/submission-01-client-details">Create a sick animal submission</a></li>
-        <li><a class="govuk-link govuk-link--no-underline" href="/submission-01-client-details">Create a healthy animal submission</a></li>
-        <li><a class="govuk-link govuk-link--no-underline" href="/create-client">Create a new client</a></li>
-        <li><a class="govuk-link govuk-link--no-underline" href="/update-client">Update an existing client's details</a></li>
+        <li>{{ govukButton({ text: "Create a sick animal submission", href: "/submission-01-client-details" }) }}</li>
+        <li>{{ govukButton({ text: "Create a healthy animal submission", href: "/submission-01-client-details" }) }}</li>
+        <li>{{ govukButton({ text: "Create a new client", href: "/create-client" }) }}</li>
+        <li>{{ govukButton({ text: "Update an existing client's details", href: "/update-client" }) }}</li>
       </ul>
 
       <hr class="govuk-section-break govuk-section-break--m govuk-section-break--visible">

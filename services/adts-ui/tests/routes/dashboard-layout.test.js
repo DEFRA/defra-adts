@@ -72,11 +72,19 @@ describe('Dashboard Layout', () => {
       expect(html).not.toContain('Start a new sick animal submission or healthy animal submission.')
     })
 
-    test('renders the homepage actions as an unbulleted GOV.UK list with no-underline links', () => {
-      expect(html).toMatch(/<ul class="govuk-list">[\s\S]*<li><a class="govuk-link govuk-link--no-underline" href="\/submission-01-client-details">Create a sick animal submission<\/a><\/li>/)
-      expect(html).toMatch(/<li><a class="govuk-link govuk-link--no-underline" href="\/submission-01-client-details">Create a healthy animal submission<\/a><\/li>/)
-      expect(html).toMatch(/<li><a class="govuk-link govuk-link--no-underline" href="\/create-client">Create a new client<\/a><\/li>/)
-      expect(html).toMatch(/<li><a class="govuk-link govuk-link--no-underline" href="\/update-client">Update an existing client's details<\/a><\/li>[\s\S]*<\/ul>/)
+    test('renders the homepage actions as stacked GOV.UK buttons', () => {
+      const actions = [...html.matchAll(/<li>\s*(<a\b[^>]*role="button"[^>]*>[\s\S]*?<\/a>)\s*<\/li>/g)]
+        .map(([, button]) => button)
+
+      expect(actions).toHaveLength(4)
+      expect(actions[0]).toContain('class="govuk-button"')
+      expect(actions[0]).toContain('href="/submission-01-client-details"')
+      expect(actions[0]).toContain('Create a sick animal submission')
+      expect(actions[1]).toContain('Create a healthy animal submission')
+      expect(actions[2]).toContain('href="/create-client"')
+      expect(actions[2]).toContain('Create a new client')
+      expect(actions[3]).toContain('href="/update-client"')
+      expect(actions[3]).toContain('Update an existing client&#39;s details')
     })
 
     test('both submission links navigate to the client details page', async () => {
@@ -97,11 +105,14 @@ describe('Dashboard Layout', () => {
       expect(destinationResponse.payload).toContain('1. Client details')
     })
 
-    test('renders separate create and update client action links', () => {
-      expect(html).toContain('href="/create-client">Create a new client</a>')
-      expect(html).toContain('href="/update-client">Update an existing client\'s details</a>')
+    test('renders separate create and update client action buttons', () => {
+      expect(html).toContain('href="/create-client"')
+      expect(html).toContain('Create a new client')
+      expect(html).toContain('href="/update-client"')
+      expect(html).toContain('Update an existing client&#39;s details')
       expect(html).not.toContain('govuk-!-font-size-24')
       expect(html).not.toContain('govuk-list--bullet')
+      expect(html).not.toContain('govuk-link--no-underline')
     })
   })
 })

@@ -72,12 +72,11 @@ describe('Dashboard Layout', () => {
       expect(html).not.toContain('Start a new sick animal submission or healthy animal submission.')
     })
 
-    test('renders "Create a sick animal submission" as a standard GOV.UK link', () => {
-      expect(html).toMatch(/<p class="govuk-body"><a class="govuk-link" href="\/submission-01-client-details">Create a sick animal submission<\/a><\/p>/)
-    })
-
-    test('renders "Create a healthy animal submission" as a standard GOV.UK link', () => {
-      expect(html).toMatch(/<p class="govuk-body"><a class="govuk-link" href="\/submission-01-client-details">Create a healthy animal submission<\/a><\/p>/)
+    test('renders the homepage actions as an unbulleted GOV.UK list with no-underline links', () => {
+      expect(html).toMatch(/<ul class="govuk-list">[\s\S]*<li><a class="govuk-link govuk-link--no-underline" href="\/submission-01-client-details">Create a sick animal submission<\/a><\/li>/)
+      expect(html).toMatch(/<li><a class="govuk-link govuk-link--no-underline" href="\/submission-01-client-details">Create a healthy animal submission<\/a><\/li>/)
+      expect(html).toMatch(/<li><a class="govuk-link govuk-link--no-underline" href="\/create-client">Create a new client<\/a><\/li>/)
+      expect(html).toMatch(/<li><a class="govuk-link govuk-link--no-underline" href="\/update-client">Update an existing client's details<\/a><\/li>[\s\S]*<\/ul>/)
     })
 
     test('both submission links navigate to the client details page', async () => {
@@ -99,10 +98,10 @@ describe('Dashboard Layout', () => {
     })
 
     test('renders separate create and update client action links', () => {
-      expect(html).toMatch(/<p class="govuk-body"><a class="govuk-link" href="\/create-client">Create a new client<\/a><\/p>/)
-      expect(html).toMatch(/<p class="govuk-body"><a class="govuk-link" href="\/update-client">Update an existing client's details<\/a><\/p>/)
+      expect(html).toContain('href="/create-client">Create a new client</a>')
+      expect(html).toContain('href="/update-client">Update an existing client\'s details</a>')
       expect(html).not.toContain('govuk-!-font-size-24')
-      expect(html).not.toContain('<ul class="govuk-list')
+      expect(html).not.toContain('govuk-list--bullet')
     })
   })
 })

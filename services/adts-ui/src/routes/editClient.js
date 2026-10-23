@@ -1,4 +1,5 @@
 import Joi from 'joi'
+import { constants } from 'node:http2'
 import { getClients } from '../backend/clients.js'
 import { clientDetailsSchema, renderClientForm } from './clientForm.js'
 
@@ -34,7 +35,7 @@ const editClient = (server) => {
         const client = await findClient(clientId)
 
         if (!client) {
-          return h.response('Client not found').code(404)
+          return h.response('Client not found').code(constants.HTTP_STATUS_NOT_FOUND)
         }
 
         return renderClientForm(h, client, {
@@ -56,7 +57,7 @@ const editClient = (server) => {
         const client = await findClient(request.params.clientId)
 
         if (!client) {
-          return h.response('Client not found').code(404)
+          return h.response('Client not found').code(constants.HTTP_STATUS_NOT_FOUND)
         }
 
         // TODO: persist the changes once the backend exposes an update client endpoint.

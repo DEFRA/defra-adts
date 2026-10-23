@@ -8,7 +8,7 @@ const createClient = (server) => {
     {
       method: 'GET',
       path: pagePath,
-      handler: (request, h) => renderClientForm(h, {}, { isEdit: false, formAction: pagePath })
+      handler: (_request, h) => renderClientForm(h, {}, { isEdit: false, formAction: pagePath })
     },
     {
       method: 'POST',
@@ -18,7 +18,7 @@ const createClient = (server) => {
           payload: clientDetailsSchema
         }
       },
-      handler: (request, h) => {
+      handler: (_request, h) => {
         // TODO: persist the new client once the backend exposes a create client endpoint.
         return h.redirect('/')
       }

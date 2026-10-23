@@ -73,12 +73,14 @@ describe('Dashboard Layout', () => {
       )
     })
 
-    test('renders the "Sick animal submission" button', () => {
+    test('renders "Sick animal submission" as a GOV.UK homepage link', () => {
       expect(html).toMatch(/>\s*Sick animal submission\s*</)
+      expect(html).toMatch(/<a class="govuk-link govuk-!-font-size-24" href="\/submission-01-client-details">Sick animal submission<\/a>/)
     })
 
-    test('renders the "Healthy animal submission" button', () => {
+    test('renders "Healthy animal submission" as a GOV.UK homepage link', () => {
       expect(html).toMatch(/>\s*Healthy animal submission\s*</)
+      expect(html).toMatch(/<a class="govuk-link govuk-!-font-size-24" href="\/submission-01-client-details">Healthy animal submission<\/a>/)
     })
 
     test('both submission buttons navigate to the client details page', async () => {
@@ -99,23 +101,9 @@ describe('Dashboard Layout', () => {
       expect(destinationResponse.payload).toContain('1. Client details')
     })
 
-    test('"Sick animal submission" button is enabled (no disabled attribute)', () => {
-      // Isolate the Sick button anchor (includes the start-icon SVG), then
-      // assert disabled is absent. Non-greedy match across newlines.
-      const match = html.match(
-        /<a[^>]*role="button"[^>]*>[\s\S]*?Sick animal submission[\s\S]*?<\/a>/
-      )
-      expect(match).not.toBeNull()
-      expect(match[0]).not.toContain('disabled=')
-      expect(match[0]).not.toContain('aria-disabled="true"')
-    })
-
-    test('"Healthy animal submission" button is enabled (no disabled attribute)', () => {
-      const match = html.match(
-        /<a[^>]*role="button"[^>]*>[\s\S]*?Healthy animal submission[\s\S]*?<\/a>/
-      )
-      expect(match[0]).not.toContain('disabled=')
-      expect(match[0]).not.toContain('aria-disabled="true"')
+    test('renders separate create and update client links', () => {
+      expect(html).toMatch(/<a class="govuk-link govuk-!-font-size-24" href="\/create-client">Create a new client<\/a>/)
+      expect(html).toMatch(/<a class="govuk-link govuk-!-font-size-24" href="\/update-client">Update an existing client's details<\/a>/)
     })
   })
 })

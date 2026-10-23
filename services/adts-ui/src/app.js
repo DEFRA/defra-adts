@@ -11,6 +11,7 @@ import home from './routes/home.js'
 import results from './routes/results.js'
 import createClient from './routes/createClient.js'
 import editClient from './routes/editClient.js'
+import updateClients from './routes/updateClients.js'
 import selectClient from './routes/selectClient.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -64,6 +65,7 @@ const createServer = async () => {
   home(server)
   createClient(server)
   editClient(server)
+  updateClients(server)
   selectClient(server, SUBMISSION_FORM_STATE_KEY)
   results(server)
   health(server)

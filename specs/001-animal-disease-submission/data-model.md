@@ -23,7 +23,7 @@ The page heading is “1. Client details”; its introduction says “Tell us ab
 
 Authorised users can create or edit clients, but this is deliberately **not** wired into the submission pages. Step 1 only selects an existing client, which avoids pushing duplicate clients to the backend from within a submission.
 
-- Current implementation: `services/adts-ui/src/routes/createClient.js`, `services/adts-ui/src/routes/editClient.js`, `services/adts-ui/src/routes/clientForm.js`, `services/adts-ui/src/views/create-edit-client.njk`, and `services/adts-ui/tests/routes/create-client.test.js`.
+- Current implementation: `services/adts-ui/src/routes/createClient.js`, `services/adts-ui/src/routes/editClient.js`, `services/adts-ui/src/routes/clientForm.js`, `services/adts-ui/src/views/create-client.njk`, and `services/adts-ui/tests/routes/create-client.test.js`.
 - Routes: `/create-client` and `/edit-client/{clientId}` (the client is looked up from `GetClients`; unknown clients return 404).
 - These pages neither read nor write submission form state, show no submission progress, and redirect to `/` after saving.
 - Persistence is not implemented: the backend exposes no create/update client endpoint, so the POST handlers validate the payload and carry a TODO.

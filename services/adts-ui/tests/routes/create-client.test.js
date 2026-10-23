@@ -34,7 +34,7 @@ const mockBackend = () =>
     throw new Error(`Unexpected backend URL: ${url}`)
   })
 
-describe('Standalone create/edit client pages', () => {
+describe('Standalone client create and edit pages', () => {
   let server
 
   beforeAll(async () => {
@@ -64,6 +64,38 @@ describe('Standalone create/edit client pages', () => {
     expect(globalThis.fetch).not.toHaveBeenCalled()
     expect(response.payload).not.toContain('Submission progress')
     expect(response.payload).not.toContain('submission-01-client-details')
+  })
+
+  test('lists existing clients with links to their edit pages', async () => {
+    mockBackend()
+
+    const response = await server.inject({ method: 'GET', url: '/update-client' })
+
+    expect(response.statusCode).toBe(200)
+    expect(response.payload).toContain("Update an existing client's details")
+    expect(response.payload).toContain('href="/edit-client/101"')
+    expect(response.payload).toContain('Old McDonald')
+    expect(response.payload).toContain('Animal Farm')
+    expect(response.payload).toContain('12/123/1234')
+  })
+
+  test('shows an empty state when there are no clients to update', async () => {
+    jest.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify([]), { status: 200 }))
+
+    const response = await server.inject({ method: 'GET', url: '/update-client' })
+
+    expect(response.statusCode).toBe(200)
+    expect(response.payload).toContain('There are no existing clients to update.')
+  })
+
+  test('returns an error when clients cannot be loaded', async () => {
+    jest.spyOn(globalThis, 'fetch').mockRejectedValue(new Error('Adapter unavailable'))
+    jest.spyOn(console, 'error').mockImplementation(() => {})
+
+    const response = await server.inject({ method: 'GET', url: '/update-client' })
+
+    expect(response.statusCode).toBe(500)
+    expect(response.payload).toBe('Unable to load clients')
   })
 
   test('create does not touch submission state and does not redirect into the submission', async () => {

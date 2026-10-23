@@ -12,7 +12,7 @@ export const clientDetailsSchema = Joi.object({
 })
 
 export const renderClientForm = (h, client, { isEdit, formAction }) =>
-  h.view('create-edit-client.njk', {
+  h.view('create-client.njk', {
     client,
     isEdit,
     formAction,

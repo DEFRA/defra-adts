@@ -7,17 +7,6 @@ const getCookieHeader = (response) => {
 }
 
 const url = '/submission-01-client-details'
-const createClientPayload = {
-  cph: '',
-  name: '',
-  farmName: '',
-  addressLine1: '',
-  addressLine2: '',
-  addressLine3: '',
-  county: '',
-  postcode: ''
-}
-
 describe('Submission client details page', () => {
   let server
 
@@ -57,8 +46,8 @@ describe('Submission client details page', () => {
     expect(response.statusCode).toBe(200)
     expect(response.payload).toContain('1. Client details')
     expect(response.payload).toContain('Animal Disease Testing Service')
-    expect(response.payload).toContain('create a new client')
-    expect(response.payload).toContain('href="/create-client">create a new client</a>')
+    expect(response.payload).not.toContain('create-client')
+    expect(response.payload).not.toContain('edit-client')
     expect(response.payload).toContain('<form method="post" action="/submission-01-client-details">')
     expect(response.payload).toContain('<select class="govuk-select" id="client" name="clientId"')
     expect(response.payload).toMatch(/>\s*Continue\s*</)
@@ -66,7 +55,7 @@ describe('Submission client details page', () => {
     expect(response.payload).toContain('<option value="101">Acme Farm</option>')
     expect(response.payload).toContain('<option value="102">Green Acres</option>')
     expect(globalThis.fetch).toHaveBeenCalledWith('http://localhost:3200/GetClients')
-    expect(response.request.response.source.context.formDetails).toEqual({})
+    expect(response.request.response.source.context.submissionFormState).toEqual({})
     expect(response.request.response.source.context.clientOptions).toEqual([
       { value: '', text: 'Select a client', selected: true },
       { value: '101', text: 'Acme Farm', selected: false },
@@ -94,96 +83,64 @@ describe('Submission client details page', () => {
     })
 
     expect(revisitResponse.statusCode).toBe(200)
-    expect(revisitResponse.request.response.source.context.formDetails.client).toEqual({
-      clientId: '101',
-      name: 'Acme Farm'
-    })
+    expect(revisitResponse.request.response.source.context.submissionFormState.formData.clientDetails).toEqual({ clientId: '101' })
     expect(revisitResponse.payload).toContain('<option value="101" selected>Acme Farm</option>')
     expect(revisitResponse.payload).toContain('data-default-value="Acme Farm"')
   })
 
-  test.each([
-    [{ cph: '48/123/4567' }, '48/123/4567'],
-    [{}, 'New client']
-  ])('uses a fallback label for a new client', async (clientDetails, expectedLabel) => {
-    const createResponse = await server.inject({
+  test('displays the selected client details from the backend while persisting only the clientId', async () => {
+    globalThis.fetch.mockImplementation(async () => new Response(JSON.stringify([
+      {
+        clientId: 101,
+        name: 'Acme Farm',
+        farmName: 'Acme Holdings',
+        addressLine1: '1 Farm Road',
+        addressLine2: 'Farmsville',
+        county: 'Merseyside',
+        postcode: 'L20 6EC',
+        cph: '12/123/1234'
+      }
+    ]), { status: 200 }))
+
+    const selectionResponse = await server.inject({ method: 'POST', url, payload: { clientId: '101' } })
+    const response = await server.inject({
+      method: 'GET',
+      url,
+      headers: { cookie: getCookieHeader(selectionResponse) }
+    })
+
+    expect(response.request.response.source.context.submissionFormState.formData.clientDetails).toEqual({
+      clientId: '101'
+    })
+    expect(response.payload).toContain('Acme Holdings')
+    expect(response.payload).toContain('1 Farm Road, Farmsville')
+    expect(response.payload).toContain('Merseyside, L20 6EC')
+    expect(response.payload).toContain('12/123/1234')
+    expect(globalThis.fetch).not.toHaveBeenCalledWith('http://localhost:3200/GetCounties')
+  })
+
+  test('does not offer the new-client option or create/edit links once a client is selected', async () => {
+    const selectionResponse = await server.inject({
       method: 'POST',
-      url: '/create-client',
-      payload: { ...createClientPayload, ...clientDetails }
+      url,
+      payload: { clientId: '101' }
     })
 
     const response = await server.inject({
       method: 'GET',
       url,
-      headers: { cookie: getCookieHeader(createResponse) }
+      headers: { cookie: getCookieHeader(selectionResponse) }
     })
 
     expect(response.statusCode).toBe(200)
-    expect(response.request.response.source.context.clientOptions).toContainEqual({
-      value: 'new-client',
-      text: expectedLabel,
-      selected: true
-    })
-  })
-
-  test('keeps a newly created client when it is selected on the client details page', async () => {
-    const createResponse = await server.inject({
-      method: 'POST',
-      url: '/create-client',
-      payload: { ...createClientPayload, name: 'New farm' }
-    })
-
-    const response = await server.inject({
-      method: 'POST',
-      url,
-      headers: { cookie: getCookieHeader(createResponse) },
-      payload: { clientId: 'new-client' }
-    })
-
-    expect(response.statusCode).toBe(302)
-    expect(response.headers.location).toBe(url)
-
-    const revisitResponse = await server.inject({
-      method: 'GET',
-      url,
-      headers: { cookie: getCookieHeader(response) }
-    })
-
-    expect(revisitResponse.statusCode).toBe(200)
-    expect(revisitResponse.request.response.source.context.formDetails.client).toEqual({
-      ...createClientPayload,
-      name: 'New farm'
-    })
-    expect(revisitResponse.request.response.source.context.clientOptions).toContainEqual({
-      value: 'new-client',
-      text: 'New farm',
-      selected: true
-    })
-  })
-
-  test('does not select a new client when there is no created client in the session', async () => {
-    const response = await server.inject({
-      method: 'POST',
-      url,
-      payload: { clientId: 'new-client' }
-    })
-
-    expect(response.statusCode).toBe(302)
-
-    const revisitResponse = await server.inject({
-      method: 'GET',
-      url,
-      headers: { cookie: getCookieHeader(response) }
-    })
-
-    expect(revisitResponse.statusCode).toBe(200)
-    expect(revisitResponse.request.response.source.context.formDetails.client).toBeUndefined()
-    expect(revisitResponse.request.response.source.context.clientOptions).not.toContainEqual(
+    expect(response.payload).not.toContain('create-client')
+    expect(response.payload).not.toContain('edit-client')
+    expect(response.request.response.source.context.clientOptions).not.toContainEqual(
       expect.objectContaining({ value: 'new-client' })
     )
   })
 
-  test('does not treat an existing client as a newly created client', async () => {
+  test('does not select a client that is not in the backend list, including new-client', async () => {
     const existingClientResponse = await server.inject({
       method: 'POST',
       url,
@@ -206,7 +163,7 @@ describe('Submission client details page', () => {
     })
 
     expect(revisitResponse.statusCode).toBe(200)
-    expect(revisitResponse.request.response.source.context.formDetails.client).toBeUndefined()
+    expect(revisitResponse.request.response.source.context.submissionFormState.formData.clientDetails).toBeUndefined()
     expect(revisitResponse.request.response.source.context.clientOptions).not.toContainEqual(
       expect.objectContaining({ value: 'new-client' })
     )

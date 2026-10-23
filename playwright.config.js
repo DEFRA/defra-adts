@@ -41,7 +41,7 @@ webServer: [
     }
   },
   {
-    command: 'npm start --prefix services/adts-ui',
+    command: 'npm run build --prefix services/adts-ui && npm start --prefix services/adts-ui',
     url: 'http://localhost:3000',
     reuseExistingServer: !process.env.CI,
     timeout: 60 * 1000,

@@ -62,32 +62,38 @@ describe('Dashboard Layout', () => {
     })
   })
 
-  describe('New submission section', () => {
-    test('renders the "New submission" heading as h1', () => {
-      expect(html).toMatch(/<h1[^>]*class="[^"]*govuk-heading-l[^"]*"[^>]*>\s*New submission\s*<\/h1>/)
+  describe('Homepage links', () => {
+    test('does not render redundant submission or client headings', () => {
+      expect(html).not.toContain('New submission')
+      expect(html).not.toContain('>Clients<')
     })
 
-    test('displays guidance text explaining submission options', () => {
-      expect(html).toContain(
-        'Start a new sick animal submission or healthy animal submission.'
-      )
+    test('does not display redundant guidance text for the submission links', () => {
+      expect(html).not.toContain('Start a new sick animal submission or healthy animal submission.')
     })
 
-    test('renders the "Sick animal submission" button', () => {
-      expect(html).toMatch(/>\s*Sick animal submission\s*</)
+    test('renders the homepage actions as stacked GOV.UK buttons', () => {
+      const actions = [...html.matchAll(/<li>\s*(<a\b[^>]*role="button"[^>]*>[\s\S]*?<\/a>)\s*<\/li>/g)]
+        .map(([, button]) => button)
+
+      expect(actions).toHaveLength(4)
+      expect(actions[0]).toContain('class="govuk-button"')
+      expect(actions[0]).toContain('href="/submission-01-client-details"')
+      expect(actions[0]).toContain('Create a sick animal submission')
+      expect(actions[1]).toContain('Create a healthy animal submission')
+      expect(actions[2]).toContain('href="/create-client"')
+      expect(actions[2]).toContain('Create a new client')
+      expect(actions[3]).toContain('href="/update-client"')
+      expect(actions[3]).toContain('Update an existing client&#39;s details')
     })
 
-    test('renders the "Healthy animal submission" button', () => {
-      expect(html).toMatch(/>\s*Healthy animal submission\s*</)
-    })
+    test('both submission links navigate to the client details page', async () => {
+      for (const linkText of ['Create a sick animal submission', 'Create a healthy animal submission']) {
+        const link = [...html.matchAll(/<a\b([^>]*)>([\s\S]*?)<\/a>/g)]
+          .find(([, , content]) => content.includes(linkText))
 
-    test('both submission buttons navigate to the client details page', async () => {
-      for (const buttonText of ['Sick animal submission', 'Healthy animal submission']) {
-        const button = [...html.matchAll(/<a\b([^>]*)>([\s\S]*?)<\/a>/g)]
-          .find(([, , content]) => content.includes(buttonText))
-
-        expect(button).toBeDefined()
-        expect(button[1]).toContain('href="/submission-01-client-details"')
+        expect(link).toBeDefined()
+        expect(link[1]).toContain('href="/submission-01-client-details"')
       }
 
       const destinationResponse = await server.inject({
@@ -99,23 +105,14 @@ describe('Dashboard Layout', () => {
       expect(destinationResponse.payload).toContain('1. Client details')
     })
 
-    test('"Sick animal submission" button is enabled (no disabled attribute)', () => {
-      // Isolate the Sick button anchor (includes the start-icon SVG), then
-      // assert disabled is absent. Non-greedy match across newlines.
-      const match = html.match(
-        /<a[^>]*role="button"[^>]*>[\s\S]*?Sick animal submission[\s\S]*?<\/a>/
-      )
-      expect(match).not.toBeNull()
-      expect(match[0]).not.toContain('disabled=')
-      expect(match[0]).not.toContain('aria-disabled="true"')
-    })
-
-    test('"Healthy animal submission" button is enabled (no disabled attribute)', () => {
-      const match = html.match(
-        /<a[^>]*role="button"[^>]*>[\s\S]*?Healthy animal submission[\s\S]*?<\/a>/
-      )
-      expect(match[0]).not.toContain('disabled=')
-      expect(match[0]).not.toContain('aria-disabled="true"')
+    test('renders separate create and update client action buttons', () => {
+      expect(html).toContain('href="/create-client"')
+      expect(html).toContain('Create a new client')
+      expect(html).toContain('href="/update-client"')
+      expect(html).toContain('Update an existing client&#39;s details')
+      expect(html).not.toContain('govuk-!-font-size-24')
+      expect(html).not.toContain('govuk-list--bullet')
+      expect(html).not.toContain('govuk-link--no-underline')
     })
   })
 })

@@ -1,5 +1,35 @@
 # Data Model: Animal Disease Submission
 
+## Living Field Requirements Catalogue
+
+Maintain this catalogue incrementally as page requirements are explored and implemented. There is no single requirements source: use the relevant Azure DevOps tickets, screenshots, and v1 code as evidence. Record enough source detail to locate each reference again. Treat v1 behavior as evidence, not automatic authority. When evidence is incomplete or conflicts, record an open question and the competing references; do not silently resolve it by assumption.
+
+For each page, record the field, user-facing label, requiredness, validation, source reference(s), and status or open question. Add entries as evidence is reviewed, and update them when implementation or further investigation clarifies the requirement. Keep unrelated page work moving when one field remains unresolved.
+
+### Step 1: Select a client
+
+**Evidence**
+
+- Screenshot supplied for Step 1.
+- Current implementation: `services/adts-ui/src/routes/selectClient.js`, `services/adts-ui/src/views/select-client.njk`, and `services/adts-ui/tests/routes/submission-client-details.test.js`.
+
+| Field | User-facing label | Requiredness | Validation / notes | Evidence and status |
+|---|---|---|---|---|
+| `clientId` | Client | Not specified | Search/select an existing client. The prompt says a user can search by client name, address, or CPH. Existing clients are loaded through `GetClients`; the UI enhances the select with accessible autocomplete. A result is presented with client name, farm name/address, county, postcode, and CPH as shown in the screenshot. | Screenshot and current implementation. The route accepts an empty selection, so the implementation does not currently enforce selecting a client before continuing. Whether selection should be mandatory remains unspecified. |
+
+The page heading is “1. Client details”; its introduction says “Tell us about the owner (your client) of the animal or animals you want to test.” The client search prompt is “Enter the name of your client, their address, or the County Parish Holding (CPH) eg 48/234/2348:”. Step 1 only selects an existing client returned by the backend (`GetClients`); it does not link to, or create/edit, clients. Creating or editing a client is a separate, standalone capability (see below) that is not part of the submission journey or its session state.
+
+### Standalone client management (outside the submission journey)
+
+Authorised users can create or edit clients, but this is deliberately **not** wired into the submission pages. Step 1 only selects an existing client, which avoids pushing duplicate clients to the backend from within a submission.
+
+- Current implementation: `services/adts-ui/src/routes/createClient.js`, `services/adts-ui/src/routes/editClient.js`, `services/adts-ui/src/routes/clientForm.js`, `services/adts-ui/src/views/create-client.njk`, and `services/adts-ui/tests/routes/create-client.test.js`.
+- Routes: `/create-client` and `/edit-client/{clientId}` (the client is looked up from `GetClients`; unknown clients return 404).
+- These pages neither read nor write submission form state, show no submission progress, and redirect to `/` after saving.
+- Persistence is not implemented: the backend exposes no create/update client endpoint, so the POST handlers validate the payload and carry a TODO.
+
+Fields (all optional strings; unspecified validation is not inferred): `cph`, `name`, `farmName`, `addressLine1`, `addressLine2`, `addressLine3`, `county` (displayed as returned by the backend; blank if absent), `postcode`.
+
 ## Submission Draft
 
 A user's in-progress report. The backend owns the durable draft; Yar may cache the current draft ID and form data during one UI session.
@@ -10,7 +40,7 @@ A user's in-progress report. The backend owns the durable draft; Yar may cache t
 | `ownerId` | Authenticated user who owns the draft | Derived from trusted server identity; never accepted from browser form data |
 | `status` | Draft lifecycle state | `draft`, `submitting`, or `submitted`; invalid transitions are rejected |
 | `lastSavedPage` | Stable page key to resume at | Must match an allowlisted page; updated with every successful progression |
-| `formData` | Complete current report answers | Replaced as a whole on progression; exact field schema to be supplied during task refinement |
+| `formData` | Complete current report answers | Replaced as a whole on progression; field schema is recorded incrementally in the living field requirements catalogue |
 | `revision` | Monotonic version of the persisted snapshot | Conditional writes reject stale revisions to prevent silent lost updates |
 | `createdAt` | Draft creation time | Set by backend |
 | `updatedAt` | Most recent successful save time | Set by backend |
@@ -18,11 +48,25 @@ A user's in-progress report. The backend owns the durable draft; Yar may cache t
 
 ## Report Data (`formData`)
 
-Concrete field names and validation are intentionally deferred until approved ADTS/APHA fields are supplied.
+Concrete field names and validation are captured incrementally in the living field requirements catalogue above, with source references and unresolved questions. The client details captured on Step 1 are represented as `formData.clientDetails`:
+
+```json
+{
+  "formData": {
+    "clientDetails": {
+      "clientId": ""
+    }
+  }
+}
+```
+
+`clientId` identifies the selected existing client; a submission can only reference an existing client. Only the `clientId` is persisted. Display details (name, farm, address, county, postcode, CPH) are read from the client record returned by `GetClients` each time they are shown and are never copied into the submission. The backend returns fully formed client records, so the UI makes no separate county lookup.
+
+The UI stores this object in the Yar value keyed by `submissionFormState`, under `formData.clientDetails`. Each submission page should preserve the existing `submissionFormState` properties and update only its own section of `formData`.
 
 | Concept | Cardinality | Validation / notes |
 |---|---:|---|
-| Client details | One per report | Required fields follow existing ADTS/APHA requirements |
+| `clientDetails` | One per report | Field-level requiredness and validation are listed under Step 1 above; do not infer unspecified requirements. |
 | Species | One per report | Required; all animals in the report must match it |
 | Animal | One or more per report | Each animal belongs to the single report species |
 | Clinical history | Report and/or animal-associated answers, according to approved field definitions | Required fields follow existing ADTS/APHA requirements |

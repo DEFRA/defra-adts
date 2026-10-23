@@ -8,7 +8,7 @@
 
 Deliver the eight-stage animal disease report as progressively enhanced Nunjucks pages in the existing HAPI UI. Keep Yar as a short-lived session working copy and call backend methods for client lookup, draft creation/update, and draft retrieval. The UI treats the backend as the persistence boundary and does not know or configure its storage technology. The backend owns durable drafts, currently in DynamoDB. On final submission, the backend sends the completed report and mandatory test-kit order through the submissions service to LIMS. Payment is not part of this journey.
 
-The form field catalogue is intentionally deferred until task refinement; use a validated `formData` boundary that can accommodate the confirmed ADTS/APHA fields without inventing them in this plan.
+Maintain the form field catalogue incrementally in `data-model.md` as page-specific evidence is reviewed from Azure DevOps tickets, screenshots, and the v1 codebase. Record source references and mark uncertain or conflicting evidence as open questions; do not infer requirements from incomplete evidence. Use a validated `formData` boundary that can accommodate the resulting field set.
 
 ## Technical Context
 
@@ -33,7 +33,7 @@ The form field catalogue is intentionally deferred until task refinement; use a 
 - Every pre-submission stage is required. A submission needs at least one selected kit and a delivery address. The final Print documents stage follows successful submission.
 - Draft identity and ownership MUST come from trusted server-side user identity, never a browser-supplied owner identifier. Do not log full form payloads or sensitive client/animal details.
 - Draft storage, database credentials, table configuration, and storage-specific limits are backend concerns and MUST NOT be exposed as UI configuration or dependencies.
-- Exact report fields are intentionally not defined until task refinement provides the approved ADTS/APHA field set.
+- Field requirements are recorded page by page in the living catalogue in `data-model.md`; source evidence and unresolved questions are tracked there rather than assuming one authoritative requirements source.
 - Completed submission calls must be safely retryable without creating duplicate LIMS submissions.
 
 **Scale/Scope**: Eight named stages, each of which may contain one or more pages; one species and one or more animals per report; at least one kit per submission; one durable draft record per report, owned by its authenticated user.

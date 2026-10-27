@@ -27,7 +27,7 @@ describe('client initialization', () => {
   test('enhances the client select using its default value', async () => {
     const clientSelect = { dataset: { defaultValue: 'Acme Farm' } }
     globalThis.document = {
-      querySelector: jest.fn().mockReturnValue(clientSelect)
+      querySelector: jest.fn((selector) => selector === '#client' ? clientSelect : null)
     }
 
     await import('../../src/client/all.js')

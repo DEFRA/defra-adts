@@ -27,6 +27,7 @@ Retrieves clients available to the current user for the Client details stage.
 - **Input**: User context supplied by the trusted backend integration; no owner identity should be trusted from arbitrary form fields.
 - **Output**: Client records/options suitable for rendering in the existing client-selection form.
 - **Errors**: Backend or downstream lookup failure, surfaced to the user without presenting an empty success result.
+- On the submission pages, a client lookup failure is shown as an explicit error; it must not be presented as a missing or empty client record.
 
 ## `getCounties`
 

@@ -1,40 +1,63 @@
-import { getClients } from '../backend/clients.js'
 import { getSpecies } from '../backend/species.js'
+import {
+  BAD_GATEWAY_STATUS,
+  BAD_REQUEST_STATUS,
+  loadClientSummary,
+  safeLoad
+} from './submissionViewHelpers.js'
 
 const pageName = 'submission-02-species'
 const nextPageName = 'submission-02-animal-details'
 const OTHER = 'other'
 const COMMON_SPECIES = ['Cattle', 'Sheep', 'Chicken', 'Pig', 'Turkey', 'Duck', 'Alpaca', 'Goat']
 
-export const safeLoad = async (loader) => {
-  try {
-    return { data: await loader() }
-  } catch (error) {
-    console.error('Error contacting backend server:', error.message)
-    return { error }
+const getSavedSpeciesSelection = (savedSpecies) => {
+  if (!savedSpecies) {
+    return undefined
   }
+
+  return COMMON_SPECIES.includes(savedSpecies) ? savedSpecies : OTHER
 }
 
-export const getClientSummary = (clients, clientId) => {
-  const client = clients.find((item) => item.clientId === clientId)
+const getSpeciesSelection = (selection, otherSpecies) => {
+  const errors = {}
+  let speciesName
 
-  return {
-    name: client?.name || 'No client name set',
-    address: [client?.addressLine1, client?.addressLine2, client?.addressLine3, client?.postcode]
-      .filter(Boolean)
-      .join(', ') || 'No address set',
-    cph: client?.cph || 'No CPH number set'
+  if (COMMON_SPECIES.includes(selection)) {
+    speciesName = selection
+  } else if (selection === OTHER) {
+    if (!otherSpecies) {
+      errors.otherSpecies = 'Specify the species'
+    } else {
+      speciesName = otherSpecies
+    }
+  } else {
+    errors.species = 'Select a species'
   }
+
+  return { speciesName, errors }
 }
 
-export const loadClientSummary = async (submissionFormState) => {
-  const clientsResult = await safeLoad(getClients)
+const findSelectedSpecies = async (speciesName, selection, errors) => {
+  if (!speciesName) {
+    return undefined
+  }
 
-  return getClientSummary(clientsResult.data || [], submissionFormState.formData?.clientDetails?.clientId)
+  const speciesResult = await safeLoad(getSpecies)
+  const matchedSpecies = speciesResult.data?.find(({ name }) => name === speciesName)
+
+  if (!matchedSpecies) {
+    const errorField = selection === OTHER ? 'otherSpecies' : 'species'
+    errors[errorField] = speciesResult.error
+      ? 'The species list is unavailable. Try again later'
+      : 'Select a species from the list'
+  }
+
+  return matchedSpecies
 }
 
 const buildViewContext = async (submissionFormState, { selection, otherSpecies, errors = {} } = {}) => {
-  const [speciesResult, clientSummary] = await Promise.all([
+  const [speciesResult, clientSummaryResult] = await Promise.all([
     safeLoad(getSpecies),
     loadClientSummary(submissionFormState)
   ])
@@ -42,12 +65,12 @@ const buildViewContext = async (submissionFormState, { selection, otherSpecies, 
   const savedSpecies = submissionFormState.formData?.animalDetails?.species
   const savedIsCommon = COMMON_SPECIES.includes(savedSpecies)
 
-  const currentSelection = selection ?? (savedSpecies ? (savedIsCommon ? savedSpecies : OTHER) : undefined)
+  const currentSelection = selection ?? getSavedSpeciesSelection(savedSpecies)
   const currentOther = otherSpecies ?? (savedSpecies && !savedIsCommon ? savedSpecies : '')
 
   return {
     submissionFormState,
-    clientSummary,
+    ...clientSummaryResult,
     speciesItems: COMMON_SPECIES.map((name) => ({
       value: name,
       text: name,
@@ -71,8 +94,10 @@ const submissionSpecies = (server, submissionFormStateKey) => {
       path: `/${pageName}`,
       handler: async (request, h) => {
         const submissionFormState = request.yar.get(submissionFormStateKey) || {}
+        const context = await buildViewContext(submissionFormState)
+        const view = h.view('submission-species.njk', context)
 
-        return h.view('submission-species.njk', await buildViewContext(submissionFormState))
+        return context.clientSummaryError ? view.code(BAD_GATEWAY_STATUS) : view
       }
     },
     {
@@ -82,38 +107,16 @@ const submissionSpecies = (server, submissionFormStateKey) => {
         const submissionFormState = request.yar.get(submissionFormStateKey) || {}
         const selection = request.payload?.species
         const otherSpecies = request.payload?.otherSpecies || ''
-        const errors = {}
-        let speciesName
-
-        if (COMMON_SPECIES.includes(selection)) {
-          speciesName = selection
-        } else if (selection === OTHER) {
-          if (!otherSpecies) {
-            errors.otherSpecies = 'Specify the species'
-          } else {
-            speciesName = otherSpecies
-          }
-        } else {
-          errors.species = 'Select a species'
-        }
-
-        // The backend list is the source of truth for the speciesId that drives the next page.
-        let matchedSpecies
-        if (speciesName) {
-          const speciesResult = await safeLoad(getSpecies)
-          matchedSpecies = speciesResult.data?.find(({ name }) => name === speciesName)
-
-          if (!matchedSpecies) {
-            errors[selection === OTHER ? 'otherSpecies' : 'species'] = speciesResult.error
-              ? 'The species list is unavailable. Try again later'
-              : 'Select a species from the list'
-          }
-        }
+        const { speciesName, errors } = getSpeciesSelection(selection, otherSpecies)
+        const matchedSpecies = await findSelectedSpecies(speciesName, selection, errors)
 
         if (Object.keys(errors).length > 0) {
           const context = await buildViewContext(submissionFormState, { selection, otherSpecies, errors })
+          const view = h.view('submission-species.njk', context)
 
-          return h.view('submission-species.njk', context).code(400)
+          return context.clientSummaryError
+            ? view.code(BAD_GATEWAY_STATUS)
+            : view.code(BAD_REQUEST_STATUS)
         }
 
         const formData = submissionFormState.formData || {}
@@ -125,7 +128,11 @@ const submissionSpecies = (server, submissionFormStateKey) => {
           ...submissionFormState,
           formData: {
             ...formData,
-            animalDetails: { ...retained, speciesId: matchedSpecies.speciesId, species: matchedSpecies.name }
+            animalDetails: {
+              ...retained,
+              speciesId: matchedSpecies.speciesId,
+              species: matchedSpecies.name
+            }
           }
         })
         request.yar.touch()

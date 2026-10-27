@@ -142,4 +142,21 @@ describe('Submission species page', () => {
     expect(response.statusCode).toBe(400)
     expect(response.payload).toContain('The species list is unavailable')
   })
+
+  test('shows an explicit error when client details cannot be loaded', async () => {
+    jest.spyOn(console, 'error').mockImplementation(() => {})
+    globalThis.fetch.mockImplementation(async (requestUrl) => {
+      if (requestUrl === 'http://localhost:3200/GetSpecies') {
+        return new Response(JSON.stringify(speciesList), { status: 200 })
+      }
+      return new Response('{}', { status: 500 })
+    })
+
+    const response = await server.inject({ method: 'GET', url })
+
+    expect(response.statusCode).toBe(502)
+    expect(response.payload).toContain('Client details could not be loaded')
+    expect(response.payload).toContain('Client details unavailable')
+    expect(response.payload).not.toContain('No client name set')
+  })
 })

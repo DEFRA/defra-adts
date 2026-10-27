@@ -265,6 +265,25 @@ describe('Submission animal details page', () => {
     expect(submit.statusCode).toBe(502)
   })
 
+  test('shows an explicit error when client details cannot be loaded', async () => {
+    const selection = await selectSpecies('Sheep')
+    jest.spyOn(console, 'error').mockImplementation(() => {})
+    globalThis.fetch.mockImplementation(async (requestUrl) => {
+      if (requestUrl === 'http://localhost:3200/GetAnimalDetails?speciesId=2') {
+        return new Response(JSON.stringify(sheepDetails), { status: 200 })
+      }
+      return new Response('{}', { status: 500 })
+    })
+
+    const response = await get(selection)
+
+    expect(response.statusCode).toBe(502)
+    expect(response.payload).toContain('Client details could not be loaded')
+    expect(response.payload).toContain('Client details unavailable')
+    expect(response.payload).not.toContain('No client name set')
+    expect(response.payload).toContain('<form')
+  })
+
   test('treats a response without option lists as having no optional fields', async () => {
     detailsResponses[2] = { speciesId: '2' }
     const selection = await selectSpecies('Sheep')

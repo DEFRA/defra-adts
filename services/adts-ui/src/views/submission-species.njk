@@ -1,6 +1,7 @@
 {% extends "govuk/template.njk" %}
 
 {% from "govuk/components/header/macro.njk" import govukHeader %}
+{% from "govuk/components/notification-banner/macro.njk" import govukNotificationBanner %}
 {% from "govuk/components/radios/macro.njk" import govukRadios %}
 {% from "govuk/components/select/macro.njk" import govukSelect %}
 {% from "govuk/components/button/macro.njk" import govukButton %}
@@ -8,7 +9,7 @@
 {% from "macros/submissionProgress.njk" import submissionProgress %}
 {% from "macros/clientSummary.njk" import clientSummaryBar %}
 
-{% block pageTitle %}{% if errors.species or errors.otherSpecies %}Error: {% endif %}Animal details – ADTS{% endblock %}
+{% block pageTitle %}{% if clientSummaryError or errors.species or errors.otherSpecies %}Error: {% endif %}Animal details – ADTS{% endblock %}
 
 {% block head %}
   <link rel="stylesheet" href="/assets/css/application.css">
@@ -36,6 +37,14 @@
 
   {{ submissionProgress(2) }}
   {{ clientSummaryBar(clientSummary) }}
+
+  {% if clientSummaryError %}
+    {{ govukNotificationBanner({
+      type: "important",
+      titleText: "Important",
+      text: "Client details could not be loaded. Refresh the page to try again."
+    }) }}
+  {% endif %}
 
   {% if errors.species or errors.otherSpecies %}
     {% set errorList = [] %}

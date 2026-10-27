@@ -24,15 +24,17 @@ export const getClientSummary = (clients, clientId) => {
   }
 }
 
+const CLIENT_DETAILS_UNAVAILABLE = 'Client details unavailable'
+
 export const loadClientSummary = async (submissionFormState) => {
   const clientsResult = await safeLoad(getClients)
 
   if (clientsResult.error) {
     return {
       clientSummary: {
-        name: 'Client details unavailable',
-        address: 'Client details unavailable',
-        cph: 'Client details unavailable'
+        name: CLIENT_DETAILS_UNAVAILABLE,
+        address: CLIENT_DETAILS_UNAVAILABLE,
+        cph: CLIENT_DETAILS_UNAVAILABLE
       },
       clientSummaryError: clientsResult.error
     }

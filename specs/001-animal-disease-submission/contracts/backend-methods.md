@@ -40,6 +40,7 @@ Retrieves the county options needed for client or delivery-address forms.
 Retrieves species options for the Animal details stage.
 
 - **Output**: Species records/options suitable for rendering in the form.
+- **Current wire contract**: `GET /GetSpecies` returns `[{ "speciesId": "<string>", "name": "<string>" }]`. The backend fetches `GetSpecies` from `adts-submissions-service` and normalises it (ids as strings, malformed entries dropped).
 - **Errors**: Backend or downstream lookup failure; do not silently present an empty success result.
 
 ## `getAnimalDetails`
@@ -48,7 +49,21 @@ Retrieves animal details or reference data needed for the selected report specie
 
 - **Input**: The selected species and any other context required by the backend method contract.
 - **Output**: Animal details/reference data required by the form.
-- **Errors**: Invalid selection or backend/downstream lookup failure, surfaced without treating missing data as a successful empty result.
+- **Current wire contract**: `GET /GetAnimalDetails?speciesId=<id>` (`speciesId` required, otherwise 400) returns the following. Every option list may be empty, meaning the field does not apply to the species and the UI omits it. Option `value`s are strings and `label`s are display text. The backend fetches `GetAnimalDetails` from `adts-submissions-service` and normalises the result into this shape.
+
+  ```json
+  {
+    "speciesId": "2",
+    "ageCategories": [{ "value": "lamb", "label": "Lamb" }],
+    "purposes": [{ "value": "meat", "label": "Meat" }],
+    "keepingTypes": [{ "value": "outdoor", "label": "Outdoor" }],
+    "breeds": [{ "value": "texel", "label": "Texel" }],
+    "sexes": [{ "value": "ewe", "label": "Ewe" }],
+    "organicAccreditationApplicable": true
+  }
+  ```
+
+- **Errors**: Invalid selection or backend/downstream lookup failure, surfaced without treating missing data as a successful empty result. Downstream error statuses are preserved; unusable downstream data returns 502.
 
 ## `getTests`
 

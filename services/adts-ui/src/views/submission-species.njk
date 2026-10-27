@@ -1,0 +1,101 @@
+{% extends "govuk/template.njk" %}
+
+{% from "govuk/components/header/macro.njk" import govukHeader %}
+{% from "govuk/components/radios/macro.njk" import govukRadios %}
+{% from "govuk/components/select/macro.njk" import govukSelect %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
+{% from "govuk/components/error-summary/macro.njk" import govukErrorSummary %}
+{% from "macros/submissionProgress.njk" import submissionProgress %}
+{% from "macros/clientSummary.njk" import clientSummaryBar %}
+
+{% block pageTitle %}{% if errors.species or errors.otherSpecies %}Error: {% endif %}Animal details – ADTS{% endblock %}
+
+{% block head %}
+  <link rel="stylesheet" href="/assets/css/application.css">
+  <link rel="stylesheet" href="/assets/css/accessible-autocomplete.min.css">
+{% endblock %}
+
+{% block header %}
+  {{ govukHeader({
+    serviceName: "Animal Disease Testing Service",
+    serviceUrl: "/",
+    navigation: [
+      { text: "My Account", href: "#" },
+      { text: "Sign out", href: "#" }
+    ]
+  }) }}
+{% endblock %}
+
+{% block content %}
+  <div class="govuk-phase-banner app-phase-banner govuk-body-l">
+    <strong class="govuk-tag govuk-phase-banner__content__tag">BETA</strong>
+    <span class="govuk-phase-banner__text">
+      This is a new service – your <a class="govuk-link" href="#">feedback</a> will help us to improve it.
+    </span>
+  </div>
+
+  {{ submissionProgress(2) }}
+  {{ clientSummaryBar(clientSummary) }}
+
+  {% if errors.species or errors.otherSpecies %}
+    {% set errorList = [] %}
+    {% if errors.species %}
+      {% set errorList = (errorList.push({ text: errors.species, href: "#species" }), errorList) %}
+    {% endif %}
+    {% if errors.otherSpecies %}
+      {% set errorList = (errorList.push({ text: errors.otherSpecies, href: "#otherSpecies" }), errorList) %}
+    {% endif %}
+    {{ govukErrorSummary({ titleText: "There is a problem", errorList: errorList }) }}
+  {% endif %}
+
+  <h1 class="govuk-heading-l">2. Animal details</h1>
+  <p class="govuk-body-l">Tell us about the animals you want to test.</p>
+
+  <hr class="govuk-section-break govuk-section-break--visible app-client-details-divider">
+
+  {% if speciesListUnavailable %}
+    <div class="govuk-warning-text">
+      <span class="govuk-warning-text__icon" aria-hidden="true">!</span>
+      <strong class="govuk-warning-text__text">
+        <span class="govuk-visually-hidden">Warning</span>
+        The full list of species could not be loaded, so you can only choose from the common species.
+      </strong>
+    </div>
+  {% endif %}
+
+  <form method="post" action="/submission-02-species" novalidate>
+    {% set otherHtml %}
+      {{ govukSelect({
+        id: "otherSpecies",
+        name: "otherSpecies",
+        label: { text: "Specify species" },
+        attributes: { "data-default-value": otherSpecies },
+        errorMessage: { text: errors.otherSpecies } if errors.otherSpecies,
+        items: otherSpeciesOptions
+      }) }}
+    {% endset %}
+
+    {{ govukRadios({
+      classes: "govuk-radios--small",
+      idPrefix: "species",
+      name: "species",
+      fieldset: { legend: { text: "Species", classes: "govuk-fieldset__legend--l", isPageHeading: false } },
+      errorMessage: { text: errors.species } if errors.species,
+      items: speciesItems.concat([{
+        value: "other",
+        text: "Other",
+        checked: otherChecked,
+        conditional: { html: otherHtml }
+      }])
+    }) }}
+
+    {{ govukButton({ text: "Continue" }) }}
+  </form>
+
+  <h2 class="govuk-heading-s">Please note</h2>
+  <p class="govuk-body">If you don’t enter any information for more than 2 hours, your session will time out and you'll need to start again.</p>
+{% endblock %}
+
+{% block bodyEnd %}
+  <script type="module" src="/assets/js/all.js"></script>
+{% endblock %}

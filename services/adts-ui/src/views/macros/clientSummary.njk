@@ -1,0 +1,7 @@
+{% macro clientSummaryBar(clientSummary) %}
+  <dl class="govuk-grid-row">
+    <div class="govuk-grid-column-one-quarter"><dt class="govuk-body govuk-!-font-weight-bold">Client</dt><dd class="govuk-body govuk-!-margin-left-0">{{ clientSummary.name }}</dd></div>
+    <div class="govuk-grid-column-one-quarter"><dt class="govuk-body govuk-!-font-weight-bold">Address</dt><dd class="govuk-body govuk-!-margin-left-0">{{ clientSummary.address }}</dd></div>
+    <div class="govuk-grid-column-one-quarter"><dt class="govuk-body govuk-!-font-weight-bold">CPH number</dt><dd class="govuk-body govuk-!-margin-left-0">{{ clientSummary.cph }}</dd></div>
+  </dl>
+{% endmacro %}

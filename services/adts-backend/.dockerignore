@@ -1,4 +1,10 @@
 node_modules
 Dockerfile
+.git/
+.dockerignore
+Dockerfile*
+*.log*
+.env*
+coverage/
 LICENCE
 README.md

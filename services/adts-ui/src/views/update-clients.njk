@@ -1,0 +1,49 @@
+{% extends "govuk/template.njk" %}
+
+{% from "govuk/components/header/macro.njk" import govukHeader %}
+
+{% block pageTitle %}Update a client's details – ADTS{% endblock %}
+
+{% block head %}
+  <link rel="stylesheet" href="/assets/css/application.css">
+{% endblock %}
+
+{% block header %}
+  {{ govukHeader({
+    serviceName: "Animal Disease Testing Service",
+    serviceUrl: "/",
+    navigation: [
+      { text: "My Account", href: "/" },
+      { text: "Sign out", href: "/" }
+    ]
+  }) }}
+{% endblock %}
+
+{% block content %}
+  <a class="govuk-back-link" href="/">Back to home</a>
+  <h1 class="govuk-heading-l govuk-!-margin-top-4">Update an existing client's details</h1>
+
+  {% if clients.length %}
+    <p class="govuk-body">Select a client to update their details.</p>
+    <ul class="govuk-list">
+      {% for client in clients %}
+        <li>
+          <a class="govuk-link govuk-!-font-size-19" href="{{ client.editUrl }}">{{ client.displayName }}</a>
+          {% if client.farmName or client.cph %}
+            <p class="govuk-body-s govuk-!-margin-bottom-2">
+              {% if client.farmName %}{{ client.farmName }}{% endif %}
+              {% if client.farmName and client.cph %} – {% endif %}
+              {% if client.cph %}{{ client.cph }}{% endif %}
+            </p>
+          {% endif %}
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p class="govuk-body">There are no existing clients to update.</p>
+  {% endif %}
+{% endblock %}
+
+{% block bodyEnd %}
+  <script type="module" src="/assets/js/all.js"></script>
+{% endblock %}

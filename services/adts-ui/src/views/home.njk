@@ -33,18 +33,12 @@
   <div class="govuk-grid-row">
     <div class="govuk-grid-column-full">
       <p class="govuk-body">Signed in as Test User 2</p>
-      <h1 class="govuk-heading-l">New submission</h1>
-      <p class="govuk-body">Start a new sick animal submission or healthy animal submission.</p>
-      {{ govukButton({
-        text: "Sick animal submission",
-        href: "/submission-01-client-details",
-        isStartButton: true
-      }) }}
-      {{ govukButton({
-        text: "Healthy animal submission",
-        href: "/submission-01-client-details",
-        isStartButton: true
-      }) }}
+      <ul class="govuk-list">
+        <li>{{ govukButton({ text: "Create a sick animal submission", href: "/submission-01-client-details" }) }}</li>
+        <li>{{ govukButton({ text: "Create a healthy animal submission", href: "/submission-01-client-details" }) }}</li>
+        <li>{{ govukButton({ text: "Create a new client", href: "/create-client" }) }}</li>
+        <li>{{ govukButton({ text: "Update an existing client's details", href: "/update-client" }) }}</li>
+      </ul>
 
       <hr class="govuk-section-break govuk-section-break--m govuk-section-break--visible">
 

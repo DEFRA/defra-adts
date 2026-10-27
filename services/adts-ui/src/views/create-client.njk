@@ -1,9 +1,8 @@
 {% extends "govuk/template.njk" %}
 
 {% from "govuk/components/header/macro.njk" import govukHeader %}
-{% from "macros/submissionProgress.njk" import submissionProgress %}
 
-{% block pageTitle %}Create a new client – ADTS{% endblock %}
+{% block pageTitle %}{% if isEdit %}Edit client details{% else %}Create a new client{% endif %} – ADTS{% endblock %}
 
 {% block head %}
   <link rel="stylesheet" href="/assets/css/application.css">
@@ -28,16 +27,10 @@
     </span>
   </div>
 
-  {{ submissionProgress(1, "/submission-01-client-details") }}
+  <h1 class="govuk-heading-l">{% if isEdit %}Edit client details{% else %}Create a new client{% endif %}</h1>
+  <p class="govuk-body-l">Enter the details of your client - if you have the full CPH this can be used to retrieve the client record.</p>
 
-  <h1 class="govuk-heading-l">1. Client details</h1>
-  <p class="govuk-body-l">Tell us about the owner (your client) of the animal or animals you want to test.</p>
-
-  <hr class="govuk-section-break govuk-section-break--visible app-client-details-divider">
-
-  <form method="post" action="/create-client">
-    <h2 class="govuk-heading-l">Client</h2>
-    <p class="govuk-body-l">Enter the details of your client - if you have the full CPH this can be used to retrieve the client record.</p>
+  <form method="post" action="{{ formAction or '/create-client' }}">
 
     <div class="govuk-form-group">
       <label class="govuk-label" for="cph">CPH number eg 48/234/2348:</label>
@@ -72,12 +65,7 @@
 
     <div class="govuk-form-group">
       <label class="govuk-label" for="county">County:</label>
-      <select class="govuk-select govuk-!-width-one-half" id="county" name="county">
-        <option value=""{% if not client.county %} selected{% endif %}></option>
-        {% for county in countyOptions %}
-          <option value="{{ county.value }}"{% if county.selected %} selected{% endif %}>{{ county.text }}</option>
-        {% endfor %}
-      </select>
+      <input class="govuk-input govuk-!-width-one-half" id="county" name="county" type="text" autocomplete="address-level1" value="{{ client.county or '' }}">
     </div>
 
     <div class="govuk-form-group">
@@ -85,8 +73,8 @@
       <input class="govuk-input govuk-!-width-one-half" id="postcode" name="postcode" type="text" autocomplete="postal-code" value="{{ client.postcode or '' }}">
     </div>
 
-    <button class="govuk-button" data-module="govuk-button" type="submit">Save</button>
-    <a class="govuk-link govuk-!-margin-left-3" href="/submission-01-client-details">Cancel</a>
+    <button class="govuk-button" data-module="govuk-button" type="submit">{{ submitText or 'Save' }}</button>
+    <a class="govuk-link govuk-!-margin-left-3" href="/">Cancel</a>
   </form>
 {% endblock %}
 

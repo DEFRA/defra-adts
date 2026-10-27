@@ -4,7 +4,6 @@ import Hapi from '@hapi/hapi'
 import Inert from '@hapi/inert'
 import Joi from 'joi'
 import { constants } from 'http2'
-import { toAnimalDetails, toSpeciesList } from './animalDetails.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -98,42 +97,7 @@ const createServer = async () => {
     }
   }
 
-  const getTransformed = (path, transform) => async (request, h) => {
-    const queryParams = new URLSearchParams(request.query).toString()
-    const url = `${process.env.SUBMISSIONS_SERVICE_URL}/${path}${queryParams ? `?${queryParams}` : ''}`
-
-    try {
-      const response = await fetch(url)
-      const payload = await response.json()
-
-      if (!response.ok) {
-        return h.response(payload).code(response.status)
-      }
-
-      return h.response(transform(payload, request.query))
-    } catch (error) {
-      console.error('Error retrieving %s from submissions service:', path, error.message)
-      return h.response({ error: 'Unable to retrieve data from submissions service' })
-        .code(constants.HTTP_STATUS_BAD_GATEWAY)
-    }
-  }
-
   server.route([
-    {
-      method: 'GET',
-      path: '/GetSpecies',
-      handler: getTransformed('GetSpecies', toSpeciesList)
-    },
-    {
-      method: 'GET',
-      path: '/GetAnimalDetails',
-      options: {
-        validate: {
-          query: Joi.object({ speciesId: Joi.string().trim().required() }).required()
-        }
-      },
-      handler: getTransformed('GetAnimalDetails', (payload, query) => toAnimalDetails(payload, query.speciesId))
-    },
     {
       method: 'GET',
       path: '/GetClients',

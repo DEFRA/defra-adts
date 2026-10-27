@@ -42,7 +42,7 @@ The page heading is “1. Client details”; its introduction says “Tell us ab
 
 Only values the user supplies are persisted; empty optional fields are omitted. A supplied value must be one of the options the backend returned for the species.
 
-Open questions: the maximum number of animals per submission and the animal ID format (assumed 10 and 50 characters); whether the common species/age/purpose option labels come from the backend as assumed; the `GetSpecies` and `GetAnimalDetails` downstream (submissions service/LIMS) endpoints do not yet exist, so the backend currently normalises an assumed downstream shape (see `contracts/backend-methods.md`); the common-species list is fixed to the screenshot (matched to backend species by name); the single-species-per-submission rule is enforced by this step choosing one species for all animals; the Continue destination after this page (Clinical history) is not yet built, so the page redirects to itself.
+Open questions: the maximum number of animals per submission and the animal ID format (assumed 10 and 50 characters); whether the common species/age/purpose option labels come from the backend as assumed; the `GetSpecies` and `GetAnimalDetails` backend endpoints do not yet exist; the UI is built to an assumed shape (see `contracts/backend-methods.md`); the common-species list is fixed to the screenshot (matched to backend species by name); the single-species-per-submission rule is enforced by this step choosing one species for all animals; the Continue destination after this page (Clinical history) is not yet built, so the page redirects to itself.
 
 ### Standalone client management (outside the submission journey)
 

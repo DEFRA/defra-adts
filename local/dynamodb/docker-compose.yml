@@ -2,7 +2,7 @@ name: adts-dynamodb-local
 
 services:
   dynamodb:
-    image: amazon/dynamodb-local:latest
+    image: amazon/dynamodb-local:3.3.2
     container_name: adts-dynamodb-local
     command: ["-jar", "DynamoDBLocal.jar", "-sharedDb", "-dbPath", "/data"]
     user: root
@@ -18,7 +18,7 @@ services:
 
   # One-shot job: creates the ADTS tables (if missing) and loads sample data.
   init:
-    image: amazon/aws-cli:latest
+    image: amazon/aws-cli:2.38.5
     container_name: adts-dynamodb-init
     depends_on:
       dynamodb:

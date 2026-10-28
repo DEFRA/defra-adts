@@ -16,7 +16,7 @@ description: "Implementation tasks for local DynamoDB integration and E2E testin
 
 **Purpose**: Make the local database setup reproducible.
 
-- [ ] T001 [P] Pin DynamoDB Local and AWS CLI image versions in `local/dynamodb/docker-compose.yml`, and record the selected tags in `specs/002-local-dynamodb/quickstart.md`
+- [X] T001 [P] Pin DynamoDB Local and AWS CLI image versions in `local/dynamodb/docker-compose.yml`, and record the selected tags in `specs/002-local-dynamodb/quickstart.md`
 
 ---
 
@@ -161,4 +161,3 @@ Then complete T014 with the final commands and run T015.
 3. Deliver US2 to make E2E use the same local-only data source.
 4. Deliver US3 to select and restore seeded or empty state.
 5. Run the final repeatability and coverage validation.
-

@@ -2,6 +2,35 @@
 
 Use this guide to start the local DynamoDB, load or reset the test data, run the tests against it, and check that the feature works. Table details are in [data-model.md](./data-model.md). Design choices are in [research.md](./research.md).
 
+## Windows setup (WSL 2)
+
+The local database harness uses POSIX shell scripts. On Windows, run the commands in this guide from a WSL 2 Linux distribution rather than PowerShell or Command Prompt.
+
+1. In an elevated PowerShell window, install WSL 2 and Ubuntu if they are not already installed:
+
+   ```powershell
+   wsl --install -d Ubuntu
+   ```
+
+   Restart Windows if prompted, then launch Ubuntu and create its Linux user.
+2. Install Docker Desktop for Windows, enable its WSL 2 engine, and enable WSL integration for the Ubuntu distribution in Docker Desktop settings.
+3. In the Ubuntu terminal, install Node.js 24 and npm using the [official Node.js download instructions](https://nodejs.org/en/download). Install Node.js inside Ubuntu rather than relying on a Windows installation, which may not be available on the WSL `PATH`. Clone the repository into the Linux filesystem (for example, under `~/projects`, not `/mnt/c`) and change into the repository directory.
+4. Confirm the WSL terminal can use Docker Compose and Node.js:
+
+   ```bash
+   docker compose version
+   node --version
+   npm --version
+   ```
+
+   `node --version` should report version 24. Install repository dependencies from that same terminal:
+
+   ```bash
+   npm ci
+   npm ci --prefix services/adts-backend
+   ```
+5. Continue with the steps below from the Ubuntu terminal. The test commands start and reset DynamoDB automatically; no AWS account or credentials are required.
+
 ## Prerequisites
 
 - Docker with the Compose plugin (Docker Desktop, or Docker Engine on Linux). Confirm with `docker compose version`.
@@ -95,3 +124,5 @@ Run these checks to confirm each success criterion in [spec.md](./spec.md):
 | Seed mode | `seeded` (default) | `SEED_DATA` environment variable |
 
 Image tags are pinned in [docker-compose.yml](../../local/dynamodb/docker-compose.yml). Update them only as a deliberate change, since repeatability (SC-003) depends on them.
+
+The pinned images are `amazon/dynamodb-local:3.3.2` and `amazon/aws-cli:2.38.5`.

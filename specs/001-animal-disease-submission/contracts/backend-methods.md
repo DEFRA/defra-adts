@@ -27,6 +27,7 @@ Retrieves clients available to the current user for the Client details stage.
 - **Input**: User context supplied by the trusted backend integration; no owner identity should be trusted from arbitrary form fields.
 - **Output**: Client records/options suitable for rendering in the existing client-selection form.
 - **Errors**: Backend or downstream lookup failure, surfaced to the user without presenting an empty success result.
+- On the submission pages, a client lookup failure is shown as an explicit error; it must not be presented as a missing or empty client record.
 
 ## `getCounties`
 
@@ -40,6 +41,7 @@ Retrieves the county options needed for client or delivery-address forms.
 Retrieves species options for the Animal details stage.
 
 - **Output**: Species records/options suitable for rendering in the form.
+- **Expected wire contract (not yet implemented in `adts-backend`; the UI is built to this shape)**: `GET /GetSpecies` returns `[{ "speciesId": "<string>", "name": "<string>" }]`.
 - **Errors**: Backend or downstream lookup failure; do not silently present an empty success result.
 
 ## `getAnimalDetails`
@@ -48,6 +50,20 @@ Retrieves animal details or reference data needed for the selected report specie
 
 - **Input**: The selected species and any other context required by the backend method contract.
 - **Output**: Animal details/reference data required by the form.
+- **Expected wire contract (not yet implemented in `adts-backend`; the UI is built to this shape)**: `GET /GetAnimalDetails?speciesId=<id>` (`speciesId` required) returns the following. Every option list may be empty, meaning the field does not apply to the species and the UI omits it. Option `value`s are strings and `label`s are display text.
+
+  ```json
+  {
+    "speciesId": "2",
+    "ageCategories": [{ "value": "lamb", "label": "Lamb" }],
+    "purposes": [{ "value": "meat", "label": "Meat" }],
+    "keepingTypes": [{ "value": "outdoor", "label": "Outdoor" }],
+    "breeds": [{ "value": "texel", "label": "Texel" }],
+    "sexes": [{ "value": "ewe", "label": "Ewe" }],
+    "organicAccreditationApplicable": true
+  }
+  ```
+
 - **Errors**: Invalid selection or backend/downstream lookup failure, surfaced without treating missing data as a successful empty result.
 
 ## `getTests`

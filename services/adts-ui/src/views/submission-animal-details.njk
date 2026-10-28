@@ -1,0 +1,184 @@
+{% extends "govuk/template.njk" %}
+
+{% from "govuk/components/header/macro.njk" import govukHeader %}
+{% from "govuk/components/notification-banner/macro.njk" import govukNotificationBanner %}
+{% from "govuk/components/error-summary/macro.njk" import govukErrorSummary %}
+{% from "govuk/components/radios/macro.njk" import govukRadios %}
+{% from "govuk/components/select/macro.njk" import govukSelect %}
+{% from "govuk/components/input/macro.njk" import govukInput %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
+{% from "macros/submissionProgress.njk" import submissionProgress %}
+{% from "macros/clientSummary.njk" import clientSummaryBar %}
+
+{% set errorFields = [
+  { key: "breed", id: "breed" },
+  { key: "numberOfAnimals", id: "numberOfAnimals" },
+  { key: "sex", id: "sex" },
+  { key: "ageCategory", id: "ageCategory" },
+  { key: "organicAccreditation", id: "organicAccreditation" },
+  { key: "purpose", id: "purpose" },
+  { key: "keepingType", id: "keepingType" }
+] %}
+{% set errorList = [] %}
+{% for field in errorFields %}
+  {% if errors and errors[field.key] %}
+    {% set errorList = (errorList.push({ text: errors[field.key], href: "#" + field.id }), errorList) %}
+  {% endif %}
+{% endfor %}
+{% for input in animalIdInputs %}
+  {% if input.error %}
+    {% set errorList = (errorList.push({ text: input.error, href: "#" + input.id }), errorList) %}
+  {% endif %}
+{% endfor %}
+
+{% block pageTitle %}{% if animalDetailsUnavailable or clientSummaryError or errorList.length %}Error: {% endif %}Animal details – ADTS{% endblock %}
+
+{% block head %}
+  <link rel="stylesheet" href="/assets/css/application.css">
+{% endblock %}
+
+{% block header %}
+  {{ govukHeader({
+    serviceName: "Animal Disease Testing Service",
+    serviceUrl: "/",
+    navigation: [
+      { text: "My Account", href: "#" },
+      { text: "Sign out", href: "#" }
+    ]
+  }) }}
+{% endblock %}
+
+{% block content %}
+  <div class="govuk-phase-banner app-phase-banner govuk-body-l">
+    <strong class="govuk-tag govuk-phase-banner__content__tag">BETA</strong>
+    <span class="govuk-phase-banner__text">
+      This is a new service – your <a class="govuk-link" href="#">feedback</a> will help us to improve it.
+    </span>
+  </div>
+
+  {{ submissionProgress(2) }}
+  {{ clientSummaryBar(clientSummary) }}
+
+  {% if clientSummaryError %}
+    {{ govukNotificationBanner({
+      type: "important",
+      titleText: "Important",
+      text: "Client details could not be loaded. Refresh the page to try again."
+    }) }}
+  {% endif %}
+
+  {% if errorList.length %}
+    {{ govukErrorSummary({ titleText: "There is a problem", errorList: errorList }) }}
+  {% endif %}
+
+  <h1 class="govuk-heading-l">2. Animal details</h1>
+  <p class="govuk-body-l">Tell us about the animals you want to test.</p>
+
+  <hr class="govuk-section-break govuk-section-break--visible app-client-details-divider">
+
+  <p class="govuk-body">Species: <strong>{{ species }}</strong>
+    <a class="govuk-link govuk-!-margin-left-2" href="{{ speciesPageUrl }}">Change<span class="govuk-visually-hidden"> species</span></a>
+  </p>
+
+  {% if animalDetailsUnavailable %}
+    {{ govukNotificationBanner({
+      type: "important",
+      titleText: "Important",
+      text: "The animal details for this species could not be loaded. Refresh the page to try again."
+    }) }}
+  {% else %}
+    <form method="post" action="/submission-02-animal-details" novalidate>
+      {% if breedItems.length > 1 %}
+        {{ govukSelect({
+          id: "breed",
+          name: "breed",
+          label: { text: "Breed (optional)", classes: "govuk-label--m" },
+          items: breedItems,
+          attributes: { "data-default-value": "" },
+          errorMessage: { text: errors.breed } if errors.breed
+        }) }}
+      {% endif %}
+
+      {{ govukSelect({
+        id: "numberOfAnimals",
+        name: "numberOfAnimals",
+        label: { text: "Number of animals", classes: "govuk-label--m" },
+        items: numberOfAnimalsItems,
+        errorMessage: { text: errors.numberOfAnimals } if errors.numberOfAnimals
+      }) }}
+
+      <fieldset class="govuk-fieldset" id="animal-ids">
+        <legend class="govuk-fieldset__legend">Enter IDs, eg ear tag number (optional).</legend>
+        {% for input in animalIdInputs %}
+          <div class="app-animal-id" data-animal-index="{{ input.index }}">
+            {{ govukInput({
+              id: input.id,
+              name: input.id,
+              label: { text: "Animal " + input.index + ":" },
+              classes: "govuk-input--width-20",
+              value: input.value,
+              errorMessage: { text: input.error } if input.error
+            }) }}
+          </div>
+        {% endfor %}
+      </fieldset>
+
+      {% if sexItems.length %}
+        {{ govukRadios({
+          idPrefix: "sex",
+          name: "sex",
+          classes: "govuk-radios--small govuk-radios--inline",
+          fieldset: { legend: { text: "Sex (optional)", classes: "govuk-fieldset__legend--m" } },
+          errorMessage: { text: errors.sex } if errors.sex,
+          items: sexItems
+        }) }}
+      {% endif %}
+
+      {% if ageCategoryItems.length %}
+        {{ govukRadios({
+          idPrefix: "ageCategory",
+          name: "ageCategory",
+          classes: "govuk-radios--small govuk-radios--inline",
+          fieldset: { legend: { text: "Age category", classes: "govuk-fieldset__legend--m" } },
+          errorMessage: { text: errors.ageCategory } if errors.ageCategory,
+          items: ageCategoryItems
+        }) }}
+      {% endif %}
+
+      {% if showOrganicAccreditation %}
+        {{ govukRadios({
+          idPrefix: "organicAccreditation",
+          name: "organicAccreditation",
+          classes: "govuk-radios--small govuk-radios--inline",
+          fieldset: { legend: { text: "Is the farm accredited organic? (optional)", classes: "govuk-fieldset__legend--m" } },
+          errorMessage: { text: errors.organicAccreditation } if errors.organicAccreditation,
+          items: organicItems
+        }) }}
+      {% endif %}
+
+      {% if purposeItems.length %}
+        {{ govukRadios({
+          idPrefix: "purpose",
+          name: "purpose",
+          classes: "govuk-radios--small govuk-radios--inline",
+          fieldset: { legend: { text: "Purpose", classes: "govuk-fieldset__legend--m" } },
+          errorMessage: { text: errors.purpose } if errors.purpose,
+          items: purposeItems
+        }) }}
+      {% endif %}
+
+      {% if keepingTypeItems.length %}
+        {{ govukRadios({
+          idPrefix: "keepingType",
+          name: "keepingType",
+          classes: "govuk-radios--small govuk-radios--inline",
+          fieldset: { legend: { text: "Where are they kept? (optional)", classes: "govuk-fieldset__legend--m" } },
+          errorMessage: { text: errors.keepingType } if errors.keepingType,
+          items: keepingTypeItems
+        }) }}
+      {% endif %}
+
+      {{ govukButton({ text: "Continue" }) }}
+    </form>
+  {% endif %}
+{% endblock %}

@@ -1,0 +1,23 @@
+{
+  "adts-submissions": [
+    { "PutRequest": { "Item": {
+      "PK": { "S": "SUBMISSION#submission-123" },
+      "submissionId": { "S": "submission-123" },
+      "practiceId": { "S": "practice-123" },
+      "userId": { "S": "user-456" },
+      "formData": { "M": {
+        "clientDetails": { "M": {} },
+        "animalDetails": { "M": {} },
+        "clinicalHistory": { "M": {} },
+        "tests": { "M": {} },
+        "delivery": { "M": {} }
+      } },
+      "createdAt": { "S": "2026-10-06T10:00:00Z" },
+      "updatedAt": { "S": "2026-10-06T10:15:00Z" },
+      "GSI1PK": { "S": "USER#user-456" },
+      "GSI1SK": { "S": "UPDATED#2026-10-06T10:15:00Z#submission-123" },
+      "GSI2PK": { "S": "PRACTICE#practice-123" },
+      "GSI2SK": { "S": "UPDATED#2026-10-06T10:15:00Z#submission-123" }
+    } } }
+  ]
+}

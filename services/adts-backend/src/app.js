@@ -4,10 +4,13 @@ import Hapi from '@hapi/hapi'
 import Inert from '@hapi/inert'
 import Joi from 'joi'
 import { constants } from 'http2'
+import { createDocumentClient } from './data/dynamo.js'
+import { getSpecies } from './data/species.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
-const createServer = async () => {
+const createServer = async ({ docClient } = {}) => {
+  let dynamoClient = docClient
   const server = Hapi.server({
     port: process.env.PORT
   })
@@ -114,6 +117,21 @@ const createServer = async () => {
       handler: proxyGet('submissions')
     }
   ])
+
+  server.route({
+    method: 'GET',
+    path: '/GetSpecies',
+    handler: async (_request, h) => {
+      try {
+        dynamoClient ??= createDocumentClient()
+        return h.response(await getSpecies(dynamoClient))
+      } catch (error) {
+        console.error('Error retrieving species:', error.message)
+        return h.response({ error: 'Unable to retrieve species' })
+          .code(constants.HTTP_STATUS_BAD_GATEWAY)
+      }
+    }
+  })
 
   return server
 }

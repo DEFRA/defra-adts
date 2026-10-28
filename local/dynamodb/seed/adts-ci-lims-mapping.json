@@ -1,0 +1,14 @@
+{
+  "adts-ci-lims-mapping": [
+    { "PutRequest": { "Item": {
+      "PK": { "S": "USER-123" },
+      "ciID": { "S": "USER-123" },
+      "limsId": { "S": "LIMS-456789" }
+    } } },
+    { "PutRequest": { "Item": {
+      "PK": { "S": "USER-456" },
+      "ciID": { "S": "USER-456" },
+      "limsId": { "S": "LIMS-987654" }
+    } } }
+  ]
+}

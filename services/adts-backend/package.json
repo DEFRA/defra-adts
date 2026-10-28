@@ -15,9 +15,11 @@
     "test:routes": "node --experimental-vm-modules node_modules/jest/bin/jest.js tests/routes --coverage"
   },
   "dependencies": {
+    "@aws-sdk/client-dynamodb": "3.1158.0",
+    "@aws-sdk/lib-dynamodb": "3.1158.0",
     "@hapi/hapi": "21.4.10",
-    "joi": "^18.2.9",
-    "@hapi/inert": "7.1.2"
+    "@hapi/inert": "7.1.2",
+    "joi": "^18.2.9"
   },
   "devDependencies": {
     "esbuild": "0.28.1",

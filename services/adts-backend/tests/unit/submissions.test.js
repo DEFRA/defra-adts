@@ -62,6 +62,19 @@ describe('getSubmissions', () => {
     })
   })
 
+  test('matches text filters case-insensitively and excludes missing text values', async () => {
+    const docClient = clientReturning({
+      Items: [
+        draft({ submissionId: 'matching-draft', client: 'ACME Farm', clinician: 'Dr Alice Morgan' }),
+        draft({ submissionId: 'missing-client', client: undefined })
+      ]
+    })
+
+    const response = await getSubmissions(docClient, { client: ' acme ', clinician: 'ALICE' })
+
+    expect(response.results.map(({ id }) => id)).toEqual(['matching-draft'])
+  })
+
   test('follows pagination and maps submissions with tests', async () => {
     const docClient = clientReturning(
       {

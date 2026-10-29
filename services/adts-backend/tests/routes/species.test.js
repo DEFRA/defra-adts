@@ -63,6 +63,15 @@ describe('GET /GetSpecies', () => {
     expect(response.result).toEqual([])
   })
 
+  test('returns an empty array when the query response has no Items field', async () => {
+    docClient.send.mockResolvedValue({})
+
+    const response = await server.inject({ method: 'GET', url: '/GetSpecies' })
+
+    expect(response.statusCode).toBe(200)
+    expect(response.result).toEqual([])
+  })
+
   test('returns a gateway error rather than an empty result when DynamoDB fails', async () => {
     docClient.send.mockRejectedValue(new Error('connect ECONNREFUSED'))
     jest.spyOn(console, 'error').mockImplementation(() => {})

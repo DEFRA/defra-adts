@@ -1,5 +1,10 @@
 import { ScanCommand } from '@aws-sdk/lib-dynamodb'
 
+const DAYS_IN_WEEK = 7
+const DAYS_IN_FORTNIGHT = 14
+const MONTHS_IN_HALF_YEAR = 6
+const MONTHS_IN_EIGHTEEN_MONTHS = 18
+
 const tableName = () => process.env.SUBMISSIONS_TABLE || 'adts-submissions'
 
 const dateCutoff = (period, now = new Date()) => {
@@ -10,12 +15,12 @@ const dateCutoff = (period, now = new Date()) => {
   const cutoff = new Date(now)
   const periods = {
     '1_day': () => cutoff.setUTCDate(cutoff.getUTCDate() - 1),
-    '1_week': () => cutoff.setUTCDate(cutoff.getUTCDate() - 7),
-    '14_days': () => cutoff.setUTCDate(cutoff.getUTCDate() - 14),
+    '1_week': () => cutoff.setUTCDate(cutoff.getUTCDate() - DAYS_IN_WEEK),
+    '14_days': () => cutoff.setUTCDate(cutoff.getUTCDate() - DAYS_IN_FORTNIGHT),
     '1_month': () => cutoff.setUTCMonth(cutoff.getUTCMonth() - 1),
-    '6_months': () => cutoff.setUTCMonth(cutoff.getUTCMonth() - 6),
+    '6_months': () => cutoff.setUTCMonth(cutoff.getUTCMonth() - MONTHS_IN_HALF_YEAR),
     '1_year': () => cutoff.setUTCFullYear(cutoff.getUTCFullYear() - 1),
-    '18_months': () => cutoff.setUTCMonth(cutoff.getUTCMonth() - 18)
+    '18_months': () => cutoff.setUTCMonth(cutoff.getUTCMonth() - MONTHS_IN_EIGHTEEN_MONTHS)
   }
 
   if (!Object.hasOwn(periods, period)) {

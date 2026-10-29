@@ -1,5 +1,7 @@
 # ADTS Backend
 
+Changes to this directory trigger the service's CI build.
+
 The UI calls this service using `BACKEND_SERVICE_URL`. The backend forwards
 submission and client lookup requests to `SUBMISSIONS_SERVICE_URL`.
 

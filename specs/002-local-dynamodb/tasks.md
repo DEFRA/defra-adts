@@ -40,7 +40,7 @@ description: "Implementation tasks for local DynamoDB integration and E2E testin
 
 ### Implementation for User Story 1
 
-- [ ] T005 [P] [US1] Add `services/adts-backend/tests/integration/dynamo.integration.test.js` to exercise the backend's real DynamoDB species lookup against the local endpoint and verify expected fixture results and query failure handling
+- [X] T005 [P] [US1] Add `services/adts-backend/tests/integration/dynamo.integration.test.js` to exercise the backend's real DynamoDB species lookup against the local endpoint and verify expected fixture results and query failure handling
 - [ ] T006 [P] [US1] Add a `test:integration` npm script to `services/adts-backend/package.json` that starts and resets the local database before running the backend integration tests
 - [ ] T007 [US1] Add the root `test:integration` wrapper in `package.json` to invoke the backend integration script
 - [ ] T008 [US1] Update `.github/workflows/adts-services_build.yml` to run the backend integration script after backend validation tests and include `local/dynamodb/**` in the backend and E2E change filters

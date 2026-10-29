@@ -40,7 +40,20 @@ jobs:
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
 
+      - name: Verify Docker engine and Compose
+        env:
+          TEST_CONTAINER_ENGINE: docker
+          DOCKER_CONTEXT: default
+          DOCKER_HOST: unix:///var/run/docker.sock
+        run: |
+          docker info
+          docker compose version
+
       - name: Run Playwright tests (Chromium)
+        env:
+          TEST_CONTAINER_ENGINE: docker
+          DOCKER_CONTEXT: default
+          DOCKER_HOST: unix:///var/run/docker.sock
         run: npm run test:e2e:chromium
 
       - name: Upload Playwright report on failure

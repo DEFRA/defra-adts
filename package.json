@@ -10,6 +10,12 @@
   "scripts": {
     "install:all": "npm install && npm install --prefix services/adts-ui && npm install --prefix services/adts-submissions-service && npm install --prefix services/adts-backend",
 
+    "test:db:up": "local/dynamodb/test-db.sh up",
+    "test:db:reset": "local/dynamodb/test-db.sh reset",
+    "test:db:down": "local/dynamodb/test-db.sh down",
+
+    "test:integration": "npm run test:integration --prefix services/adts-backend",
+
     "test:ui": "npm test --prefix services/adts-ui",
     "test:submissions": "npm test --prefix services/adts-submissions-service",
     "test:backend": "npm test --prefix services/adts-backend",

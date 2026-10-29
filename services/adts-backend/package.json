@@ -8,16 +8,19 @@
     "build": "esbuild src/client/all.js --bundle --minify --outfile=src/public/js/all.js",
     "start": "node src/index.js",
     "test": "npm run test:routes",
-    "test:coverage": "node --experimental-vm-modules node_modules/jest/bin/jest.js tests/unit tests/component tests/integration tests/routes --coverage",
+    "test:coverage": "node --experimental-vm-modules node_modules/jest/bin/jest.js tests/unit tests/component tests/routes --coverage",
+    "test:integration": "TEST_RUN_ID=${TEST_RUN_ID:-$(date -u +%Y%m%dT%H%M%SZ)-$$-$(od -An -N4 -tx4 /dev/urandom | tr -d ' ')} && export TEST_RUN_ID DYNAMODB_ENDPOINT=http://localhost:8000 && ../../local/dynamodb/test-db.sh up && ../../local/dynamodb/test-db.sh reset && node --experimental-vm-modules node_modules/jest/bin/jest.js tests/integration",
     "start:watch": "nodemon --ext njk --signal SIGTERM src/app.js",
     "kill": "sh -c 'pids=$(lsof -tiTCP:9182 -sTCP:LISTEN); [ -z \"$pids\" ] || kill $pids'",
     "lint": "eslint .",
     "test:routes": "node --experimental-vm-modules node_modules/jest/bin/jest.js tests/routes --coverage"
   },
   "dependencies": {
+    "@aws-sdk/client-dynamodb": "3.1158.0",
+    "@aws-sdk/lib-dynamodb": "3.1158.0",
     "@hapi/hapi": "21.4.10",
-    "joi": "^18.2.9",
-    "@hapi/inert": "7.1.2"
+    "@hapi/inert": "7.1.2",
+    "joi": "^18.2.9"
   },
   "devDependencies": {
     "esbuild": "0.28.1",

@@ -47,6 +47,7 @@ jobs:
 
             backend_service:
               - 'services/adts-backend/**'
+              - 'local/dynamodb/**'
               - ".github/workflows/adts-services_build.yml"
               - ".github/workflows/_validation.yml"
               - ".github/workflows/_container_build.yml"
@@ -60,6 +61,7 @@ jobs:
             any_service:
               - 'services/adts-ui/**'
               - 'services/adts-backend/**'
+              - 'local/dynamodb/**'
               - ".github/workflows/adts-services_build.yml"
               - ".github/workflows/_validation.yml"
               - ".github/workflows/_container_build.yml"
@@ -99,7 +101,7 @@ jobs:
       run-format-check: false
       run-tests: true
       run-sonarqube-scan: true
-      test-command: npm run test:coverage
+      test-command: npm run test:coverage && npm run test:integration
       build-command: npm run build
     secrets:
       SQ_ACCESS_TOKEN: ${{ secrets.SONAR_TOKEN }}

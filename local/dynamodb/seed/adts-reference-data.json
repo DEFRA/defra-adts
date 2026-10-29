@@ -1,0 +1,117 @@
+{
+  "adts-reference-data": [
+    { "PutRequest": { "Item": {
+      "PK": { "S": "REF#SPECIES" },
+      "SK": { "S": "ORDER#0001#CHICKEN" },
+      "type": { "S": "SPECIES" },
+      "code": { "S": "CHICKEN" },
+      "description": { "S": "Chicken" },
+      "isAvian": { "BOOL": true },
+      "mostCommon": { "S": "Yes" },
+      "index": { "N": "0" },
+      "GSI1PK": { "S": "CODE#SPECIES" },
+      "GSI1SK": { "S": "CHICKEN" },
+      "GSI3PK": { "S": "AVIAN#SPECIES#1" },
+      "GSI3SK": { "S": "ORDER#0001#CHICKEN" }
+    } } },
+    { "PutRequest": { "Item": {
+      "PK": { "S": "REF#SPECIES" },
+      "SK": { "S": "ORDER#0002#COW" },
+      "type": { "S": "SPECIES" },
+      "code": { "S": "COW" },
+      "description": { "S": "Cow" },
+      "isAvian": { "BOOL": false },
+      "mostCommon": { "S": "Yes" },
+      "index": { "N": "1" },
+      "GSI1PK": { "S": "CODE#SPECIES" },
+      "GSI1SK": { "S": "COW" },
+      "GSI3PK": { "S": "AVIAN#SPECIES#0" },
+      "GSI3SK": { "S": "ORDER#0002#COW" }
+    } } },
+    { "PutRequest": { "Item": {
+      "PK": { "S": "REF#SPECIES" },
+      "SK": { "S": "ORDER#0003#SHEEP" },
+      "type": { "S": "SPECIES" },
+      "code": { "S": "SHEEP" },
+      "description": { "S": "Sheep" },
+      "isAvian": { "BOOL": false },
+      "mostCommon": { "S": "Yes" },
+      "index": { "N": "2" },
+      "GSI1PK": { "S": "CODE#SPECIES" },
+      "GSI1SK": { "S": "SHEEP" },
+      "GSI3PK": { "S": "AVIAN#SPECIES#0" },
+      "GSI3SK": { "S": "ORDER#0003#SHEEP" }
+    } } },
+    { "PutRequest": { "Item": {
+      "PK": { "S": "REF#SPECIES_ANIMAL_BREEDS#SPECIES#COW" },
+      "SK": { "S": "ORDER#0001#HOLSTEIN" },
+      "type": { "S": "SPECIES_ANIMAL_BREEDS" },
+      "speciesCode": { "S": "COW" },
+      "code": { "S": "HOLSTEIN" },
+      "description": { "S": "Holstein" },
+      "index": { "N": "0" },
+      "GSI1PK": { "S": "CODE#SPECIES_ANIMAL_BREEDS" },
+      "GSI1SK": { "S": "COW#HOLSTEIN" }
+    } } },
+    { "PutRequest": { "Item": {
+      "PK": { "S": "REF#SPECIES_ANIMAL_PURPOSES#SPECIES#COW" },
+      "SK": { "S": "ORDER#0001#DAIRY" },
+      "type": { "S": "SPECIES_ANIMAL_PURPOSES" },
+      "speciesCode": { "S": "COW" },
+      "code": { "S": "DAIRY" },
+      "description": { "S": "Dairy" },
+      "index": { "N": "0" },
+      "GSI1PK": { "S": "CODE#SPECIES_ANIMAL_PURPOSES" },
+      "GSI1SK": { "S": "COW#DAIRY" }
+    } } },
+    { "PutRequest": { "Item": {
+      "PK": { "S": "REF#COUNTY" },
+      "SK": { "S": "ORDER#0001#AB" },
+      "type": { "S": "COUNTY" },
+      "code": { "S": "AB" },
+      "name": { "S": "Argyll and Bute" },
+      "index": { "N": "0" },
+      "GSI1PK": { "S": "CODE#COUNTY" },
+      "GSI1SK": { "S": "AB" },
+      "GSI2PK": { "S": "NAME#COUNTY" },
+      "GSI2SK": { "S": "argyll and bute" }
+    } } },
+    { "PutRequest": { "Item": {
+      "PK": { "S": "REF#COUNTY" },
+      "SK": { "S": "ORDER#0002#DEV" },
+      "type": { "S": "COUNTY" },
+      "code": { "S": "DEV" },
+      "name": { "S": "Devon" },
+      "index": { "N": "1" },
+      "GSI1PK": { "S": "CODE#COUNTY" },
+      "GSI1SK": { "S": "DEV" },
+      "GSI2PK": { "S": "NAME#COUNTY" },
+      "GSI2SK": { "S": "devon" }
+    } } },
+    { "PutRequest": { "Item": {
+      "PK": { "S": "REF#PVS_PRACTICE" },
+      "SK": { "S": "ORDER#0001#PRACTICE-123" },
+      "type": { "S": "PVS_PRACTICE" },
+      "code": { "S": "PRACTICE-123" },
+      "name": { "S": "Example Veterinary Practice" },
+      "index": { "N": "0" },
+      "GSI1PK": { "S": "CODE#PVS_PRACTICE" },
+      "GSI1SK": { "S": "PRACTICE-123" },
+      "GSI2PK": { "S": "NAME#PVS_PRACTICE" },
+      "GSI2SK": { "S": "example veterinary practice" }
+    } } },
+    { "PutRequest": { "Item": {
+      "PK": { "S": "REF#INFORMATION_MESSAGE" },
+      "SK": { "S": "ORDER#0001#WELCOME" },
+      "type": { "S": "INFORMATION_MESSAGE" },
+      "code": { "S": "WELCOME" },
+      "name": { "S": "welcome" },
+      "description": { "S": "Welcome to the Animal Disease Testing Service" },
+      "index": { "N": "0" },
+      "GSI1PK": { "S": "CODE#INFORMATION_MESSAGE" },
+      "GSI1SK": { "S": "WELCOME" },
+      "GSI2PK": { "S": "NAME#INFORMATION_MESSAGE" },
+      "GSI2SK": { "S": "welcome" }
+    } } }
+  ]
+}

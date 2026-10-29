@@ -38,6 +38,7 @@ The local database harness uses POSIX shell scripts. On Windows, run the command
 ## Prerequisites
 
 - Docker Compose or Podman Compose with a running container engine (Docker Desktop/Engine or Podman Desktop/Engine). The database harness also supports the standalone `docker-compose` client. If using a standalone Compose client with Podman, configure its Docker-compatible socket through `DOCKER_HOST`.
+- If both engines are installed, set `TEST_CONTAINER_ENGINE=docker` or `TEST_CONTAINER_ENGINE=podman`; it defaults to `auto`.
 - Node.js 24 and npm, with root and service dependencies installed.
 - Port `8000` free on the host (DynamoDB Local). Port `8001` only if you use the optional admin UI.
 - No AWS account or credentials are needed.

@@ -9,41 +9,75 @@ new_test_run_id() {
 }
 
 compose() {
-  if command -v podman >/dev/null 2>&1 && podman compose version >/dev/null 2>&1; then
-    podman compose -f "$COMPOSE_FILE" "$@"
-  elif command -v docker >/dev/null 2>&1 && docker compose version >/dev/null 2>&1; then
-    docker compose -f "$COMPOSE_FILE" "$@"
-  elif command -v docker-compose >/dev/null 2>&1; then
-    docker-compose -f "$COMPOSE_FILE" "$@"
-  else
-    echo "Docker Compose or Podman Compose is required to manage the local DynamoDB." >&2
-    return 127
-  fi
+  case "${TEST_CONTAINER_ENGINE:-auto}" in
+    podman) podman compose -f "$COMPOSE_FILE" "$@" ;;
+    docker) docker compose -f "$COMPOSE_FILE" "$@" ;;
+    auto)
+      if command -v podman >/dev/null 2>&1 && podman compose version >/dev/null 2>&1; then
+        podman compose -f "$COMPOSE_FILE" "$@"
+      elif command -v docker >/dev/null 2>&1 && docker compose version >/dev/null 2>&1; then
+        docker compose -f "$COMPOSE_FILE" "$@"
+      elif command -v docker-compose >/dev/null 2>&1; then
+        docker-compose -f "$COMPOSE_FILE" "$@"
+      else
+        echo "Docker Compose or Podman Compose is required to manage the local DynamoDB." >&2
+        return 127
+      fi
+      ;;
+    *)
+      echo "TEST_CONTAINER_ENGINE must be auto, docker, or podman (received: $TEST_CONTAINER_ENGINE)." >&2
+      return 2
+      ;;
+  esac
 }
 
 require_container_engine() {
-  if command -v podman >/dev/null 2>&1; then
-    if ! podman info >/dev/null 2>&1; then
-      echo "Podman is not running or is not accessible. Start Podman and try again." >&2
+  case "${TEST_CONTAINER_ENGINE:-auto}" in
+    podman)
+      if ! command -v podman >/dev/null 2>&1 || ! podman info >/dev/null 2>&1; then
+        echo "Podman is not installed, running, or accessible. Start Podman and try again." >&2
+        exit 1
+      fi
+      ;;
+    docker)
+      if ! command -v docker >/dev/null 2>&1 || ! docker info >/dev/null 2>&1; then
+        echo "Docker is not installed, running, or accessible. Start Docker and try again." >&2
+        exit 1
+      fi
+      ;;
+    auto)
+      if command -v podman >/dev/null 2>&1 && podman info >/dev/null 2>&1; then
+        return
+      fi
+      if command -v docker >/dev/null 2>&1 && docker info >/dev/null 2>&1; then
+        return
+      fi
+      echo "Podman or Docker is not installed, running, or accessible. Start a container engine and try again." >&2
       exit 1
-    fi
-  elif command -v docker >/dev/null 2>&1; then
-    if ! docker info >/dev/null 2>&1; then
-      echo "Docker or Podman is not running or is not accessible. Start a container engine and try again." >&2
-      exit 1
-    fi
-  else
-    echo "Podman or Docker is required to manage the local DynamoDB." >&2
-    exit 1
-  fi
+      ;;
+    *)
+      echo "TEST_CONTAINER_ENGINE must be auto, docker, or podman (received: $TEST_CONTAINER_ENGINE)." >&2
+      exit 2
+      ;;
+  esac
 }
 
 inspect_container() {
-  if command -v podman >/dev/null 2>&1 && podman info >/dev/null 2>&1; then
-    podman inspect --format '{{.State.Status}}:{{.State.ExitCode}}' "$1"
-  else
-    docker inspect --format '{{.State.Status}}:{{.State.ExitCode}}' "$1"
-  fi
+  case "${TEST_CONTAINER_ENGINE:-auto}" in
+    podman) podman inspect --format '{{.State.Status}}:{{.State.ExitCode}}' "$1" ;;
+    docker) docker inspect --format '{{.State.Status}}:{{.State.ExitCode}}' "$1" ;;
+    auto)
+      if command -v podman >/dev/null 2>&1 && podman info >/dev/null 2>&1; then
+        podman inspect --format '{{.State.Status}}:{{.State.ExitCode}}' "$1"
+      else
+        docker inspect --format '{{.State.Status}}:{{.State.ExitCode}}' "$1"
+      fi
+      ;;
+    *)
+      echo "TEST_CONTAINER_ENGINE must be auto, docker, or podman (received: $TEST_CONTAINER_ENGINE)." >&2
+      return 2
+      ;;
+  esac
 }
 
 validate_seed_data() {

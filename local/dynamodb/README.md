@@ -15,6 +15,8 @@ SEED_DATA=false ./local/dynamodb/test-db.sh reset  # recreate empty tables
 
 `up` starts DynamoDB and waits for the database to become healthy and the initialization job to finish. `reset` drops and recreates the tables, so it removes records left by previous runs before loading the selected state. Seeded data is the default; set `SEED_DATA=false` for empty tables. Repeating either reset produces the same state.
 
+When both engines are installed, set `TEST_CONTAINER_ENGINE=docker` or `TEST_CONTAINER_ENGINE=podman` to select one explicitly. The default `auto` mode detects an available engine.
+
 Each test invocation exports a unique `TEST_RUN_ID` unless one is supplied. The integration npm script and Playwright create one ID per run and pass it through database setup; Playwright also passes it to the backend.
 
 On Windows, run the shell commands from a WSL 2 Linux distribution with Docker Desktop WSL integration enabled. They do not run directly in PowerShell or Command Prompt. See the [feature quickstart](../../specs/002-local-dynamodb/quickstart.md) for WSL 2 setup.

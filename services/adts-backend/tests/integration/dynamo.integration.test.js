@@ -157,4 +157,26 @@ describe('GET /submissions with local DynamoDB', () => {
       [draft001]
     )
   })
+
+  test('reports a DynamoDB failure instead of returning empty Draft results', async () => {
+    const originalTable = process.env.SUBMISSIONS_TABLE
+    process.env.SUBMISSIONS_TABLE = 'missing-integration-test-table'
+    jest.spyOn(console, 'error').mockImplementation(() => {})
+
+    let response
+    try {
+      response = await server.inject({ method: 'GET', url: '/submissions?status=draft' })
+    } finally {
+      if (originalTable === undefined) {
+        delete process.env.SUBMISSIONS_TABLE
+      } else {
+        process.env.SUBMISSIONS_TABLE = originalTable
+      }
+      jest.restoreAllMocks()
+    }
+
+    expect(response.statusCode).toBe(502)
+    expect(response.result).toEqual({ error: 'Unable to retrieve submissions' })
+    expect(response.result).not.toEqual({ results: [], totalCount: 0 })
+  })
 })

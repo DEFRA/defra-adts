@@ -4,6 +4,10 @@ set -eu
 SCRIPT_DIR=$(CDPATH= cd "$(dirname "$0")" && pwd)
 COMPOSE_FILE="$SCRIPT_DIR/docker-compose.yml"
 
+new_test_run_id() {
+  printf '%s-%s-%s' "$(date -u +%Y%m%dT%H%M%SZ)" "$$" "$(od -An -N4 -tx4 /dev/urandom | tr -d ' ')"
+}
+
 compose() {
   if command -v podman >/dev/null 2>&1 && podman compose version >/dev/null 2>&1; then
     podman compose -f "$COMPOSE_FILE" "$@"
@@ -17,7 +21,7 @@ compose() {
   fi
 }
 
-require_docker() {
+require_container_engine() {
   if command -v podman >/dev/null 2>&1; then
     if ! podman info >/dev/null 2>&1; then
       echo "Podman is not running or is not accessible. Start Podman and try again." >&2
@@ -31,6 +35,14 @@ require_docker() {
   else
     echo "Podman or Docker is required to manage the local DynamoDB." >&2
     exit 1
+  fi
+}
+
+inspect_container() {
+  if command -v podman >/dev/null 2>&1 && podman info >/dev/null 2>&1; then
+    podman inspect --format '{{.State.Status}}:{{.State.ExitCode}}' "$1"
+  else
+    docker inspect --format '{{.State.Status}}:{{.State.ExitCode}}' "$1"
   fi
 }
 
@@ -49,11 +61,12 @@ show_startup_logs() {
 }
 
 start_database() {
-  require_docker
+  require_container_engine
   SEED_DATA=${SEED_DATA:-true}
+  TEST_RUN_ID=${TEST_RUN_ID:-$(new_test_run_id)}
   validate_seed_data "$SEED_DATA"
   RESET=false
-  export SEED_DATA RESET
+  export SEED_DATA RESET TEST_RUN_ID
 
   if ! compose up --detach --wait; then
     echo "Could not start local DynamoDB. Check that Podman or Docker is running and host port 8000 is available." >&2
@@ -74,7 +87,7 @@ start_database() {
     exit 1
   fi
 
-  if ! init_result=$(docker inspect --format '{{.State.Status}}:{{.State.ExitCode}}' "$init_container"); then
+  if ! init_result=$(inspect_container "$init_container"); then
     echo "Could not verify the local DynamoDB initialization container." >&2
     show_startup_logs
     exit 1
@@ -89,18 +102,20 @@ start_database() {
 }
 
 reset_database() {
-  require_docker
+  require_container_engine
   SEED_DATA=${SEED_DATA:-true}
+  TEST_RUN_ID=${TEST_RUN_ID:-$(new_test_run_id)}
   validate_seed_data "$SEED_DATA"
+  export SEED_DATA TEST_RUN_ID
 
-  if ! compose run --rm -e RESET=true -e "SEED_DATA=$SEED_DATA" init; then
+  if ! compose run --rm -e RESET=true -e "SEED_DATA=$SEED_DATA" -e "TEST_RUN_ID=$TEST_RUN_ID" init; then
     echo "Could not reset the local DynamoDB tables." >&2
     exit 1
   fi
 }
 
 stop_database() {
-  require_docker
+  require_container_engine
   compose down
 }
 

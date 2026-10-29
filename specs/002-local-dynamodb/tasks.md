@@ -79,9 +79,9 @@ description: "Implementation tasks for local DynamoDB integration and E2E testin
 
 ### Implementation for User Story 3
 
-- [ ] T018 [US3] Extend `local/dynamodb/test-db.sh` and `tests/e2e/global-setup.js` to pass through `SEED_DATA=true|false`, default to seeded data, and export a unique `TEST_RUN_ID` for each test run
-- [ ] T019 [P] [US3] Replace the stale initialization guidance in `local/dynamodb/README.md` with the `test-db.sh` startup, seeded/empty reset, and shutdown procedures
-- [ ] T020 [US3] Update `specs/002-local-dynamodb/quickstart.md` with the finalized commands, prerequisites, connection settings, seed-mode behavior, and verification steps for the measurable success criteria, including Draft submission search filters
+- [X] T018 [US3] Extend `local/dynamodb/test-db.sh` and `tests/e2e/global-setup.js` to pass through `SEED_DATA=true|false`, default to seeded data, and export a unique `TEST_RUN_ID` for each test run
+- [X] T019 [P] [US3] Replace the stale initialization guidance in `local/dynamodb/README.md` with the `test-db.sh` startup, seeded/empty reset, and shutdown procedures
+- [X] T020 [US3] Update `specs/002-local-dynamodb/quickstart.md` with the finalized commands, prerequisites, connection settings, seed-mode behavior, and verification steps for the measurable success criteria, including Draft submission search filters
 
 **Checkpoint**: Developers can restore either supported test-data state manually, and suites honor the selected state.
 
@@ -91,7 +91,7 @@ description: "Implementation tasks for local DynamoDB integration and E2E testin
 
 **Purpose**: Validate repeatability, failure visibility, and the documented testing workflow.
 
-- [ ] T021 Run the documented test sequence and verify ten consecutive clean integration runs return identical seeded species and Draft submission filter results, an unavailable database fails visibly, and the applicable new code meets the constitution's 90% coverage requirement; record evidence in the change review using `specs/002-local-dynamodb/quickstart.md`
+- [X] T021 Run the documented test sequence and verify ten consecutive clean integration runs return identical seeded species and Draft submission filter results, an unavailable database fails visibly, and the applicable new code meets the constitution's 90% coverage requirement; record evidence in the change review using `specs/002-local-dynamodb/quickstart.md`
 
 ---
 

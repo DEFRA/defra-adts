@@ -19,6 +19,8 @@ The local database harness uses POSIX shell scripts. On Windows, run the command
 
    ```bash
    docker compose version
+   # Or use Podman Compose:
+   podman compose version
    node --version
    npm --version
    ```
@@ -28,13 +30,15 @@ The local database harness uses POSIX shell scripts. On Windows, run the command
    ```bash
    npm ci
    npm ci --prefix services/adts-backend
+   npm ci --prefix services/adts-ui
+   npm ci --prefix services/adts-submissions-service
    ```
 5. Continue with the steps below from the Ubuntu terminal. The test commands start and reset DynamoDB automatically; no AWS account or credentials are required.
 
 ## Prerequisites
 
-- Docker with the Compose plugin (Docker Desktop, or Docker Engine on Linux). Confirm with `docker compose version`.
-- Node.js 24 and npm, with dependencies installed (`npm ci` at the root and in `services/adts-backend`).
+- Docker Compose or Podman Compose with a running container engine (Docker Desktop/Engine or Podman Desktop/Engine). The database harness also supports the standalone `docker-compose` client. If using a standalone Compose client with Podman, configure its Docker-compatible socket through `DOCKER_HOST`.
+- Node.js 24 and npm, with root and service dependencies installed.
 - Port `8000` free on the host (DynamoDB Local). Port `8001` only if you use the optional admin UI.
 - No AWS account or credentials are needed.
 
@@ -54,7 +58,7 @@ aws dynamodb list-tables --endpoint-url http://localhost:8000 --region eu-west-2
 
 Expected output lists `adts-reference-data`, `adts-submissions`, and `adts-ci-lims-mapping`. The dummy credentials `local` / `local` are enough.
 
-If the database cannot start, the command exits non-zero with a message naming the cause (Docker not running, port in use, or health check timeout). It never proceeds to tests with a database that is not ready.
+If the database cannot start, the command exits non-zero with a message naming the cause (container engine not running, port in use, or health check timeout). It never proceeds to tests with a database that is not ready.
 
 ## 2. Reset to a known state
 
@@ -64,6 +68,8 @@ SEED_DATA=false npm run test:db:reset   # tables recreated and empty
 ```
 
 Expected outcome: all three tables are dropped and recreated, then loaded with the chosen state. Running the reset twice produces the same result.
+
+`SEED_DATA` accepts only `true` or `false` and defaults to `true`. Each integration or E2E run exports a unique `TEST_RUN_ID`; the same ID is passed through database setup, and Playwright also provides it to the backend. Tests that write data should include this ID in their record keys or attributes.
 
 The integration and E2E commands run a reset automatically before each suite (see step 4), so you normally do not need this step.
 
@@ -75,7 +81,14 @@ npm run test:integration --prefix services/adts-backend
 
 Or from the root: `npm run test:integration`.
 
-Expected outcome: the command starts the database, resets it, runs the integration tests in `services/adts-backend/tests/integration/` against `http://localhost:8000`, and exits `0`. Records are read from the seeded state, for example the three `REF#SPECIES` items.
+Expected outcome: the command starts the database, resets it, runs the integration tests in `services/adts-backend/tests/integration/` against `http://localhost:8000`, and exits `0`. Species are returned in order as Chicken, Cow, Sheep. Draft search assertions cover:
+
+| Filter | Expected Draft IDs |
+|---|---|
+| `client=Acme` | `draft-001`, `draft-002` |
+| `clinician=Alice` | `draft-001`, `draft-003` |
+| `submitted-date=6_months` | `draft-001`, `draft-002` |
+| `client=Acme&clinician=Alice&submitted-date=6_months` | `draft-001` |
 
 ## 4. Run the E2E tests
 
@@ -88,8 +101,9 @@ Expected outcome: a global setup starts the database and resets it, then Playwri
 ## 5. Stop the database
 
 ```bash
-npm run test:db:down           # stops containers; keeps data in the Docker volume
-docker compose -f local/dynamodb/docker-compose.yml down -v   # stops and wipes all data
+npm run test:db:down           # stops containers; keeps volume data
+docker compose -f local/dynamodb/docker-compose.yml down -v   # Docker: stop and wipe all data
+# Or: podman compose -f local/dynamodb/docker-compose.yml down -v
 ```
 
 ## Verifying the feature
@@ -102,13 +116,39 @@ Run these checks to confirm each success criterion in [spec.md](./spec.md):
 | SC-002 (no cloud credentials) | Unset `AWS_*` variables, run step 3 | Passes without AWS access |
 | SC-003 (repeatability) | Run step 3 ten times in a row | Identical results every time |
 | SC-004 (known state) | Add a record with the AWS CLI, then run step 3 | Test sees the seeded state, not the added record |
-| SC-005 (failure reported) | Run `npm run test:db:down`, then step 3 | Command fails with a clear message; no test reports an empty result as a pass |
+| SC-005 (failure reported) | Stop the database, then run the integration tests directly without their startup wrapper | Jest exits non-zero on connection failure; no test reports an empty result as a pass |
+
+For SC-005, run the tests directly from the backend directory so the command does not start the database:
+
+```bash
+npm run test:db:down
+cd services/adts-backend
+DYNAMODB_ENDPOINT=http://localhost:8000 node --experimental-vm-modules \
+  node_modules/jest/bin/jest.js tests/integration
+cd ../..
+npm run test:db:up
+npm run test:db:reset
+```
+
+The direct Jest command is expected to exit non-zero and report DynamoDB connection errors. Restart and reset the database after the check.
+
+## Verification evidence
+
+Evidence collected on 2026-10-29:
+
+| Check | Result |
+|---|---|
+| Seeded integration repeatability | Ten consecutive runs passed; each ran 7 tests asserting the ordered species results, Draft client/clinician/date/combined filters, and visible query failure handling. |
+| Empty reset repeatability | Two `SEED_DATA=false` resets each produced table item counts `0, 0, 0`; the default seeded reset restored counts `9, 4, 2`. |
+| New Draft data-access coverage | `submissions.js`: 100% statements, 100% functions, 100% lines, 96.87% branches. Unit and integration suites passed 19 tests. |
+| Database unavailable | Direct integration Jest run exited 1 (5 expected failures, 2 passed) and logged DynamoDB errors rather than returning successful empty results. |
+| Chromium E2E | 11 tests passed after the seed-mode changes. |
 
 ## Failure modes
 
 | Symptom | Likely cause | Action |
 |---------|--------------|--------|
-| "Docker is not running" | Docker Desktop is stopped | Start Docker, then retry |
+| Container engine is unavailable | Docker or Podman is stopped | Start the engine, then retry |
 | Port 8000 already in use | Another DynamoDB or service is bound to the port | Stop it, or change the host port mapping in `docker-compose.yml` |
 | Health check timed out | Container started but DynamoDB did not respond | Run `docker compose -f local/dynamodb/docker-compose.yml logs dynamodb` |
 | Backend integration tests fail with `ResourceNotFoundException` | Reset did not run or tables were removed | Run `npm run test:db:reset` |
@@ -122,6 +162,7 @@ Run these checks to confirm each success criterion in [spec.md](./spec.md):
 | Region | `eu-west-2` | Set by the test harness |
 | Credentials | `local` / `local` | Set by the test harness; not read from the environment |
 | Seed mode | `seeded` (default) | `SEED_DATA` environment variable |
+| Run identifier | Unique per integration or E2E run | Generated by the backend npm script or Playwright config |
 
 Image tags are pinned in [docker-compose.yml](../../local/dynamodb/docker-compose.yml). Update them only as a deliberate change, since repeatability (SC-003) depends on them.
 

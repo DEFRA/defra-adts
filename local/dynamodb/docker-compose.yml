@@ -30,6 +30,7 @@ services:
       DYNAMODB_ENDPOINT: http://dynamodb:8000
       SEED_DATA: ${SEED_DATA:-true}
       RESET: ${RESET:-false}
+      TEST_RUN_ID: ${TEST_RUN_ID:-}
     volumes:
       - ./tables:/tables:ro
       - ./seed:/seed:ro

@@ -1,5 +1,9 @@
 
 import { defineConfig, devices } from '@playwright/test'
+import { randomUUID } from 'node:crypto'
+
+const testRunId = `${Date.now()}-${randomUUID()}`
+process.env.TEST_RUN_ID = testRunId
 
 const config = {
   testDir: './tests/e2e',
@@ -42,7 +46,8 @@ webServer: [
       DYNAMODB_ENDPOINT: 'http://localhost:8000',
       AWS_REGION: 'eu-west-2',
       AWS_ACCESS_KEY_ID: 'local',
-      AWS_SECRET_ACCESS_KEY: 'local'
+      AWS_SECRET_ACCESS_KEY: 'local',
+      TEST_RUN_ID: testRunId
     }
   },
   {

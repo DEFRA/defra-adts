@@ -19,9 +19,9 @@ const createDynamoClientGetter = (docClient) => {
   }
 }
 
-const createProxyGet = (path) => async (request, h) => {
+const createProxyGet = (routePath) => async (request, h) => {
   const queryParams = new URLSearchParams(request.query).toString()
-  const url = `${process.env.SUBMISSIONS_SERVICE_URL}/${path}${queryParams ? `?${queryParams}` : ''}`
+  const url = `${process.env.SUBMISSIONS_SERVICE_URL}/${routePath}${queryParams ? `?${queryParams}` : ''}`
 
   try {
     const response = await fetch(url)

@@ -4,18 +4,30 @@ A local [DynamoDB Local](https://docs.aws.amazon.com/amazondynamodb/latest/devel
 
 ## Usage
 
-Requires Docker with the Compose plugin.
+Requires Docker with the Compose plugin. Run these commands from the repository root:
 
 ```bash
-cd local/dynamodb
-docker compose up -d                    # start, create tables, load sample data
-docker compose --profile ui up -d       # as above, plus a browser UI at http://localhost:8001
-docker compose down                     # stop (data is kept in a Docker volume)
-docker compose down -v                  # stop and wipe all data
-SEED_DATA=false docker compose up -d    # create empty tables only
+./local/dynamodb/test-db.sh up                 # start and wait for DynamoDB and initialization
+./local/dynamodb/test-db.sh reset              # recreate tables and restore seeded data
+SEED_DATA=false ./local/dynamodb/test-db.sh reset  # recreate empty tables
+./local/dynamodb/test-db.sh down               # stop containers; keep data in the Docker volume
 ```
 
-Table creation is idempotent, so re-running `docker compose up init` is safe. It re-applies the sample data.
+`up` starts DynamoDB and waits for the database to become healthy and the initialization job to finish. `reset` drops and recreates the tables, so it removes records left by previous runs before loading the selected state. Seeded data is the default; set `SEED_DATA=false` for empty tables. Repeating either reset produces the same state.
+
+On Windows, run the shell commands from a WSL 2 Linux distribution with Docker Desktop WSL integration enabled. They do not run directly in PowerShell or Command Prompt. See the [feature quickstart](../../specs/002-local-dynamodb/quickstart.md) for WSL 2 setup.
+
+To wipe the persisted database volume as well as stop the containers, run:
+
+```bash
+docker compose -f local/dynamodb/docker-compose.yml down -v
+```
+
+The optional browser UI is available at `http://localhost:8001` when started with the Compose `ui` profile:
+
+```bash
+docker compose -f local/dynamodb/docker-compose.yml --profile ui up -d
+```
 
 ## Connecting from a service
 
@@ -35,4 +47,4 @@ For the AWS SDK v3 set `endpoint: 'http://localhost:8000'`, or export `AWS_ENDPO
 | `adts-submissions` | `PK` | `ByUser` (`GSI1PK`/`GSI1SK`), `ByPractice` (`GSI2PK`/`GSI2SK`) |
 | `adts-ci-lims-mapping` | `PK` | none |
 
-Definitions live in [tables/](./tables) and sample data in [seed/](./seed) (DynamoDB JSON). To change a schema, edit the definition and run `docker compose down -v && docker compose up -d`.
+Definitions live in [tables/](./tables) and sample data in [seed/](./seed) (DynamoDB JSON). To change a schema, edit the definition and run `./local/dynamodb/test-db.sh reset` to recreate the tables from the updated definitions.

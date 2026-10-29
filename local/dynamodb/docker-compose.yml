@@ -16,7 +16,7 @@ services:
       timeout: 3s
       retries: 20
 
-  # One-shot job: creates the ADTS tables (if missing) and loads sample data.
+  # One-shot job: creates or resets the ADTS tables and optionally loads sample data.
   init:
     image: amazon/aws-cli:2.38.5
     container_name: adts-dynamodb-init
@@ -29,6 +29,7 @@ services:
       AWS_REGION: eu-west-2
       DYNAMODB_ENDPOINT: http://dynamodb:8000
       SEED_DATA: ${SEED_DATA:-true}
+      RESET: ${RESET:-false}
     volumes:
       - ./tables:/tables:ro
       - ./seed:/seed:ro

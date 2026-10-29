@@ -24,9 +24,9 @@ description: "Implementation tasks for local DynamoDB integration and E2E testin
 
 **Purpose**: Provide a deterministic local database lifecycle used by the integration and E2E suites.
 
-- [ ] T002 [P] Add `RESET=true` drop-and-recreate behavior and a per-table 25-item seed-batch limit check to `local/dynamodb/init.sh`, preserving idempotent initialization when reset is not requested
-- [ ] T003 Create the POSIX `up`, `reset`, and `down` commands in `local/dynamodb/test-db.sh`; `up` must wait for Compose health and init completion, and startup failures must report a useful error
-- [ ] T004 Add root npm scripts `test:db:up`, `test:db:reset`, and `test:db:down` in `package.json` to call `local/dynamodb/test-db.sh`
+- [X] T002 [P] Add `RESET=true` drop-and-recreate behavior and a per-table 25-item seed-batch limit check to `local/dynamodb/init.sh`, preserving idempotent initialization when reset is not requested
+- [X] T003 Create the POSIX `up`, `reset`, and `down` commands in `local/dynamodb/test-db.sh`; `up` must wait for Compose health and init completion, and startup failures must report a useful error
+- [X] T004 Add root npm scripts `test:db:up`, `test:db:reset`, and `test:db:down` in `package.json` to call `local/dynamodb/test-db.sh`
 
 **Checkpoint**: Shared database startup and seeded reset are available to both backend integration and E2E runs.
 

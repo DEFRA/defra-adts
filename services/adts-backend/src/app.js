@@ -6,6 +6,7 @@ import Joi from 'joi'
 import { constants } from 'http2'
 import { createDocumentClient } from './data/dynamo.js'
 import { getSpecies } from './data/species.js'
+import { getSubmissions } from './data/submissions.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -114,7 +115,20 @@ const createServer = async ({ docClient } = {}) => {
     {
       method: 'GET',
       path: '/submissions',
-      handler: proxyGet('submissions')
+      handler: async (request, h) => {
+        if (request.query.status?.toLowerCase() !== 'draft') {
+          return proxyGet('submissions')(request, h)
+        }
+
+        try {
+          dynamoClient ??= createDocumentClient()
+          return h.response(await getSubmissions(dynamoClient, request.query))
+        } catch (error) {
+          console.error('Error retrieving submissions:', error.message)
+          return h.response({ error: 'Unable to retrieve submissions' })
+            .code(constants.HTTP_STATUS_BAD_GATEWAY)
+        }
+      }
     }
   ])
 

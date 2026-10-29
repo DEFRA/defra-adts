@@ -21,7 +21,7 @@ describe('Submissions service proxy routes', () => {
   test.each([
     ['/GetClients', 'http://localhost:3100/GetClients'],
     ['/GetCounties', 'http://localhost:3100/GetCounties'],
-    ['/submissions?client=Acme+Farm&status=draft', 'http://localhost:3100/submissions?client=Acme+Farm&status=draft']
+    ['/submissions?client=Acme+Farm&status=submitted', 'http://localhost:3100/submissions?client=Acme+Farm&status=submitted']
   ])('forwards GET %s to the submissions service', async (requestUrl, submissionsUrl) => {
     const payload = [{ id: 'result-1' }]
     jest.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify(payload), {

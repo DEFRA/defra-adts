@@ -42,12 +42,12 @@ description: "Implementation tasks for local DynamoDB integration and E2E testin
 
 - [X] T005 [P] [US1] Add `services/adts-backend/tests/integration/dynamo.integration.test.js` to exercise the backend's real DynamoDB species lookup against the local endpoint and verify expected fixture results and query failure handling
 - [X] T006 [P] [US1] Add a `test:integration` npm script to `services/adts-backend/package.json` that starts and resets the local database before running the backend integration tests
-- [ ] T007 [P] [US1] Add synthetic Draft submissions with distinct client, clinician, and submission-date values to `local/dynamodb/seed/adts-submissions.json`, retaining the table's required keys and index attributes
-- [ ] T008 [P] [US1] Document the Draft fixtures and their client, clinician, and date filter values in `specs/002-local-dynamodb/data-model.md`
-- [ ] T009 [US1] Create `services/adts-backend/src/data/submissions.js` with a `getSubmissions` data-access method that reads Draft submissions from DynamoDB through the shared client, honours supported search filters, and uses the existing `DYNAMODB_ENDPOINT` configuration without affecting production defaults
-- [ ] T010 [US1] Wire the backend `/submissions` route in `services/adts-backend/src/app.js` so Draft searches use DynamoDB and non-Draft submissions retain their existing submissions-service/LIMS path and response contract
-- [ ] T011 [US1] Set `DYNAMODB_ENDPOINT=http://localhost:8000` explicitly in the backend `test:integration` command in `services/adts-backend/package.json` so the test run targets local DynamoDB regardless of ambient AWS endpoint settings
-- [ ] T012 [US1] Extend `services/adts-backend/tests/integration/dynamo.integration.test.js` to verify exact Draft search results for client, clinician, date, and combined filters using the seeded submissions
+- [X] T007 [P] [US1] Add synthetic Draft submissions with distinct client, clinician, and submission-date values to `local/dynamodb/seed/adts-submissions.json`, retaining the table's required keys and index attributes
+- [X] T008 [P] [US1] Document the Draft fixtures and their client, clinician, and date filter values in `specs/002-local-dynamodb/data-model.md`
+- [X] T009 [US1] Create `services/adts-backend/src/data/submissions.js` with a `getSubmissions` data-access method that reads Draft submissions from DynamoDB through the shared client, honours supported search filters, and uses the existing `DYNAMODB_ENDPOINT` configuration without affecting production defaults
+- [X] T010 [US1] Wire the backend `/submissions` route in `services/adts-backend/src/app.js` so Draft searches use DynamoDB and non-Draft submissions retain their existing submissions-service/LIMS path and response contract
+- [X] T011 [US1] Set `DYNAMODB_ENDPOINT=http://localhost:8000` explicitly in the backend `test:integration` command in `services/adts-backend/package.json` so the test run targets local DynamoDB regardless of ambient AWS endpoint settings
+- [X] T012 [US1] Extend `services/adts-backend/tests/integration/dynamo.integration.test.js` to verify exact Draft search results for client, clinician, date, and combined filters using the seeded submissions
 - [X] T013 [US1] Add the root `test:integration` wrapper in `package.json` to invoke the backend integration script
 - [X] T014 [US1] Update `.github/workflows/adts-services_build.yml` to run the backend integration script after backend validation tests and include `local/dynamodb/**` in the backend and E2E change filters
 

@@ -5,17 +5,31 @@ SCRIPT_DIR=$(CDPATH= cd "$(dirname "$0")" && pwd)
 COMPOSE_FILE="$SCRIPT_DIR/docker-compose.yml"
 
 compose() {
-  docker compose -f "$COMPOSE_FILE" "$@"
+  if command -v podman >/dev/null 2>&1 && podman compose version >/dev/null 2>&1; then
+    podman compose -f "$COMPOSE_FILE" "$@"
+  elif command -v docker >/dev/null 2>&1 && docker compose version >/dev/null 2>&1; then
+    docker compose -f "$COMPOSE_FILE" "$@"
+  elif command -v docker-compose >/dev/null 2>&1; then
+    docker-compose -f "$COMPOSE_FILE" "$@"
+  else
+    echo "Docker Compose or Podman Compose is required to manage the local DynamoDB." >&2
+    return 127
+  fi
 }
 
 require_docker() {
-  if ! command -v docker >/dev/null 2>&1; then
-    echo "Docker is required to manage the local DynamoDB." >&2
-    exit 1
-  fi
-
-  if ! docker info >/dev/null 2>&1; then
-    echo "Docker is not running or is not accessible. Start Docker and try again." >&2
+  if command -v podman >/dev/null 2>&1; then
+    if ! podman info >/dev/null 2>&1; then
+      echo "Podman is not running or is not accessible. Start Podman and try again." >&2
+      exit 1
+    fi
+  elif command -v docker >/dev/null 2>&1; then
+    if ! docker info >/dev/null 2>&1; then
+      echo "Docker or Podman is not running or is not accessible. Start a container engine and try again." >&2
+      exit 1
+    fi
+  else
+    echo "Podman or Docker is required to manage the local DynamoDB." >&2
     exit 1
   fi
 }
@@ -42,7 +56,7 @@ start_database() {
   export SEED_DATA RESET
 
   if ! compose up --detach --wait; then
-    echo "Could not start local DynamoDB. Check that Docker is running and host port 8000 is available." >&2
+    echo "Could not start local DynamoDB. Check that Podman or Docker is running and host port 8000 is available." >&2
     show_startup_logs
     exit 1
   fi

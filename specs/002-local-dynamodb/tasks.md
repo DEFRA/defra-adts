@@ -63,9 +63,9 @@ description: "Implementation tasks for local DynamoDB integration and E2E testin
 
 ### Implementation for User Story 2
 
-- [ ] T015 [P] [US2] Create `tests/e2e/global-setup.js` to run `local/dynamodb/test-db.sh up` and reset the seeded fixture state once before each Playwright invocation
-- [ ] T016 [US2] Configure `playwright.config.js` to use `tests/e2e/global-setup.js`, set the backend's DynamoDB endpoint, region, and dummy credentials explicitly, and disable reuse of an existing backend server
-- [ ] T017 [P] [US2] Update `tests/e2e/README.md` with the local DynamoDB prerequisite, automatic startup/reset behavior, and local-only backend configuration
+- [X] T015 [P] [US2] Create `tests/e2e/global-setup.js` to run `local/dynamodb/test-db.sh up` and reset the seeded fixture state once before each Playwright invocation
+- [X] T016 [US2] Configure `playwright.config.js` to use `tests/e2e/global-setup.js`, set the backend's DynamoDB endpoint, region, and dummy credentials explicitly, and disable reuse of an existing backend server
+- [X] T017 [P] [US2] Update `tests/e2e/README.md` with the local DynamoDB prerequisite, automatic startup/reset behavior, and local-only backend configuration
 
 **Checkpoint**: Playwright E2E runs do not depend on ambient AWS configuration or a pre-existing backend process.
 

@@ -32,6 +32,8 @@ npx playwright install chromium
 
 Node version required: **24.x**.
 
+The E2E suite requires Docker with the Compose plugin and host port `8000` available for DynamoDB Local. It uses synthetic local data and dummy AWS credentials; no AWS account or cloud credentials are required.
+
 ## Running tests locally
 
 **From the repo root, not from `tests/e2e/`.** Playwright config lives at `./playwright.config.js`.
@@ -76,30 +78,29 @@ npx playwright test --grep "DASH-02" --headed
 npx playwright test --grep "AC6" --debug
 ```
 
-## Services and auto-start
+## Local database and services
 
-Playwright's `webServer` config auto-starts `adts-ui`, `adts-backend`, and `adts-submissions-service` when they aren't already running locally (`reuseExistingServer: !process.env.CI`). You don't need to start them manually unless you want to watch their logs:
+Before each Playwright invocation, global setup runs `local/dynamodb/test-db.sh up` and then `local/dynamodb/test-db.sh reset` once. The database stays running after the tests; stop it with `npm run test:db:down`.
+
+Playwright auto-starts `adts-ui`, `adts-backend`, and `adts-submissions-service`. The UI and submissions service may be reused when already running locally. The backend is always started by Playwright with `DYNAMODB_ENDPOINT=http://localhost:8000`, `AWS_REGION=eu-west-2`, and dummy `local` credentials, so it cannot reuse a backend configured for cloud AWS. Leave port `3200` free and do not manually start the backend.
+
+If you want to watch service logs, you can start the UI and submissions service manually:
 
 ```bash
 # Terminal A — submissions service on :3100
 PORT=3100 npm start --prefix services/adts-submissions-service
 
-# Terminal B — backend on :3200
-PORT=3200 \
-SUBMISSIONS_SERVICE_URL=http://localhost:3100 \
-npm start --prefix services/adts-backend
-
-# Terminal C — UI on :3000
+# Terminal B — UI on :3000
 PORT=3000 \
 SESSION_SECRET=e2e-test-session-secret-with-at-least-32-characters \
 BACKEND_SERVICE_URL=http://localhost:3200 \
 npm start --prefix services/adts-ui
 
-# Terminal D — run tests, which will reuse the running services
+# Terminal C — run tests
 npm run test:e2e
 ```
 
-If you hit `ERR_CONNECTION_REFUSED` on `http://localhost:3000`, a service hasn't come up — check that port isn't already in use by something else (`lsof -tiTCP:3000`), and check each service was `npm install`ed.
+If you hit `ERR_CONNECTION_REFUSED` on `http://localhost:3000`, a service hasn’t come up — check that port isn’t already in use by something else (`lsof -tiTCP:3000`), and check each service was `npm install`ed. If Playwright cannot start the backend, check whether port `3200` is already in use.
 
 ## Accessibility checks
 

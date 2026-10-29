@@ -4,7 +4,7 @@ A local [DynamoDB Local](https://docs.aws.amazon.com/amazondynamodb/latest/devel
 
 ## Usage
 
-Requires Docker with the Compose plugin. Run these commands from the repository root:
+Requires Docker Compose or Podman Compose and a running container engine. Run these commands from the repository root:
 
 ```bash
 ./local/dynamodb/test-db.sh up                 # start and wait for DynamoDB and initialization

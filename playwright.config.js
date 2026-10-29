@@ -3,6 +3,7 @@ import { defineConfig, devices } from '@playwright/test'
 
 const config = {
   testDir: './tests/e2e',
+  globalSetup: './tests/e2e/global-setup.js',
 
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
@@ -33,11 +34,15 @@ webServer: [
   {
     command: 'npm start --prefix services/adts-backend',
     url: 'http://localhost:3200/health',
-    reuseExistingServer: !process.env.CI,
+    reuseExistingServer: false,
     timeout: 60 * 1000,
     env: {
       PORT: '3200',
-      SUBMISSIONS_SERVICE_URL: 'http://localhost:3100'
+      SUBMISSIONS_SERVICE_URL: 'http://localhost:3100',
+      DYNAMODB_ENDPOINT: 'http://localhost:8000',
+      AWS_REGION: 'eu-west-2',
+      AWS_ACCESS_KEY_ID: 'local',
+      AWS_SECRET_ACCESS_KEY: 'local'
     }
   },
   {

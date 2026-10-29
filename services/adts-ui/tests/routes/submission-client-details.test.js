@@ -63,7 +63,7 @@ describe('Submission client details page', () => {
     ])
   })
 
-  test('stores the selected client id and name in Yar and redirects back to the page', async () => {
+  test('stores the selected client id and name in Yar and redirects to species capture', async () => {
     const response = await server.inject({
       method: 'POST',
       url,
@@ -71,7 +71,7 @@ describe('Submission client details page', () => {
     })
 
     expect(response.statusCode).toBe(302)
-    expect(response.headers.location).toBe(url)
+    expect(response.headers.location).toBe('/submission-02-species')
 
     const sessionCookie = getCookieHeader(response)
     expect(sessionCookie).toContain('session=')
@@ -155,6 +155,7 @@ describe('Submission client details page', () => {
     })
 
     expect(response.statusCode).toBe(302)
+    expect(response.headers.location).toBe(url)
 
     const revisitResponse = await server.inject({
       method: 'GET',

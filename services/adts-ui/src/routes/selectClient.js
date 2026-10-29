@@ -2,6 +2,7 @@ import Joi from 'joi'
 import { getClients } from '../backend/clients.js'
 
 const pageName = 'submission-01-client-details'
+const nextPageName = 'submission-02-species'
 
 const submissionClientSchema = Joi.object({
   clientId: Joi.string().allow('').required()
@@ -88,7 +89,7 @@ const selectClient = (server, submissionFormStateKey) => {
         })
         request.yar.touch()
 
-        return h.redirect(`/${pageName}`)
+        return h.redirect(selectedClient ? `/${nextPageName}` : `/${pageName}`)
       }
     }
   ])

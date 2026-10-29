@@ -8,3 +8,10 @@ CVE-2026-102278
 
 # Unable to find dependency for undici
 CVE-2026-19534
+
+# undici bundled inside npm in the defradigital/node base image
+# (/usr/local/lib/node_modules/npm/node_modules/undici, 6.28.0). Not an app dependency.
+# Latest base image (3.2.4-node24.22.1) still ships 6.29.0; fix is 6.29.1. Remove once the base image updates.
+CVE-2026-109383
+CVE-2026-109869
+CVE-2026-87018

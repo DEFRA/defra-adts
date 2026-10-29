@@ -58,23 +58,25 @@ const toSearchResult = (item) => ({
   tests: item.tests || []
 })
 
+const getSubmissionItems = async (docClient, exclusiveStartKey) => {
+  const result = await docClient.send(new ScanCommand({
+    TableName: tableName(),
+    FilterExpression: '#status = :draft',
+    ExpressionAttributeNames: { '#status': 'status' },
+    ExpressionAttributeValues: { ':draft': 'Draft' },
+    ExclusiveStartKey: exclusiveStartKey
+  }))
+
+  const items = result.Items ?? []
+  if (!result.LastEvaluatedKey) {
+    return items
+  }
+
+  return [...items, ...await getSubmissionItems(docClient, result.LastEvaluatedKey)]
+}
+
 export const getSubmissions = async (docClient, filters = {}) => {
-  const items = []
-  let exclusiveStartKey
-
-  do {
-    const result = await docClient.send(new ScanCommand({
-      TableName: tableName(),
-      FilterExpression: '#status = :draft',
-      ExpressionAttributeNames: { '#status': 'status' },
-      ExpressionAttributeValues: { ':draft': 'Draft' },
-      ExclusiveStartKey: exclusiveStartKey
-    }))
-
-    items.push(...(result.Items ?? []))
-    exclusiveStartKey = result.LastEvaluatedKey
-  } while (exclusiveStartKey)
-
+  const items = await getSubmissionItems(docClient)
   const cutoff = dateCutoff(filters['submitted-date'])
   const results = items
     .filter((item) =>

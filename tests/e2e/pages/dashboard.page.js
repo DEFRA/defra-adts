@@ -22,6 +22,10 @@ export class DashboardPage {
     this.statusFilter = page.getByLabel('Status')
     this.submittedDateFilter = page.getByLabel('Submitted date')
 
+    //DASH-07, DASH-08 - Start Sick and Healthy submission buttons on dashboard
+    this.sickSubmission = page.getByRole('button', { name: 'Sick animal submission' })
+    this.healthySubmission = page.getByRole('button', { name: 'Healthy animal submission' })
+
     // AC3 — search action
     this.searchButton = page.getByRole('button', { name: 'Search' })
 

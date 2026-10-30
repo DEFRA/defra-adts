@@ -1,0 +1,507 @@
+openapi: 3.0.3
+info:
+  title: ADTS Submission Service API
+  version: 1.0.0
+  description: >-
+    Proposed domain-oriented REST API between the ADTS Backend and the Submission
+    Service. LIMS-specific endpoint names and parameter spellings are internal.
+    Draft field schemas and report representations are deliberately incomplete
+    until verified against legacy callers and the authoritative LIMS contract.
+servers:
+  - url: /
+security:
+  - BackendBearer: []
+paths:
+  /health:
+    get:
+      security: []
+      summary: Report process health
+      responses:
+        '200':
+          description: The service process is responding.
+  /ready:
+    get:
+      security: []
+      summary: Report service readiness without requiring LIMS availability
+      responses:
+        '200':
+          description: Service configuration and startup requirements are ready.
+        '503':
+          description: Service is not ready to accept requests.
+  /health/lims:
+    get:
+      security: []
+      summary: Report connectivity to the configured LIMS dependency
+      responses:
+        '200':
+          description: Configured LIMS is reachable and accepted the health check.
+        '503':
+          description: Configured LIMS is unavailable or rejected the health check.
+  /v1/products:
+    get:
+      summary: Search products
+      parameters:
+        - $ref: '#/components/parameters/Filter'
+        - name: species
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Matching products.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  additionalProperties: true
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        default:
+          $ref: '#/components/responses/ServiceError'
+  /v1/clients:
+    get:
+      summary: Search clients within a practice
+      parameters:
+        - $ref: '#/components/parameters/PvsId'
+        - $ref: '#/components/parameters/Filter'
+      responses:
+        '200':
+          description: Matching clients.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  additionalProperties: true
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        default:
+          $ref: '#/components/responses/ServiceError'
+  /v1/practices/{pvsId}:
+    get:
+      summary: Retrieve practice/PVS details
+      parameters:
+        - $ref: '#/components/parameters/PvsIdPath'
+      responses:
+        '200':
+          description: Practice details.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        default:
+          $ref: '#/components/responses/ServiceError'
+  /v1/submission-identifiers:
+    get:
+      summary: Search submission identifiers
+      parameters:
+        - $ref: '#/components/parameters/PvsId'
+        - $ref: '#/components/parameters/Filter'
+      responses:
+        '200':
+          description: Matching submission identifiers.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        default:
+          $ref: '#/components/responses/ServiceError'
+  /v1/submissions:
+    get:
+      summary: Search submitted records
+      parameters:
+        - $ref: '#/components/parameters/PvsId'
+        - $ref: '#/components/parameters/Filter'
+        - name: clientId
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+        - name: clinician
+          in: query
+          schema:
+            type: string
+        - name: submittedDateBegin
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: submittedDateEnd
+          in: query
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Matching submitted records.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/SubmissionSummary'
+                  nextPageToken:
+                    type: string
+                    nullable: true
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        default:
+          $ref: '#/components/responses/ServiceError'
+  /v1/drafts/{draftId}:
+    get:
+      summary: Retrieve an editable LIMS draft
+      parameters:
+        - $ref: '#/components/parameters/DraftIdPath'
+        - $ref: '#/components/parameters/PvsId'
+      responses:
+        '200':
+          description: Editable LIMS draft.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DraftSubmission'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        default:
+          $ref: '#/components/responses/ServiceError'
+    put:
+      summary: Update an existing LIMS draft
+      parameters:
+        - $ref: '#/components/parameters/DraftIdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DraftSubmissionInput'
+      responses:
+        '200':
+          description: Draft updated and confirmed by LIMS.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DraftIdentifier'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        default:
+          $ref: '#/components/responses/ServiceError'
+  /v1/drafts:
+    post:
+      summary: Create a LIMS draft
+      description: >-
+        The service makes one upstream attempt. If the result is ambiguous, it
+        returns outcome_unknown; the caller must reconcile before retrying.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DraftSubmissionInput'
+      responses:
+        '201':
+          description: Draft created and identifier confirmed by LIMS.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DraftIdentifier'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        default:
+          $ref: '#/components/responses/ServiceError'
+  /v1/drafts/{draftId}/delivery-addresses:
+    get:
+      summary: Retrieve draft delivery and sample addresses
+      parameters:
+        - $ref: '#/components/parameters/DraftIdPath'
+        - $ref: '#/components/parameters/PvsId'
+      responses:
+        '200':
+          description: Address records associated with the draft.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  additionalProperties: true
+        default:
+          $ref: '#/components/responses/ServiceError'
+  /v1/drafts/{draftId}/confirmation:
+    post:
+      summary: Confirm a LIMS draft
+      description: >-
+        The service makes one upstream attempt. An ambiguous result is returned
+        as outcome_unknown and is not automatically retried.
+      parameters:
+        - $ref: '#/components/parameters/DraftIdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [pvsId]
+              properties:
+                pvsId:
+                  type: string
+      responses:
+        '200':
+          description: Confirmation established by LIMS.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [submissionId]
+                properties:
+                  submissionId:
+                    type: string
+        default:
+          $ref: '#/components/responses/ServiceError'
+  /v1/cancellation-requests:
+    post:
+      summary: Request cancellation of a LIMS draft or submission
+      description: >-
+        The service makes one upstream attempt. Business-level cancellation
+        rejections are represented as errors even if LIMS returns HTTP success.
+        An ambiguous result is not automatically retried.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [pvsId, clinician]
+              properties:
+                pvsId:
+                  type: string
+                draftId:
+                  type: string
+                submissionId:
+                  type: string
+                clinician:
+                  type: string
+              oneOf:
+                - required: [draftId]
+                - required: [submissionId]
+      responses:
+        '200':
+          description: LIMS accepted the cancellation request.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [accepted]
+                properties:
+                  accepted:
+                    type: boolean
+                    enum: [true]
+                  messages:
+                    type: array
+                    items:
+                      type: string
+        '422':
+          description: LIMS returned a business-level cancellation rejection.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        default:
+          $ref: '#/components/responses/ServiceError'
+  /v1/submissions/{submissionId}/results/latest:
+    get:
+      summary: Retrieve latest released results and charges
+      parameters:
+        - $ref: '#/components/parameters/SubmissionIdPath'
+        - $ref: '#/components/parameters/PvsId'
+      responses:
+        '200':
+          description: Latest released result and charge information.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        default:
+          $ref: '#/components/responses/ServiceError'
+  /v1/submissions/{submissionId}/release-summary:
+    get:
+      summary: Retrieve a release summary
+      parameters:
+        - $ref: '#/components/parameters/SubmissionIdPath'
+        - $ref: '#/components/parameters/PvsId'
+      responses:
+        '200':
+          description: Release summary in the verified LIMS representation; media type and schema require contract discovery.
+          headers:
+            Content-Type:
+              schema:
+                type: string
+        default:
+          $ref: '#/components/responses/ServiceError'
+  /v1/submissions/{submissionId}/report:
+    get:
+      summary: Retrieve report content
+      description: >-
+        The report media type and attachment behavior are discovery gates. The
+        implementation must preserve the verified media type and content.
+      parameters:
+        - $ref: '#/components/parameters/SubmissionIdPath'
+        - $ref: '#/components/parameters/PvsId'
+      responses:
+        '200':
+          description: Report in its verified upstream media type.
+          content:
+            '*/*':
+              schema:
+                type: string
+                format: binary
+        default:
+          $ref: '#/components/responses/ServiceError'
+components:
+  securitySchemes:
+    BackendBearer:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: >-
+        Proposed workload identity contract. Issuer, audience, and verification
+        configuration must be supplied by the approved runtime platform.
+  parameters:
+    PvsId:
+      name: pvsId
+      in: query
+      required: true
+      schema:
+        type: string
+    PvsIdPath:
+      name: pvsId
+      in: path
+      required: true
+      schema:
+        type: string
+    Filter:
+      name: filter
+      in: query
+      required: false
+      schema:
+        type: string
+    DraftIdPath:
+      name: draftId
+      in: path
+      required: true
+      schema:
+        type: string
+    SubmissionIdPath:
+      name: submissionId
+      in: path
+      required: true
+      schema:
+        type: string
+  schemas:
+    DraftSubmissionInput:
+      type: object
+      description: >-
+        Proposed domain payload. Exact required fields, nested structures,
+        optionality, and validation are not final until verified against the
+        complete legacy model/callers and authoritative LIMS contract.
+      required: [pvsId, data]
+      properties:
+        pvsId:
+          type: string
+        data:
+          type: object
+          additionalProperties: true
+    DraftSubmission:
+      allOf:
+        - $ref: '#/components/schemas/DraftSubmissionInput'
+        - type: object
+          required: [draftId]
+          properties:
+            draftId:
+              type: string
+    DraftIdentifier:
+      type: object
+      required: [draftId]
+      properties:
+        draftId:
+          type: string
+    SubmissionSummary:
+      type: object
+      required: [submissionId]
+      properties:
+        submissionId:
+          type: string
+        status:
+          type: string
+        clientId:
+          type: string
+        clinician:
+          type: string
+        submittedDate:
+          type: string
+          format: date
+        additionalData:
+          type: object
+          additionalProperties: true
+    Error:
+      type: object
+      required: [category, message, correlationId]
+      properties:
+        category:
+          type: string
+          enum:
+            - validation_error
+            - unauthenticated
+            - forbidden
+            - not_found
+            - business_error
+            - upstream_http_error
+            - upstream_timeout
+            - upstream_transport_error
+            - dependency_unavailable
+            - outcome_unknown
+        message:
+          type: string
+        correlationId:
+          type: string
+        upstreamCode:
+          type: string
+          description: Allowlisted, non-sensitive LIMS code when available.
+  responses:
+    ValidationError:
+      description: Backend request failed service-side validation.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFoundError:
+      description: Requested record does not exist or is not visible.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    ServiceError:
+      description: Normalized dependency, business, timeout, or unknown-outcome error.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

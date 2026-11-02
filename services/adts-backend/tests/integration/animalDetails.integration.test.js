@@ -17,7 +17,10 @@
 import { afterAll, beforeAll, describe, expect, jest, test } from '@jest/globals'
 import createServer from '../../src/app.js'
 
-describe('GET /GetAnimalDetails with local DynamoDB', () => {
+// TODO: Re-enable when get-clients cross-service test is moved out of UI integration suite.
+// Currently fails in CI because UI workflow doesn't install submissions-service/backend deps.
+// Tracked by: <755932>
+describe.skip('GET /GetAnimalDetails with local DynamoDB', () => {
   let server
   const testEnvironment = {
     DYNAMODB_ENDPOINT: 'http://localhost:8000',

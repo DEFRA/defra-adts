@@ -65,6 +65,102 @@
       "GSI1SK": { "S": "COW#DAIRY" }
     } } },
     { "PutRequest": { "Item": {
+      "PK": { "S": "REF#AGE_CATEGORIES" },
+      "SK": { "S": "ORDER#0001#ADULT" },
+      "type": { "S": "AGE_CATEGORIES" },
+      "code": { "S": "ADULT" },
+      "description": { "S": "Adult" },
+      "forAvianSpecies": { "BOOL": false },
+      "index": { "N": "0" },
+      "GSI1PK": { "S": "CODE#AGE_CATEGORIES" },
+      "GSI1SK": { "S": "ADULT" }
+    } } },
+    { "PutRequest": { "Item": {
+      "PK": { "S": "REF#AGE_CATEGORIES" },
+      "SK": { "S": "ORDER#0002#CALF" },
+      "type": { "S": "AGE_CATEGORIES" },
+      "code": { "S": "CALF" },
+      "description": { "S": "Calf" },
+      "forAvianSpecies": { "BOOL": false },
+      "index": { "N": "1" },
+      "GSI1PK": { "S": "CODE#AGE_CATEGORIES" },
+      "GSI1SK": { "S": "CALF" }
+    } } },
+    { "PutRequest": { "Item": {
+      "PK": { "S": "REF#SPECIES_HOUSINGS" },
+      "SK": { "S": "ORDER#0001#HOUSED" },
+      "type": { "S": "SPECIES_HOUSINGS" },
+      "code": { "S": "HOUSED" },
+      "description": { "S": "Housed" },
+      "forAvianSpecies": { "BOOL": false },
+      "index": { "N": "0" },
+      "GSI1PK": { "S": "CODE#SPECIES_HOUSINGS" },
+      "GSI1SK": { "S": "HOUSED" }
+    } } },
+    { "PutRequest": { "Item": {
+      "PK": { "S": "REF#SPECIES_HOUSINGS" },
+      "SK": { "S": "ORDER#0002#OUTDOOR" },
+      "type": { "S": "SPECIES_HOUSINGS" },
+      "code": { "S": "OUTDOOR" },
+      "description": { "S": "Outdoor" },
+      "forAvianSpecies": { "BOOL": false },
+      "index": { "N": "1" },
+      "GSI1PK": { "S": "CODE#SPECIES_HOUSINGS" },
+      "GSI1SK": { "S": "OUTDOOR" }
+    } } },
+    { "PutRequest": { "Item": {
+      "PK": { "S": "REF#SPECIES_HOUSINGS" },
+      "SK": { "S": "ORDER#0003#AVIARY" },
+      "type": { "S": "SPECIES_HOUSINGS" },
+      "code": { "S": "AVIARY" },
+      "description": { "S": "Aviary" },
+      "forAvianSpecies": { "BOOL": true },
+      "index": { "N": "2" },
+      "GSI1PK": { "S": "CODE#SPECIES_HOUSINGS" },
+      "GSI1SK": { "S": "AVIARY" }
+    } } },
+    { "PutRequest": { "Item": {
+      "PK": { "S": "REF#SEX_GROUPS" },
+      "SK": { "S": "ORDER#0001#FEMALE" },
+      "type": { "S": "SEX_GROUPS" },
+      "code": { "S": "FEMALE" },
+      "description": { "S": "Female" },
+      "index": { "N": "0" },
+      "GSI1PK": { "S": "CODE#SEX_GROUPS" },
+      "GSI1SK": { "S": "FEMALE" }
+    } } },
+    { "PutRequest": { "Item": {
+      "PK": { "S": "REF#SEX_GROUPS" },
+      "SK": { "S": "ORDER#0002#MALE" },
+      "type": { "S": "SEX_GROUPS" },
+      "code": { "S": "MALE" },
+      "description": { "S": "Male" },
+      "index": { "N": "1" },
+      "GSI1PK": { "S": "CODE#SEX_GROUPS" },
+      "GSI1SK": { "S": "MALE" }
+    } } },
+    { "PutRequest": { "Item": {
+      "PK": { "S": "REF#SEX_GROUPS" },
+      "SK": { "S": "ORDER#0003#MIXED" },
+      "type": { "S": "SEX_GROUPS" },
+      "code": { "S": "MIXED" },
+      "description": { "S": "Mixed" },
+      "index": { "N": "2" },
+      "GSI1PK": { "S": "CODE#SEX_GROUPS" },
+      "GSI1SK": { "S": "MIXED" }
+    } } },
+    { "PutRequest": { "Item": {
+      "PK": { "S": "REF#ORGANIC_ENVIRONMENT" },
+      "SK": { "S": "ORDER#0001#ORGANIC" },
+      "type": { "S": "ORGANIC_ENVIRONMENT" },
+      "code": { "S": "ORGANIC" },
+      "description": { "S": "Organic accreditation applies" },
+      "forAvianSpecies": { "BOOL": false },
+      "index": { "N": "0" },
+      "GSI1PK": { "S": "CODE#ORGANIC_ENVIRONMENT" },
+      "GSI1SK": { "S": "ORGANIC" }
+    } } },
+    { "PutRequest": { "Item": {
       "PK": { "S": "REF#COUNTY" },
       "SK": { "S": "ORDER#0001#AB" },
       "type": { "S": "COUNTY" },

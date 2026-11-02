@@ -5,6 +5,7 @@ import Inert from '@hapi/inert'
 import Joi from 'joi'
 import { constants } from 'http2'
 import { createDocumentClient } from './data/dynamo.js'
+import { getAnimalDetails } from './data/animalDetails.js'
 import { getSpecies } from './data/species.js'
 import { getSubmissions } from './data/submissions.js'
 
@@ -147,6 +148,34 @@ const registerSpeciesRoute = (server, getDynamoClient) => {
   })
 }
 
+const registerAnimalDetailsRoute = (server, getDynamoClient) => {
+  server.route({
+    method: 'GET',
+    path: '/GetAnimalDetails',
+    options: {
+      validate: {
+        query: Joi.object({
+          speciesId: Joi.string().trim().required()
+        }).required()
+      }
+    },
+    handler: async (request, h) => {
+      try {
+        const animalDetails = await getAnimalDetails(getDynamoClient(), request.query.speciesId)
+        if (!animalDetails) {
+          return h.response({ error: 'Species not found' }).code(constants.HTTP_STATUS_NOT_FOUND)
+        }
+
+        return h.response(animalDetails)
+      } catch (error) {
+        console.error('Error retrieving animal details:', error.message)
+        return h.response({ error: 'Unable to retrieve animal details' })
+          .code(constants.HTTP_STATUS_BAD_GATEWAY)
+      }
+    }
+  })
+}
+
 const createServer = async ({ docClient } = {}) => {
   const server = Hapi.server({
     port: process.env.PORT
@@ -158,6 +187,7 @@ const createServer = async ({ docClient } = {}) => {
   registerConnectionHealthRoute(server)
   registerSubmissionsRoutes(server, getDynamoClient)
   registerSpeciesRoute(server, getDynamoClient)
+  registerAnimalDetailsRoute(server, getDynamoClient)
 
   return server
 }

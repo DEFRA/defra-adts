@@ -18,6 +18,14 @@ PORT=3200 SUBMISSIONS_SERVICE_URL=http://localhost:3100 npm start
 `[{ "speciesId": "<code>", "name": "<description>" }]`, in the table's configured order.
 It returns `502` if DynamoDB can't be reached.
 
+`GET /GetAnimalDetails?speciesId=<code>` returns the reference-data options used by the
+animal-details form: `ageCategories`, `purposes`, `keepingTypes`, `breeds`, and `sexes`,
+plus `organicAccreditationApplicable`. Species-specific breed and purpose records take
+precedence over avian-specific or generic fallbacks. Other options respect
+`forAvianSpecies` and `excludeSpeciesLimsCodes` attributes when present. It returns `400`
+when `speciesId` is missing, `404` for an unknown species, and `502` if DynamoDB can't
+be reached.
+
 | Variable | Default | Purpose |
 |---|---|---|
 | `DYNAMODB_ENDPOINT` | AWS default | Set to `http://localhost:8000` to use the [local DynamoDB](../../local/dynamodb/README.md). |
@@ -25,4 +33,3 @@ It returns `502` if DynamoDB can't be reached.
 | `REFERENCE_DATA_TABLE` | `adts-reference-data` | Reference data table name. |
 
 Locally, the SDK also needs credentials, so set `AWS_ACCESS_KEY_ID=local AWS_SECRET_ACCESS_KEY=local`.
-

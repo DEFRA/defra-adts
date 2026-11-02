@@ -46,11 +46,11 @@ All values are synthetic. The seeded state is loaded by `test-db.sh reset` (defa
 
 | Table | Count | Entities |
 |-------|-------|----------|
-| `adts-reference-data` | 9 | Species `CHICKEN` (avian), `COW`, `SHEEP`; breeds `HOLSTEIN` (for COW); purposes `DAIRY` (for COW); counties `AB`, `DEV`; practice `PRACTICE-123`; information message `WELCOME` |
+| `adts-reference-data` | 18 | Species `CHICKEN` (avian), `COW`, `SHEEP`; breeds `HOLSTEIN` (for COW); purposes `DAIRY` (for COW); ages `ADULT`, `CALF`; housings `HOUSED`, `OUTDOOR` (non-avian), `AVIARY` (avian); sexes `FEMALE`, `MALE`, `MIXED`; organic accreditation applicability (non-avian); counties `AB`, `DEV`; practice `PRACTICE-123`; information message `WELCOME` |
 | `adts-submissions` | 4 | `submission-123` for `practice-123`, submitted by `user-456`; Drafts `draft-001` and `draft-002` for Acme Farm and `draft-003` for Beta Farm |
 | `adts-ci-lims-mapping` | 2 | `USER-123` to `LIMS-456789`; `USER-456` to `LIMS-987654` |
 
-Total: 15 items, below the 25-item `BatchWriteItem` limit, so the seed loads in one batch per table.
+Total: 24 items, below the 25-item `BatchWriteItem` limit for each table, so the seed loads in one batch per table.
 
 The Draft fixtures are searchable through `GET /submissions?status=draft`. Client and clinician filters are case-insensitive substring matches; `submitted-date` uses the dashboard's rolling date periods.
 

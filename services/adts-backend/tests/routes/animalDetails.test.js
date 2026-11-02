@@ -1,0 +1,88 @@
+import { afterAll, afterEach, beforeAll, describe, expect, jest, test } from '@jest/globals'
+import createServer from '../../src/app.js'
+
+describe('GET /GetAnimalDetails', () => {
+  let server
+  const docClient = { send: jest.fn() }
+
+  beforeAll(async () => {
+    process.env.PORT = '3200'
+    server = await createServer({ docClient })
+  })
+
+  afterAll(async () => {
+    await server.stop()
+  })
+
+  afterEach(() => {
+    jest.resetAllMocks()
+  })
+
+  test('returns species animal options in the UI contract shape with generic fallbacks', async () => {
+    docClient.send.mockImplementation(async (command) => {
+      const partition = command.input.ExpressionAttributeValues[':pk']
+      const items = {
+        'REF#SPECIES': [
+          { code: 'COW', description: 'Cow', isAvian: false }
+        ],
+        'REF#SPECIES_ANIMAL_BREEDS#SPECIES#COW': [],
+        'REF#SPECIES_ANIMAL_BREEDS': [{ code: 'HOLSTEIN', description: 'Holstein' }],
+        'REF#SPECIES_ANIMAL_PURPOSES#SPECIES#COW': [],
+        'REF#SPECIES_ANIMAL_PURPOSES#AVIAN#0': [],
+        'REF#SPECIES_ANIMAL_PURPOSES': [{ code: 'DAIRY', description: 'Dairy' }],
+        'REF#SPECIES_HOUSINGS': [
+          { code: 'OUTDOOR', description: 'Outdoor' },
+          { code: 'AVIARY', description: 'Aviary', forAvianSpecies: true },
+          { code: 'NOT-COW', description: 'Not for cows', excludeSpeciesLimsCodes: ['COW'] }
+        ],
+        'REF#SEX_GROUPS': [{ code: 'FEMALE', description: 'Female' }],
+        'REF#AGE_CATEGORIES': [{ code: 'ADULT', description: 'Adult' }],
+        'REF#ORGANIC_ENVIRONMENT': [{ code: 'ORGANIC', description: 'Organic' }]
+      }[partition]
+
+      return { Items: items ?? [] }
+    })
+
+    const response = await server.inject({ method: 'GET', url: '/GetAnimalDetails?speciesId=COW' })
+
+    expect(response.statusCode).toBe(200)
+    expect(response.result).toEqual({
+      speciesId: 'COW',
+      ageCategories: [{ value: 'ADULT', label: 'Adult' }],
+      purposes: [{ value: 'DAIRY', label: 'Dairy' }],
+      keepingTypes: [{ value: 'OUTDOOR', label: 'Outdoor' }],
+      breeds: [{ value: 'HOLSTEIN', label: 'Holstein' }],
+      sexes: [{ value: 'FEMALE', label: 'Female' }],
+      organicAccreditationApplicable: true
+    })
+    expect(docClient.send.mock.calls.map(([command]) =>
+      command.input.ExpressionAttributeValues[':pk']
+    )).toContain('REF#SPECIES_ANIMAL_BREEDS')
+  })
+
+  test('rejects a request without speciesId', async () => {
+    const response = await server.inject({ method: 'GET', url: '/GetAnimalDetails' })
+
+    expect(response.statusCode).toBe(400)
+    expect(docClient.send).not.toHaveBeenCalled()
+  })
+
+  test('returns not found for an unknown species', async () => {
+    docClient.send.mockResolvedValue({ Items: [] })
+
+    const response = await server.inject({ method: 'GET', url: '/GetAnimalDetails?speciesId=UNKNOWN' })
+
+    expect(response.statusCode).toBe(404)
+    expect(response.result).toEqual({ error: 'Species not found' })
+  })
+
+  test('returns a gateway error when DynamoDB fails', async () => {
+    docClient.send.mockRejectedValue(new Error('connect ECONNREFUSED'))
+    jest.spyOn(console, 'error').mockImplementation(() => {})
+
+    const response = await server.inject({ method: 'GET', url: '/GetAnimalDetails?speciesId=COW' })
+
+    expect(response.statusCode).toBe(502)
+    expect(response.result).toEqual({ error: 'Unable to retrieve animal details' })
+  })
+})

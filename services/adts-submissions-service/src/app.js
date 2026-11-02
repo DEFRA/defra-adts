@@ -72,6 +72,33 @@ const createServer = async () => {
 
   server.route({
     method: 'GET',
+    path: '/GetClients',
+    handler: async (_request, h) => {
+      const { LIMS_BASE_URL, LIMS_PVS_ID } = process.env
+      if (!LIMS_BASE_URL || !LIMS_PVS_ID) {
+        console.error('LIMS_BASE_URL and LIMS_PVS_ID must be configured to retrieve clients')
+        return h.response({ error: 'LIMS client lookup is not configured' })
+          .code(constants.HTTP_STATUS_INTERNAL_SERVER_ERROR)
+      }
+
+      try {
+        const query = new URLSearchParams({ pvsId: LIMS_PVS_ID, filter: '' })
+        const response = await fetch(`${LIMS_BASE_URL}/general/getClients?${query}`)
+        if (!response.ok) {
+          return h.response({ error: 'LIMS integration error' }).code(response.status)
+        }
+
+        return await response.json()
+      } catch (error) {
+        console.error('Error retrieving clients from LIMS:', error.message)
+        return h.response({ error: 'LIMS connectivity failure' })
+          .code(constants.HTTP_STATUS_BAD_GATEWAY)
+      }
+    }
+  })
+
+  server.route({
+    method: 'GET',
     path: '/submissions',
     handler: async (request, h) => {
       const queryParams = new URLSearchParams(request.query).toString()

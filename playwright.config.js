@@ -27,12 +27,23 @@ const config = {
   },
 webServer: [
   {
+    command: 'node tests/mocks/lims/lims-server.js',
+    url: 'http://localhost:3300/health',
+    reuseExistingServer: false,
+    timeout: 30 * 1000,
+    env: {
+      PORT: '3300'
+    }
+  },
+  {
     command: 'npm start --prefix services/adts-submissions-service',
     url: 'http://localhost:3100',
-    reuseExistingServer: !process.env.CI,
+    reuseExistingServer: false,
     timeout: 60 * 1000,
     env: {
-      PORT: '3100'
+      PORT: '3100',
+      LIMS_BASE_URL: 'http://localhost:3300',
+      LIMS_PVS_ID: 'E2E-PVS-001'
     }
   },
   {

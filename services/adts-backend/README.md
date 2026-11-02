@@ -12,6 +12,39 @@ the backend with:
 PORT=3200 SUBMISSIONS_SERVICE_URL=http://localhost:3100 npm start
 ```
 
+## Running tests
+
+From the repository root:
+
+```bash
+# Route/unit/component coverage run used in CI
+npm run test:coverage --prefix services/adts-backend
+
+# Backend integration tests against local DynamoDB
+TEST_CONTAINER_ENGINE=podman npm run test:integration --prefix services/adts-backend
+# or
+TEST_CONTAINER_ENGINE=docker npm run test:integration --prefix services/adts-backend
+
+# Backend API contract tests
+npm run test:contract --prefix services/adts-backend
+
+# Cross-service API health/schema tests
+npm run test:api --prefix services/adts-backend
+```
+
+### Integration test prerequisites
+
+- Node.js 24.x and npm
+- Podman or Docker with Compose available
+- Port `8000` free for local DynamoDB
+
+The integration command starts and resets local DynamoDB via
+`local/dynamodb/test-db.sh`. Stop local test containers after local runs:
+
+```bash
+npm run test:db:down
+```
+
 ## Reference data (DynamoDB)
 
 `GET /GetSpecies` reads the species from the DynamoDB reference data table and returns

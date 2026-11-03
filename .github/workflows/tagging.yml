@@ -27,7 +27,7 @@ jobs:
     runs-on: ubuntu-latest
 
     strategy:
-      fail-fast: false
+      fail-fast: true
       matrix:
         include:
           - service: adts-ui
@@ -91,6 +91,7 @@ jobs:
 
             # Determine whether this service has changed since its own
             # most recent successful image build.
+            echo "CHANGES: $(git rev-list "${CHANGE_RANGE}" -- "${APPLICATION_PATH}")"
             if [[ -z "$(git rev-list "${CHANGE_RANGE}" -- "${APPLICATION_PATH}")" ]]; then
               echo "No changes detected for ${APPLICATION}."
               echo "changed=false" >> "${GITHUB_OUTPUT}"

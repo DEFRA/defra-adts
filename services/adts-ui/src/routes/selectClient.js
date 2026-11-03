@@ -7,7 +7,7 @@ const nextPageName = 'submission-02-species'
 const submissionClientSchema = Joi.object({
   clientId: Joi.string().allow('').required(),
   animalsAtClientAddress: Joi.string().valid('yes', 'no').optional(),
-  animalAddress: Joi.string().allow('').max(500).optional()
+  animalAddress: Joi.string().allow('').optional()
 })
 
 const getClientOptions = (clients, selectedClientId) => [

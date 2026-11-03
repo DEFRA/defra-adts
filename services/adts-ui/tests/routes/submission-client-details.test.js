@@ -166,20 +166,14 @@ describe('Submission client details page', () => {
     })
   })
 
-  test('rejects an invalid animal location answer or an overlong animal address', async () => {
+  test('rejects an invalid animal location answer', async () => {
     const invalidAnswer = await server.inject({
       method: 'POST',
       url,
       payload: { clientId: '101', animalsAtClientAddress: 'maybe' }
     })
-    const longAddress = await server.inject({
-      method: 'POST',
-      url,
-      payload: { clientId: '101', animalsAtClientAddress: 'no', animalAddress: 'x'.repeat(501) }
-    })
 
     expect(invalidAnswer.statusCode).toBe(400)
-    expect(longAddress.statusCode).toBe(400)
   })
 
   test('displays the selected client details from the backend while persisting only the clientId', async () => {

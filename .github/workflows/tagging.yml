@@ -156,15 +156,17 @@ jobs:
 
       - name: Configure AWS credentials
         if: steps.version.outputs.changed == 'true'
-        uses: aws-actions/configure-aws-credentials@v5
+        uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd  #v6.3.0
         with:
-          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
-          aws-region: ${{ env.AWS_REGION }}
+          role-to-assume: arn:aws:iam::${{ vars.AWS_ECR_ROLE_ACCOUNT_ID }}:role/${{ vars.AWS_ECR_ROLE_NAME }}
+          aws-region: ${{ vars.AWS_REGION }}
 
       - name: Log in to Amazon ECR
         if: steps.version.outputs.changed == 'true'
         id: ecr-login
-        uses: aws-actions/amazon-ecr-login@v2
+        uses: aws-actions/amazon-ecr-login@03f1aad4c6c7ffd436567f42f9384779290529bd  # v2.1.7
+        with:
+          mask-password: true
 
 #      - name: Set up Docker Buildx
 #        if: steps.version.outputs.changed == 'true'

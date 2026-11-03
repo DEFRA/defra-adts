@@ -1,0 +1,258 @@
+name: Build and publish service images
+
+on:
+  push:
+    branches:
+      - main
+
+  pull_request:
+    branches:
+      - main
+
+# Prevent two main-branch runs from calculating the same next version.
+concurrency:
+  group: service-versioning-main
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  id-token: write
+
+env:
+  AWS_REGION: eu-west-2
+
+jobs:
+  build:
+    name: Build ${{ matrix.service }}
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - service: adts-ui
+            service-path: services/adts-ui
+            ecr-repository: ${{ vars.ADTS_UI_ECR }}
+
+          - service: adts-backend
+            service-path: services/adts-backend
+            ecr-repository: ${{ vars.ADTS_BACKEND_ECR }}
+
+          - service: adts-submissions-service
+            service-path: services/adts-submissions-service
+            ecr-repository: ${{ vars.ADTS_SUBMISSIONS_ECR }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Fetch service version tags
+        run: git fetch --force --tags
+
+      - name: Calculate service version
+        id: version
+        shell: bash
+        env:
+          APPLICATION: ${{ matrix.service }}
+          APPLICATION_PATH: ${{ matrix.service-path }}
+        run: |
+          set -euo pipefail
+
+          TAG_PREFIX="${APPLICATION}-v"
+
+          LAST_TAG="$(
+            git tag \
+              --list "${TAG_PREFIX}[0-9]*.[0-9]*.[0-9]*" \
+              --sort=-v:refname |
+            head -n 1
+          )"
+
+          if [[ -z "${LAST_TAG}" ]]; then
+            echo "No previous version tag exists for ${APPLICATION}."
+
+            # Check whether the service path exists and contains tracked files.
+            if ! git ls-files --error-unmatch "${APPLICATION_PATH}" >/dev/null 2>&1 &&
+               [[ -z "$(git ls-files "${APPLICATION_PATH}")" ]]; then
+              echo "No tracked files found under ${APPLICATION_PATH}."
+              echo "changed=false" >> "${GITHUB_OUTPUT}"
+              exit 0
+            fi
+
+            VERSION="0.1.0"
+            CHANGE_RANGE="HEAD"
+            CHANGED="true"
+            BUMP_TYPE="initial"
+          else
+            echo "Last service tag: ${LAST_TAG}"
+
+            CHANGE_RANGE="${LAST_TAG}..HEAD"
+
+            # Determine whether this service has changed since its own
+            # most recent successful image build.
+            if [[ -z "$(git rev-list "${CHANGE_RANGE}" -- "${APPLICATION_PATH}")" ]]; then
+              echo "No changes detected for ${APPLICATION}."
+              echo "changed=false" >> "${GITHUB_OUTPUT}"
+              echo "previous_tag=${LAST_TAG}" >> "${GITHUB_OUTPUT}"
+              exit 0
+            fi
+
+            PREVIOUS_VERSION="${LAST_TAG#${TAG_PREFIX}}"
+
+            if [[ ! "${PREVIOUS_VERSION}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+              echo "Invalid previous semantic version: ${PREVIOUS_VERSION}"
+              exit 1
+            fi
+
+            IFS='.' read -r MAJOR MINOR PATCH <<< "${PREVIOUS_VERSION}"
+
+            COMMIT_MESSAGES="$(
+              git log \
+                --format='%B%n---END-COMMIT---' \
+                "${CHANGE_RANGE}" \
+                -- "${APPLICATION_PATH}"
+            )"
+
+            if grep -Eqi \
+              '(^|[[:space:]])BREAKING CHANGE:|^[a-zA-Z]+(\([^)]*\))?!:' \
+              <<< "${COMMIT_MESSAGES}"; then
+              MAJOR=$((MAJOR + 1))
+              MINOR=0
+              PATCH=0
+              BUMP_TYPE="major"
+
+            elif grep -Eqi \
+              '^feat(\([^)]*\))?:' \
+              <<< "${COMMIT_MESSAGES}"; then
+              MINOR=$((MINOR + 1))
+              PATCH=0
+              BUMP_TYPE="minor"
+
+            else
+              PATCH=$((PATCH + 1))
+              BUMP_TYPE="patch"
+            fi
+
+            VERSION="${MAJOR}.${MINOR}.${PATCH}"
+            CHANGED="true"
+          fi
+
+          VERSION_TAG="${APPLICATION}-v${VERSION}"
+
+          echo "Application: ${APPLICATION}"
+          echo "Version: ${VERSION}"
+          echo "Version tag: ${VERSION_TAG}"
+          echo "Bump type: ${BUMP_TYPE}"
+          echo "Change range: ${CHANGE_RANGE}"
+
+          {
+            echo "changed=${CHANGED}"
+            echo "version=${VERSION}"
+            echo "version_tag=${VERSION_TAG}"
+            echo "bump_type=${BUMP_TYPE}"
+            echo "change_range=${CHANGE_RANGE}"
+          } >> "${GITHUB_OUTPUT}"
+
+      - name: Configure AWS credentials
+        if: steps.version.outputs.changed == 'true'
+        uses: aws-actions/configure-aws-credentials@v5
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Log in to Amazon ECR
+        if: steps.version.outputs.changed == 'true'
+        id: ecr-login
+        uses: aws-actions/amazon-ecr-login@v2
+
+#      - name: Set up Docker Buildx
+#        if: steps.version.outputs.changed == 'true'
+#        uses: docker/setup-buildx-action@v4
+#
+#      - name: Generate container metadata
+#        if: steps.version.outputs.changed == 'true'
+#        id: metadata
+#        uses: docker/metadata-action@v6
+#        with:
+#          images: |
+#            ${{ steps.ecr-login.outputs.registry }}/${{ matrix.ecr-repository }}
+#          tags: |
+#            type=raw,value=${{ steps.version.outputs.version }}
+#            type=raw,value=${{ steps.version.outputs.version }},suffix=-${{ github.sha }}
+#            type=raw,value=latest
+#          labels: |
+#            org.opencontainers.image.title=${{ matrix.service }}
+#            org.opencontainers.image.version=${{ steps.version.outputs.version }}
+#            org.opencontainers.image.revision=${{ github.sha }}
+#            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+#
+#      - name: Build and push container image
+#        if: steps.version.outputs.changed == 'true'
+#        uses: docker/build-push-action@v7
+#        with:
+#          context: ${{ matrix.service-path }}
+#          file: ${{ matrix.service-path }}/Dockerfile
+#          push: true
+#          tags: ${{ steps.metadata.outputs.tags }}
+#          labels: ${{ steps.metadata.outputs.labels }}
+#          cache-from: type=gha,scope=${{ matrix.service }}
+#          cache-to: type=gha,mode=max,scope=${{ matrix.service }}
+#          provenance: mode=max
+#
+#      - name: Create service version tag
+#        if: steps.version.outputs.changed == 'true'
+#        shell: bash
+#        env:
+#          APPLICATION: ${{ matrix.service }}
+#          VERSION: ${{ steps.version.outputs.version }}
+#          VERSION_TAG: ${{ steps.version.outputs.version_tag }}
+#          BUMP_TYPE: ${{ steps.version.outputs.bump_type }}
+#        run: |
+#          set -euo pipefail
+#
+#          # Ensure another process has not created the same tag.
+#          git fetch --force --tags
+#
+#          if git rev-parse "${VERSION_TAG}" >/dev/null 2>&1; then
+#            echo "Tag ${VERSION_TAG} already exists."
+#            exit 1
+#          fi
+#
+#          git config user.name "github-actions[bot]"
+#          git config user.email \
+#            "41898282+github-actions[bot]@users.noreply.github.com"
+#
+#          git tag \
+#            --annotate "${VERSION_TAG}" \
+#            --message "${APPLICATION} ${VERSION} (${BUMP_TYPE} release)"
+#
+#          git push origin "${VERSION_TAG}"
+
+      - name: Add workflow summary
+        if: always()
+        shell: bash
+        env:
+          APPLICATION: ${{ matrix.service }}
+          CHANGED: ${{ steps.version.outputs.changed }}
+          VERSION: ${{ steps.version.outputs.version }}
+          BUMP_TYPE: ${{ steps.version.outputs.bump_type }}
+          ECR_REGISTRY: ${{ steps.ecr-login.outputs.registry }}
+          ECR_REPOSITORY: ${{ matrix.ecr-repository }}
+        run: |
+          {
+            echo "## ${APPLICATION}"
+            echo
+          } >> "${GITHUB_STEP_SUMMARY}"
+
+          if [[ "${CHANGED}" == "true" ]]; then
+            {
+              echo "- Version: \`${VERSION}\`"
+              echo "- Increment: \`${BUMP_TYPE}\`"
+              echo "- Image: \`${ECR_REGISTRY}/${ECR_REPOSITORY}:${VERSION}\`"
+              echo "- Commit: \`${GITHUB_SHA}\`"
+            } >> "${GITHUB_STEP_SUMMARY}"
+          else
+            echo "No service changes detected. No image was built." \
+              >> "${GITHUB_STEP_SUMMARY}"
+          fi

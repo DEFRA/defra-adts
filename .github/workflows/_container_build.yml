@@ -328,13 +328,12 @@ jobs:
           exit 1
 
       # Push image to ECR.
-#          docker push ${{ fromJson(steps.metadata.outputs.json).tags[0] }}
       - name: Push container image
         run: |
           echo "Image destination is ${{ fromJson(steps.metadata.outputs.json).tags[0] }}"
-          echo "Image reference: ${{ steps.ecr-login.outputs.registry }}/${{ inputs.ecr-repository }}"
-          echo "Next tag: ${{ fromJson(steps.metadata.outputs.json).tags[1] }}
-          echo "Last tag: ${{ fromJson(steps.metadata.outputs.json).tags[2] }}
+          docker push ${{ fromJson(steps.metadata.outputs.json).tags[0] }}
+#          docker tag ${{ fromJson(steps.metadata.outputs.json).tags[0] }} ${{ fromJson(steps.metadata.outputs.json).tags[1] }}
+#          docker tag ${{ fromJson(steps.metadata.outputs.json).tags[0] }} ${{ fromJson(steps.metadata.outputs.json).tags[2] }}
 
       - name: Set immutable image reference
         id: result
@@ -349,33 +348,33 @@ jobs:
 
           echo "image-reference=${image_reference}" >> "${GITHUB_OUTPUT}"
 
-#      - name: Create service version tag
-#        shell: bash
-#        env:
-#          SERVICE: ${{ matrix.service }}
-#          VERSION: ${{ steps.version.outputs.version }}
-#          VERSION_TAG: ${{ steps.version.outputs.version_tag }}
-#          BUMP_TYPE: ${{ steps.version.outputs.bump_type }}
-#        run: |
-#          set -euo pipefail
-#
-#          # Ensure another process has not created the same tag.
-#          git fetch --force --tags
-#
-#          if git rev-parse "${VERSION_TAG}" >/dev/null 2>&1; then
-#            echo "Tag ${VERSION_TAG} already exists."
-#            exit 1
-#          fi
-#
-#          git config user.name "github-actions[bot]"
-#          git config user.email \
-#            "41898282+github-actions[bot]@users.noreply.github.com"
-#
-#          git tag \
-#            --annotate "${VERSION_TAG}" \
-#            --message "${SERVICE} ${VERSION} (${BUMP_TYPE} release)"
-#
-#          git push origin "${VERSION_TAG}"
+      - name: Create service version tag
+        shell: bash
+        env:
+          SERVICE: ${{ matrix.service }}
+          VERSION: ${{ steps.version.outputs.version }}
+          VERSION_TAG: ${{ steps.version.outputs.version_tag }}
+          BUMP_TYPE: ${{ steps.version.outputs.bump_type }}
+        run: |
+          set -euo pipefail
+
+          # Ensure another process has not created the same tag.
+          git fetch --force --tags
+
+          if git rev-parse "${VERSION_TAG}" >/dev/null 2>&1; then
+            echo "Tag ${VERSION_TAG} already exists."
+            exit 1
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email \
+            "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git tag \
+            --annotate "${VERSION_TAG}" \
+            --message "${SERVICE} ${VERSION} (${BUMP_TYPE} release)"
+
+          git push origin "${VERSION_TAG}"
 
       - name: Write container build summary
         if: always()

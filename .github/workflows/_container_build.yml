@@ -227,21 +227,6 @@ jobs:
         with:
           mask-password: true
 
-#      - name: Set image repository
-#        id: image
-#        shell: bash
-#        env:
-#          ECR_REGISTRY: ${{ steps.ecr-login.outputs.registry }}
-#          ECR_REPOSITORY: ${{ inputs.ecr-repository }}
-#        run: |
-#          set -euo pipefail
-#
-#          image_uri="${ECR_REGISTRY}/${ECR_REPOSITORY}"
-#
-#          echo "image-uri=${image_uri}" >> "${GITHUB_OUTPUT}"
-#          echo "IMAGE_URI=${image_uri}" >> "${GITHUB_ENV}"
-#          echo "version-tag=$(cat ${{ inputs.service-directory }}/VERSION_PREFIX).${{ github.run_number }}" >> "${GITHUB_OUTPUT}"
-
       - name: Generate container metadata
         id: metadata
         uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
@@ -332,8 +317,8 @@ jobs:
         run: |
           echo "Image destination is ${{ fromJson(steps.metadata.outputs.json).tags[0] }}"
           docker push ${{ fromJson(steps.metadata.outputs.json).tags[0] }}
-#          docker tag ${{ fromJson(steps.metadata.outputs.json).tags[0] }} ${{ fromJson(steps.metadata.outputs.json).tags[1] }}
-#          docker tag ${{ fromJson(steps.metadata.outputs.json).tags[0] }} ${{ fromJson(steps.metadata.outputs.json).tags[2] }}
+          docker tag ${{ fromJson(steps.metadata.outputs.json).tags[0] }} ${{ fromJson(steps.metadata.outputs.json).tags[1] }}
+          docker tag ${{ fromJson(steps.metadata.outputs.json).tags[0] }} ${{ fromJson(steps.metadata.outputs.json).tags[2] }}
 
       - name: Set immutable image reference
         id: result

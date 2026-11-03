@@ -248,8 +248,8 @@ jobs:
         with:
           images:  ${{ steps.ecr-login.outputs.registry }}/${{ inputs.ecr-repository }}
           tags: |
-            type=raw,value=${{ steps.version.outputs.version }}
-            type=raw,value=${{ steps.version.outputs.version }},suffix=-${{ github.sha }}
+            type=raw,value=v${{ steps.version.outputs.version }}
+            type=raw,value=v${{ steps.version.outputs.version }},suffix=-${{ github.sha }}
             type=raw,value=latest
           labels: |
             org.opencontainers.image.title=${{ inputs.service-name }}
@@ -389,7 +389,7 @@ jobs:
           IMAGE_DIGEST: ${{ steps.build.outputs.digest }}
         run: |
           {
-            echo "## ${ SERVICE_NAME } Container image published"
+            echo "## ${SERVICE_NAME} Container image published"
             echo
             echo "| Property | Value |"
             echo "|---|---|"

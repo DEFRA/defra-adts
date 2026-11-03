@@ -18,7 +18,7 @@
   "dependencies": {
     "@aws-sdk/client-dynamodb": "3.1158.0",
     "@aws-sdk/lib-dynamodb": "3.1158.0",
-    "@hapi/hapi": "21.4.10",
+    "@hapi/hapi": "21.4.12",
     "@hapi/inert": "7.1.2",
     "joi": "^18.2.9"
   },

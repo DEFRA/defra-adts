@@ -15,8 +15,8 @@
     "test:routes": "node --experimental-vm-modules node_modules/jest/bin/jest.js tests/routes --coverage"
   },
   "dependencies": {
-    "@hapi/hapi": "21.4.10",
-    "joi": "^18.2.9",
+    "@hapi/hapi": "21.4.12",
+    "joi": "^18.3.1",
     "@hapi/inert": "7.1.2"
   },
   "devDependencies": {

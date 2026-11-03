@@ -159,7 +159,7 @@ jobs:
       SQ_ACCESS_TOKEN: ${{ secrets.SUBMISSIONS_SONAR_TOKEN }}
 
   e2e_testing:
-    name: Run End to End Tests
+    name: End to End Tests
 
     needs:
       - detect_changes

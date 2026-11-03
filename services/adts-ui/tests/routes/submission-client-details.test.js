@@ -88,6 +88,100 @@ describe('Submission client details page', () => {
     expect(revisitResponse.payload).toContain('data-default-value="Acme Farm"')
   })
 
+  test('renders the animal location question with a conditional animal address section', async () => {
+    const response = await server.inject({ method: 'GET', url })
+
+    expect(response.payload).toContain('Are the animals at the client’s address?')
+    expect(response.payload).toMatch(/name="animalsAtClientAddress"[^>]*value="yes"/)
+    expect(response.payload).toMatch(/name="animalsAtClientAddress"[^>]*value="no"[^>]*data-aria-controls="conditional-animalsAtClientAddress-2"/)
+    expect(response.payload).toContain('govuk-radios__conditional govuk-radios__conditional--hidden')
+    expect(response.payload).toContain('Animal address or location')
+    expect(response.payload).toContain('name="animalAddress"')
+    expect(response.payload).toContain('placeholder="start typing"')
+    expect(response.payload).toContain('create a new animal\'s address')
+    expect(response.payload).not.toMatch(/name="animalsAtClientAddress"[^>]*checked/)
+  })
+
+  test('stores and restores the animal address when the animals are not at the client address', async () => {
+    const response = await server.inject({
+      method: 'POST',
+      url,
+      payload: { clientId: '101', animalsAtClientAddress: 'no', animalAddress: '  48/234/2348 ' }
+    })
+
+    expect(response.statusCode).toBe(302)
+    expect(response.headers.location).toBe('/submission-02-species')
+
+    const revisitResponse = await server.inject({
+      method: 'GET',
+      url,
+      headers: { cookie: getCookieHeader(response) }
+    })
+
+    expect(revisitResponse.request.response.source.context.submissionFormState.formData.clientDetails).toEqual({
+      clientId: '101',
+      animalsAtClientAddress: 'no',
+      animalAddress: '48/234/2348'
+    })
+    expect(revisitResponse.payload).toMatch(/name="animalsAtClientAddress"[^>]*value="no"[^>]*checked/)
+    expect(revisitResponse.payload).toContain('value="48/234/2348"')
+  })
+
+  test('discards the animal address when the animals are at the client address', async () => {
+    const response = await server.inject({
+      method: 'POST',
+      url,
+      payload: { clientId: '101', animalsAtClientAddress: 'yes', animalAddress: '48/234/2348' }
+    })
+
+    const revisitResponse = await server.inject({
+      method: 'GET',
+      url,
+      headers: { cookie: getCookieHeader(response) }
+    })
+
+    expect(revisitResponse.request.response.source.context.submissionFormState.formData.clientDetails).toEqual({
+      clientId: '101',
+      animalsAtClientAddress: 'yes'
+    })
+    expect(revisitResponse.payload).toMatch(/name="animalsAtClientAddress"[^>]*value="yes"[^>]*checked/)
+  })
+
+  test('omits the animal address when No is chosen but the address is blank', async () => {
+    const response = await server.inject({
+      method: 'POST',
+      url,
+      payload: { clientId: '101', animalsAtClientAddress: 'no', animalAddress: '   ' }
+    })
+
+    const revisitResponse = await server.inject({
+      method: 'GET',
+      url,
+      headers: { cookie: getCookieHeader(response) }
+    })
+
+    expect(revisitResponse.request.response.source.context.submissionFormState.formData.clientDetails).toEqual({
+      clientId: '101',
+      animalsAtClientAddress: 'no'
+    })
+  })
+
+  test('rejects an invalid animal location answer or an overlong animal address', async () => {
+    const invalidAnswer = await server.inject({
+      method: 'POST',
+      url,
+      payload: { clientId: '101', animalsAtClientAddress: 'maybe' }
+    })
+    const longAddress = await server.inject({
+      method: 'POST',
+      url,
+      payload: { clientId: '101', animalsAtClientAddress: 'no', animalAddress: 'x'.repeat(501) }
+    })
+
+    expect(invalidAnswer.statusCode).toBe(400)
+    expect(longAddress.statusCode).toBe(400)
+  })
+
   test('displays the selected client details from the backend while persisting only the clientId', async () => {
     globalThis.fetch.mockImplementation(async () => new Response(JSON.stringify([
       {

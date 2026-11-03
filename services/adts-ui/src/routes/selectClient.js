@@ -5,7 +5,9 @@ const pageName = 'submission-01-client-details'
 const nextPageName = 'submission-02-species'
 
 const submissionClientSchema = Joi.object({
-  clientId: Joi.string().allow('').required()
+  clientId: Joi.string().allow('').required(),
+  animalsAtClientAddress: Joi.string().valid('yes', 'no').optional(),
+  animalAddress: Joi.string().allow('').max(500).optional()
 })
 
 const getClientOptions = (clients, selectedClientId) => [
@@ -37,6 +39,8 @@ const getClientDetailsViewContext = (submissionFormState, clients) => {
 
   return {
     clientOptions: getClientOptions(clients, selectedClientId),
+    animalsAtClientAddress: submissionFormState.formData?.clientDetails?.animalsAtClientAddress,
+    animalAddress: submissionFormState.formData?.clientDetails?.animalAddress || '',
     selectedClientName: selectedClient?.name || '',
     selectedClient: getSelectedClientView(selectedClient),
     submissionFormState
@@ -51,6 +55,12 @@ const loadClients = async () => {
     return []
   }
 }
+
+const buildClientDetails = (client, { animalsAtClientAddress, animalAddress }) => ({
+  clientId: client.clientId,
+  ...(animalsAtClientAddress && { animalsAtClientAddress }),
+  ...(animalsAtClientAddress === 'no' && animalAddress?.trim() && { animalAddress: animalAddress.trim() })
+})
 
 const selectClient = (server, submissionFormStateKey) => {
   server.route([
@@ -84,7 +94,7 @@ const selectClient = (server, submissionFormStateKey) => {
           ...submissionFormState,
           formData: {
             ...formData,
-            clientDetails: selectedClient ? { clientId: selectedClient.clientId } : undefined
+            clientDetails: selectedClient ? buildClientDetails(selectedClient, request.payload) : undefined
           }
         })
         request.yar.touch()

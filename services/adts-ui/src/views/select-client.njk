@@ -2,6 +2,8 @@
 
 {% from "govuk/components/header/macro.njk" import govukHeader %}
 {% from "govuk/components/select/macro.njk" import govukSelect %}
+{% from "govuk/components/radios/macro.njk" import govukRadios %}
+{% from "govuk/components/input/macro.njk" import govukInput %}
 {% from "govuk/components/button/macro.njk" import govukButton %}
 {% from "macros/submissionProgress.njk" import submissionProgress %}
 
@@ -69,6 +71,27 @@
         {% endif %}
       </div>
     {% endif %}
+    <hr class="govuk-section-break govuk-section-break--l govuk-section-break--visible">
+    {% set animalAddressHtml %}
+      <h2 class="govuk-heading-l">Animal address or location</h2>
+      {{ govukInput({
+        id: "animalAddress",
+        name: "animalAddress",
+        value: animalAddress,
+        label: { text: "Enter animal's address or the County Parish Holding (CPH) eg 48/234/2348:" },
+        attributes: { placeholder: "start typing" }
+      }) }}
+      <p class="govuk-body">Or you can <a class="govuk-link" href="#">create a new animal's address</a>.</p>
+    {% endset %}
+    {{ govukRadios({
+      classes: "govuk-radios--inline",
+      name: "animalsAtClientAddress",
+      fieldset: { legend: { text: "Are the animals at the client’s address?", classes: "govuk-fieldset__legend--m" } },
+      items: [
+        { value: "yes", text: "Yes", checked: animalsAtClientAddress == "yes" },
+        { value: "no", text: "No", checked: animalsAtClientAddress == "no", conditional: { html: animalAddressHtml } }
+      ]
+    }) }}
     {{ govukButton({
       text: "Continue"
     }) }}

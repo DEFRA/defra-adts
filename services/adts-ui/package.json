@@ -20,13 +20,13 @@
   "lint": "eslint ." 
 },
   "dependencies": {
-    "@hapi/hapi": "21.4.10",
+    "@hapi/hapi": "21.4.12",
     "@hapi/inert": "7.1.2",
     "@hapi/vision": "7.0.3",
     "@hapi/yar": "^11.0.3",
     "accessible-autocomplete": "^3.0.2",
     "govuk-frontend": "5.14.0",
-    "joi": "^18.2.9",
+    "joi": "^18.3.1",
     "nunjucks": "3.2.4"
   },
   "devDependencies": {

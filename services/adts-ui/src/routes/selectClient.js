@@ -29,6 +29,7 @@ const submissionClientSchema = Joi.object({
 
 const getClientLabel = (client) => [
   client.name,
+  client.farmName,
   client.addressLine1,
   client.addressLine2,
   client.addressLine3,

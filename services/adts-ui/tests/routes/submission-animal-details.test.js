@@ -125,6 +125,7 @@ describe('Submission animal details page', () => {
     })
     track(session, speciesResponse)
 
+    globalThis.fetch.mockClear()
     const response = await get(session)
 
     expect(response.statusCode).toBe(200)

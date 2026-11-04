@@ -46,7 +46,7 @@ describe('Submission client details page', () => {
     expect(response.statusCode).toBe(200)
     expect(response.payload).toContain('1. Client details')
     expect(response.payload).toContain('Animal Disease Testing Service')
-    expect(response.payload).toContain('<form method="post" action="/submission-01-client-details">')
+    expect(response.payload).toContain('<form method="post" action="/submission-01-client-details" novalidate>')
     expect(response.payload).toContain('<select class="govuk-select" id="client" name="clientId"')
     expect(response.payload).toContain('name="intent"')
     expect(response.payload).toContain('value="new">Enter client details manually')

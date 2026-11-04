@@ -220,6 +220,8 @@ const getClientIntentViewOptions = ({
       ...animalLocation
     }
   }
+
+  return null
 }
 
 const shouldShowClientSelectionError = (payload, selectedClient, hasSubmittedFields) =>

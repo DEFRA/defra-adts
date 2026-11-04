@@ -233,8 +233,6 @@ jobs:
         with:
           images:  ${{ steps.ecr-login.outputs.registry }}/${{ inputs.ecr-repository }}
           tags: |
-            type=raw,value=v${{ steps.version.outputs.version }}
-            type=raw,value=v${{ steps.version.outputs.version }},suffix=-${{ github.sha }}
             type=raw,value=latest
           labels: |
             org.opencontainers.image.title=${{ inputs.service-name }}

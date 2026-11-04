@@ -19,6 +19,17 @@ if (clientSelect) {
     defaultValue: clientSelect.dataset.defaultValue,
     selectElement: clientSelect
   })
+
+  const editClientButton = document.querySelector('[data-client-edit-button]')
+
+  if (editClientButton) {
+    const syncEditButton = () => {
+      editClientButton.hidden = !clientSelect.value
+    }
+
+    clientSelect.addEventListener('change', syncEditButton)
+    syncEditButton()
+  }
 }
 
 const breedSelect = document.querySelector('#breed')

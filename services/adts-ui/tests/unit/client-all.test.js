@@ -26,9 +26,15 @@ describe('client initialization', () => {
 
   test('enhances the client select using its default value', async () => {
     const clientSelect = { dataset: { defaultValue: 'Acme Farm' } }
+    const editButton = { hidden: false }
     globalThis.document = {
-      querySelector: jest.fn((selector) => selector === '#client' ? clientSelect : null)
+      querySelector: jest.fn((selector) => {
+        if (selector === '#client') return clientSelect
+        if (selector === '[data-client-edit-button]') return editButton
+        return null
+      })
     }
+    clientSelect.addEventListener = jest.fn()
 
     await import('../../src/client/all.js')
 
@@ -38,6 +44,12 @@ describe('client initialization', () => {
       defaultValue: 'Acme Farm',
       selectElement: clientSelect
     })
+    expect(editButton.hidden).toBe(true)
+    expect(clientSelect.addEventListener).toHaveBeenCalledWith('change', expect.any(Function))
+
+    clientSelect.value = '101'
+    clientSelect.addEventListener.mock.calls[0][1]()
+    expect(editButton.hidden).toBe(false)
   })
 
   test('does not enhance a client select when it is not present', async () => {

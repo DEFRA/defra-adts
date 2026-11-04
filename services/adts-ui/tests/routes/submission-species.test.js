@@ -123,7 +123,17 @@ describe('Submission species page', () => {
     const response = await post({ species: 'Goat' }, { cookie: getCookieHeader(client) })
     const revisit = await getSaved(response)
 
-    expect(revisit.request.response.source.context.submissionFormState.formData.clientDetails).toEqual({ clientId: '101' })
+    expect(revisit.request.response.source.context.submissionFormState.formData.clientDetails).toEqual({
+      clientId: '101',
+      cph: '12/123/1234',
+      name: 'Acme Farm',
+      farmName: '',
+      addressLine1: '1 Farm Road',
+      addressLine2: '',
+      addressLine3: '',
+      county: '',
+      postcode: 'L20 6EC'
+    })
     expect(revisit.payload).toContain('Acme Farm')
     expect(revisit.payload).toContain('12/123/1234')
   })

@@ -63,32 +63,26 @@ describe('Dashboard Layout', () => {
   })
 
   describe('Homepage links', () => {
-    test('does not render redundant submission or client headings', () => {
-      expect(html).not.toContain('New submission')
+    test('renders the new submission subheading and guidance', () => {
+      expect(html).toMatch(/<h2[^>]*>\s*New submission\s*<\/h2>/)
+      expect(html).toContain('Start a new sick animal submission or healthy animal submission.')
       expect(html).not.toContain('>Clients<')
     })
 
-    test('does not display redundant guidance text for the submission links', () => {
-      expect(html).not.toContain('Start a new sick animal submission or healthy animal submission.')
-    })
+    test('renders the submission actions as standard GOV.UK links', () => {
+      const actions = [...html.matchAll(/<li>\s*(<a\b[^>]*>[\s\S]*?<\/a>)\s*<\/li>/g)]
+        .map(([, link]) => link)
 
-    test('renders the homepage actions as stacked GOV.UK buttons', () => {
-      const actions = [...html.matchAll(/<li>\s*(<a\b[^>]*role="button"[^>]*>[\s\S]*?<\/a>)\s*<\/li>/g)]
-        .map(([, button]) => button)
-
-      expect(actions).toHaveLength(4)
-      expect(actions[0]).toContain('class="govuk-button"')
+      expect(actions).toHaveLength(2)
+      expect(actions[0]).toContain('class="govuk-link"')
       expect(actions[0]).toContain('href="/submission-01-client-details"')
-      expect(actions[0]).toContain('Create a sick animal submission')
-      expect(actions[1]).toContain('Create a healthy animal submission')
-      expect(actions[2]).toContain('href="/create-client"')
-      expect(actions[2]).toContain('Create a new client')
-      expect(actions[3]).toContain('href="/update-client"')
-      expect(actions[3]).toContain('Update an existing client&#39;s details')
+      expect(actions[0]).toContain('Sick animal submission')
+      expect(actions[1]).toContain('Healthy animal submission')
+      expect(actions[0]).not.toContain('role="button"')
     })
 
     test('both submission links navigate to the client details page', async () => {
-      for (const linkText of ['Create a sick animal submission', 'Create a healthy animal submission']) {
+      for (const linkText of ['Sick animal submission', 'Healthy animal submission']) {
         const link = [...html.matchAll(/<a\b([^>]*)>([\s\S]*?)<\/a>/g)]
           .find(([, , content]) => content.includes(linkText))
 
@@ -105,11 +99,13 @@ describe('Dashboard Layout', () => {
       expect(destinationResponse.payload).toContain('1. Client details')
     })
 
-    test('renders separate create and update client action buttons', () => {
-      expect(html).toContain('href="/create-client"')
-      expect(html).toContain('Create a new client')
-      expect(html).toContain('href="/update-client"')
-      expect(html).toContain('Update an existing client&#39;s details')
+    test('renders the completed and draft submissions subheading', () => {
+      expect(html).toMatch(/<h2[^>]*>\s*View completed submissions or edit draft submissions\s*<\/h2>/)
+    })
+
+    test('does not render standalone client create or update links', () => {
+      expect(html).not.toContain('href="/create-client"')
+      expect(html).not.toContain('href="/update-client"')
       expect(html).not.toContain('govuk-!-font-size-24')
       expect(html).not.toContain('govuk-list--bullet')
       expect(html).not.toContain('govuk-link--no-underline')

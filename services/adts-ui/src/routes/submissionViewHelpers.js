@@ -17,7 +17,13 @@ export const getClientSummary = (clients, clientId) => {
 
   return {
     name: client?.name || 'No client name set',
-    address: [client?.addressLine1, client?.addressLine2, client?.addressLine3, client?.postcode]
+    address: [
+      client?.addressLine1,
+      client?.addressLine2,
+      client?.addressLine3,
+      client?.county,
+      client?.postcode
+    ]
       .filter(Boolean)
       .join(', ') || 'No address set',
     cph: client?.cph || 'No CPH number set'
@@ -30,6 +36,7 @@ const getClientSummaryFromDetails = (clientDetails) => ({
     clientDetails.addressLine1,
     clientDetails.addressLine2,
     clientDetails.addressLine3,
+    clientDetails.county,
     clientDetails.postcode
   ].filter(Boolean).join(', ') || 'No address set',
   cph: clientDetails.cph || 'No CPH number set'

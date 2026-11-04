@@ -5,12 +5,12 @@ initAll()
 
 const clientSelect = document.querySelector('#client')
 
-const otherSpeciesSelect = document.querySelector('#otherSpecies')
+const speciesSelect = document.querySelector('#species')
 
-if (otherSpeciesSelect) {
+if (speciesSelect) {
   accessibleAutocomplete.enhanceSelectElement({
-    defaultValue: otherSpeciesSelect.dataset.defaultValue,
-    selectElement: otherSpeciesSelect
+    defaultValue: speciesSelect.dataset.defaultValue,
+    selectElement: speciesSelect
   })
 }
 

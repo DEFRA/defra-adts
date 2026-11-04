@@ -24,12 +24,14 @@ describe('client initialization', () => {
     }
   })
 
-  test('enhances the client select using its default value', async () => {
+  test('enhances client and species selects using their default values', async () => {
     const clientSelect = { dataset: { defaultValue: 'Acme Farm' } }
+    const speciesSelect = { dataset: { defaultValue: 'Sheep' } }
     const editButton = { hidden: false }
     globalThis.document = {
       querySelector: jest.fn((selector) => {
         if (selector === '#client') return clientSelect
+        if (selector === '#species') return speciesSelect
         if (selector === '[data-client-edit-button]') return editButton
         return null
       })
@@ -43,6 +45,10 @@ describe('client initialization', () => {
     expect(enhanceSelectElement).toHaveBeenCalledWith({
       defaultValue: 'Acme Farm',
       selectElement: clientSelect
+    })
+    expect(enhanceSelectElement).toHaveBeenCalledWith({
+      defaultValue: 'Sheep',
+      selectElement: speciesSelect
     })
     expect(editButton.hidden).toBe(true)
     expect(clientSelect.addEventListener).toHaveBeenCalledWith('change', expect.any(Function))

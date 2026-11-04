@@ -30,7 +30,7 @@ The page heading is “1. Client details”; its introduction says “Tell us ab
 
 | Field | User-facing label | Requiredness | Validation / notes | Evidence and status |
 |---|---|---|---|---|
-| `animalDetails.speciesId`, `animalDetails.species` | Species | Required to continue | Single value. Common species are radios; choosing “Other” reveals “Specify species”, a select enhanced with type-ahead, listing all species from `GetSpecies` (`speciesId`, `name`). The chosen name must exist in that list; its `speciesId` and name are persisted (not the “Other” marker). On return, a species outside the common list re-selects Other. Changing species discards previously saved species-dependent answers. | AC1, AC1a, AC1b, AC1c and screenshot. Implemented. |
+| `animalDetails.speciesId`, `animalDetails.species` | Species | Required to continue | Single value selected from all species returned by `GetSpecies` (`speciesId`, `name`) in a native select enhanced with accessible autocomplete. The chosen name must exist in that list; its `speciesId` and name are persisted. Changing species discards previously saved species-dependent answers. | AC1 and backend species list. Implemented. The select is usable without JavaScript. |
 | `animalDetails.ageCategory` | Age category | Required (no “optional” in the design) when the species offers options | Radios from `ageCategories` for the species (AC2), e.g. Adult, Mixed, Neonatal (1 week old or less), Post weaned, Pre weaned, Unknown, Doesn’t apply. Categories only in the current build. | Screenshot 3. Implemented. |
 | `animalDetails.ageDetail` (`value`, `unit`, `isEstimate`) | Age detail (optional), unit, estimate flag | Optional | **To do (T010a):** AC4 requires it to be persisted alongside the age category, but the screenshots show no such fields; confirm before building. | SUB-07 AC4. Not implemented. |
 | `animalDetails.purpose` | Purpose | Required when the species offers options | Radios from `purposes` for the species (AC2), e.g. Beef finisher, Dairy, Calf rearer, Captive/zoo, Suckler, I don’t know, Doesn’t apply. | Screenshot 4. Implemented. |
@@ -42,7 +42,7 @@ The page heading is “1. Client details”; its introduction says “Tell us ab
 
 Only values the user supplies are persisted; empty optional fields are omitted. A supplied value must be one of the options the backend returned for the species.
 
-Open questions: the maximum number of animals per submission and the animal ID format (assumed 10 and 50 characters); whether the common species/age/purpose option labels come from the backend as assumed; the `GetSpecies` and `GetAnimalDetails` backend endpoints do not yet exist; the UI is built to an assumed shape (see `contracts/backend-methods.md`); the common-species list is fixed to the screenshot (matched to backend species by name); the single-species-per-submission rule is enforced by this step choosing one species for all animals; the Continue destination after this page (Clinical history) is not yet built, so the page redirects to itself.
+Open questions: the maximum number of animals per submission and the animal ID format (assumed 10 and 50 characters); the `GetSpecies` and `GetAnimalDetails` backend endpoints do not yet exist; the UI is built to an assumed shape (see `contracts/backend-methods.md`); the single-species-per-submission rule is enforced by this step choosing one species for all animals; the Continue destination after this page (Clinical history) is not yet built, so the page redirects to itself.
 
 ### Client details collection
 

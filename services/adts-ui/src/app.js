@@ -35,6 +35,7 @@ const createServer = async () => {
       options: {
         cookieOptions: {
           password: sessionSecret,
+          isSecure: process.env.NODE_ENV !== 'development',
           isHttpOnly: true,
           isSameSite: 'Lax',
           path: '/'

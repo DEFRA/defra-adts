@@ -140,6 +140,7 @@ describe('Submission species page', () => {
       postcode: 'AB1 2CD'
     })
     expect(revisit.payload).toContain('Updated Client Name')
+    expect(revisit.payload).toContain('Updated Farm')
     expect(revisit.payload).toContain('2 Farm Road, New Village, Northshire, AB1 2CD')
     expect(revisit.payload).toContain('48/234/2348')
     expect(globalThis.fetch).not.toHaveBeenCalledWith('http://localhost:3200/GetClients')

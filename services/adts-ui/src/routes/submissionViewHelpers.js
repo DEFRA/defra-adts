@@ -17,6 +17,7 @@ export const getClientSummary = (clients, clientId) => {
 
   return {
     name: client?.name || 'No client name set',
+    farmName: client?.farmName || '',
     address: [
       client?.addressLine1,
       client?.addressLine2,
@@ -32,6 +33,7 @@ export const getClientSummary = (clients, clientId) => {
 
 const getClientSummaryFromDetails = (clientDetails) => ({
   name: clientDetails.name || 'No client name set',
+  farmName: clientDetails.farmName || '',
   address: [
     clientDetails.addressLine1,
     clientDetails.addressLine2,

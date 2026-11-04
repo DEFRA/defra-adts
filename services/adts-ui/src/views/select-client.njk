@@ -53,6 +53,7 @@
     {% if editMode %}
       <p class="govuk-body-l">Enter the details of your client. If you have the full CPH this can be used to retrieve the client record.</p>
       <input type="hidden" name="clientId" value="{{ clientDetails.clientId or '' }}">
+      <input type="hidden" name="manualClientEntry" value="yes">
 
       {{ govukInput({
         id: "name",
@@ -164,24 +165,95 @@
     <hr class="govuk-section-break govuk-section-break--l govuk-section-break--visible">
     {% set animalAddressHtml %}
       <h2 class="govuk-heading-l">Animal address or location</h2>
-      {{ govukInput({
-        id: "animalAddress",
-        name: "animalAddress",
-        value: animalAddress,
-        label: { text: "Enter animal's address or the County Parish Holding (CPH) eg 48/234/2348:" },
-        attributes: { placeholder: "start typing" }
-      }) }}
-      <p class="govuk-body">Or you can <a class="govuk-link" href="#">create a new animal's address</a>.</p>
+      {% if animalAddressEditMode %}
+        <p class="govuk-body-l">Enter the details of the animal address.</p>
+        <input type="hidden" name="animalAddress" value="{{ animalAddress }}">
+        {{ govukInput({
+          id: "animalAddressName",
+          name: "animalAddressName",
+          value: animalAddressDetails.name,
+          label: { text: "Name" },
+          classes: "govuk-!-width-one-half"
+        }) }}
+        {{ govukInput({
+          id: "animalAddressFarmName",
+          name: "animalAddressFarmName",
+          value: animalAddressDetails.farmName,
+          label: { text: "Farm name" },
+          classes: "govuk-!-width-one-half"
+        }) }}
+        <fieldset class="govuk-fieldset">
+          <legend class="govuk-fieldset__legend">Address</legend>
+          {{ govukInput({
+            id: "animalAddressAddressLine1",
+            name: "animalAddressAddressLine1",
+            value: animalAddressDetails.addressLine1,
+            label: { text: "Address line 1" },
+            autocomplete: "address-line1",
+            classes: "govuk-!-width-one-half"
+          }) }}
+          {{ govukInput({
+            id: "animalAddressAddressLine2",
+            name: "animalAddressAddressLine2",
+            value: animalAddressDetails.addressLine2,
+            label: { text: "Address line 2" },
+            autocomplete: "address-line2",
+            classes: "govuk-!-width-one-half"
+          }) }}
+          {{ govukInput({
+            id: "animalAddressAddressLine3",
+            name: "animalAddressAddressLine3",
+            value: animalAddressDetails.addressLine3,
+            label: { text: "Address line 3" },
+            autocomplete: "address-line3",
+            classes: "govuk-!-width-one-half"
+          }) }}
+        </fieldset>
+        {{ govukInput({
+          id: "animalAddressCounty",
+          name: "animalAddressCounty",
+          value: animalAddressDetails.county,
+          label: { text: "County" },
+          autocomplete: "address-level1",
+          classes: "govuk-!-width-one-half"
+        }) }}
+        {{ govukInput({
+          id: "animalAddressPostcode",
+          name: "animalAddressPostcode",
+          value: animalAddressDetails.postcode,
+          label: { text: "Postcode" },
+          autocomplete: "postal-code",
+          classes: "govuk-!-width-one-half"
+        }) }}
+        {{ govukInput({
+          id: "animalAddressCph",
+          name: "animalAddressCph",
+          value: animalAddressDetails.cph,
+          label: { text: "CPH number eg 48/234/2348" },
+          classes: "govuk-!-width-one-half"
+        }) }}
+        <button class="govuk-button govuk-button--secondary" type="submit" name="intent" value="cancelAnimalAddress">Cancel</button>
+      {% else %}
+        {{ govukInput({
+          id: "animalAddress",
+          name: "animalAddress",
+          value: animalAddress,
+          label: { text: "Enter animal's address or the County Parish Holding (CPH) eg 48/234/2348:" },
+          attributes: { placeholder: "start typing" }
+        }) }}
+        <button class="govuk-button govuk-button--secondary" type="submit" name="intent" value="newAnimalAddress">Enter animal address manually</button>
+      {% endif %}
     {% endset %}
-    {{ govukRadios({
-      classes: "govuk-radios--inline",
-      name: "animalsAtClientAddress",
-      fieldset: { legend: { text: "Are the animals at the client’s address?", classes: "govuk-fieldset__legend--m" } },
-      items: [
-        { value: "yes", text: "Yes", checked: animalsAtClientAddress == "yes" },
-        { value: "no", text: "No", checked: animalsAtClientAddress == "no", conditional: { html: animalAddressHtml } }
-      ]
-    }) }}
+    <div class="app-animal-address">
+      {{ govukRadios({
+        name: "animalsAtClientAddress",
+        fieldset: { legend: { text: "Are the animals at the client’s address?", classes: "govuk-fieldset__legend--m" } },
+        items: [
+          { value: "yes", text: "Yes", checked: animalsAtClientAddress == "yes" },
+          { value: "no", text: "No", checked: animalsAtClientAddress == "no", conditional: { html: animalAddressHtml } }
+        ]
+      }) }}
+    </div>
     {{ govukButton({
       text: "Continue"
     }) }}

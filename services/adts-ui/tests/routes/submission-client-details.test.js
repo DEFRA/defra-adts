@@ -108,7 +108,8 @@ describe('Submission client details page', () => {
     expect(response.payload).toContain('Animal address or location')
     expect(response.payload).toContain('name="animalAddress"')
     expect(response.payload).toContain('placeholder="start typing"')
-    expect(response.payload).toContain('create a new animal\'s address')
+    expect(response.payload).toContain('Enter animal address manually')
+    expect(response.payload).not.toContain('govuk-radios--inline')
     expect(response.payload).not.toMatch(/name="animalsAtClientAddress"[^>]*checked/)
   })
 
@@ -341,6 +342,99 @@ describe('Submission client details page', () => {
       cph: '48/234/2348'
     })
     expect(revisitResponse.payload).toContain('value="Jane Smith"')
+  })
+
+  test('shows and saves separate manual client and animal address forms', async () => {
+    const newClientPage = await server.inject({
+      method: 'POST',
+      url,
+      payload: { intent: 'new' }
+    })
+    const animalAddressPage = await server.inject({
+      method: 'POST',
+      url,
+      headers: { cookie: getCookieHeader(newClientPage) },
+      payload: {
+        intent: 'newAnimalAddress',
+        manualClientEntry: 'yes',
+        clientId: '',
+        name: 'Jane Smith',
+        farmName: 'Client Farm',
+        addressLine1: '1 Client Lane',
+        addressLine2: '',
+        addressLine3: '',
+        county: 'Northshire',
+        postcode: 'AB1 2CD',
+        cph: '48/234/2348',
+        animalsAtClientAddress: 'no'
+      }
+    })
+
+    expect(animalAddressPage.statusCode).toBe(200)
+    expect(animalAddressPage.payload).toContain('name="name"')
+    expect(animalAddressPage.payload).toContain('name="addressLine1"')
+    expect(animalAddressPage.payload).toContain('name="animalAddressName"')
+    expect(animalAddressPage.payload).toContain('name="animalAddressAddressLine1"')
+    expect(animalAddressPage.payload).toContain('>Cancel</button>')
+    expect(animalAddressPage.payload).not.toContain('Cancel new animal address')
+    expect(animalAddressPage.payload).toContain('value="Jane Smith"')
+
+    const response = await server.inject({
+      method: 'POST',
+      url,
+      headers: { cookie: getCookieHeader(animalAddressPage) },
+      payload: {
+        manualClientEntry: 'yes',
+        clientId: '',
+        name: 'Jane Smith',
+        farmName: 'Client Farm',
+        addressLine1: '1 Client Lane',
+        addressLine2: '',
+        addressLine3: '',
+        county: 'Northshire',
+        postcode: 'AB1 2CD',
+        cph: '48/234/2348',
+        animalsAtClientAddress: 'no',
+        animalAddressName: 'Second Site',
+        animalAddressFarmName: 'Animal Farm',
+        animalAddressAddressLine1: '2 Animal Road',
+        animalAddressAddressLine2: '',
+        animalAddressAddressLine3: '',
+        animalAddressCounty: 'Southshire',
+        animalAddressPostcode: 'CD3 4EF',
+        animalAddressCph: '49/345/3456'
+      }
+    })
+
+    expect(response.statusCode).toBe(302)
+    const revisitResponse = await server.inject({
+      method: 'GET',
+      url,
+      headers: { cookie: getCookieHeader(response) }
+    })
+    expect(revisitResponse.request.response.source.context.submissionFormState.formData.clientDetails).toEqual({
+      name: 'Jane Smith',
+      farmName: 'Client Farm',
+      addressLine1: '1 Client Lane',
+      addressLine2: '',
+      addressLine3: '',
+      county: 'Northshire',
+      postcode: 'AB1 2CD',
+      cph: '48/234/2348',
+      animalsAtClientAddress: 'no',
+      animalAddressDetails: {
+        name: 'Second Site',
+        farmName: 'Animal Farm',
+        addressLine1: '2 Animal Road',
+        addressLine2: '',
+        addressLine3: '',
+        county: 'Southshire',
+        postcode: 'CD3 4EF',
+        cph: '49/345/3456'
+      }
+    })
+    expect(revisitResponse.payload).toContain('value="Jane Smith"')
+    expect(revisitResponse.payload).toContain('value="Second Site"')
   })
 
   test('cancel returns to client selection without saving edits', async () => {

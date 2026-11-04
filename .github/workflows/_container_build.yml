@@ -318,9 +318,10 @@ jobs:
           docker images
           echo "Image destination is ${{ fromJson(steps.metadata.outputs.json).tags[0] }}"
           docker push ${{ fromJson(steps.metadata.outputs.json).tags[0] }}
+          docker push --all-tags ${{ steps.ecr-login.outputs.registry }}/${{ inputs.ecr-repository }}
+
 #          docker image tag ${{ fromJson(steps.metadata.outputs.json).tags[0] }} ${{ fromJson(steps.metadata.outputs.json).tags[1] }}
 #          docker image tag ${{ fromJson(steps.metadata.outputs.json).tags[0] }} ${{ fromJson(steps.metadata.outputs.json).tags[2] }}
-          docker push --all-tags ${{ steps.ecr-login.outputs.registry }}/${{ inputs.ecr-repository }}
 
       - name: Set immutable image reference
         id: result

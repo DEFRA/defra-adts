@@ -276,10 +276,6 @@ jobs:
           provenance: mode=max
           sbom: true
 
-#      - name: Show images
-#        run: |
-#          docker images
-
       # Scan the image before it is pushed
       - name: Scan image with Trivy
         id: trivy-scan
@@ -317,11 +313,8 @@ jobs:
         run: |
           docker images
           echo "Image destination is ${{ fromJson(steps.metadata.outputs.json).tags[0] }}"
-          docker push ${{ fromJson(steps.metadata.outputs.json).tags[0] }}
+          docker push ${{ fromJson(steps.metadata.outputs.json).tags[0] }}    
           docker push --all-tags ${{ steps.ecr-login.outputs.registry }}/${{ inputs.ecr-repository }}
-
-#          docker image tag ${{ fromJson(steps.metadata.outputs.json).tags[0] }} ${{ fromJson(steps.metadata.outputs.json).tags[1] }}
-#          docker image tag ${{ fromJson(steps.metadata.outputs.json).tags[0] }} ${{ fromJson(steps.metadata.outputs.json).tags[2] }}
 
       - name: Set immutable image reference
         id: result
@@ -354,9 +347,9 @@ jobs:
             exit 1
           fi
 
-          git config user.name "github-actions[bot]"
+          git config user.name "${{ github.actor }}"
           git config user.email \
-            "41898282+github-actions[bot]@users.noreply.github.com"
+            "${{ github.actor_id }}+${{ github.actor }}@users.noreply.github.com"
 
           git tag \
             --annotate "${VERSION_TAG}" \

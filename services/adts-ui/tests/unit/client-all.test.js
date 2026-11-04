@@ -69,4 +69,30 @@ describe('client initialization', () => {
     expect(globalThis.document.querySelector).toHaveBeenCalledWith('#client')
     expect(enhanceSelectElement).not.toHaveBeenCalled()
   })
+
+  test('shows only the animal ID inputs matching the selected number of animals', async () => {
+    const numberOfAnimals = {
+      value: '1',
+      addEventListener: jest.fn()
+    }
+    const animalIdInputs = Array.from({ length: 10 }, (_, index) => ({
+      dataset: { animalIndex: String(index + 1) },
+      hidden: false
+    }))
+    globalThis.document = {
+      querySelector: jest.fn((selector) => selector === '#numberOfAnimals' ? numberOfAnimals : null),
+      querySelectorAll: jest.fn((selector) => selector === '.app-animal-id' ? animalIdInputs : [])
+    }
+
+    await import('../../src/client/all.js')
+
+    expect(animalIdInputs[0].hidden).toBe(false)
+    expect(animalIdInputs.slice(1).every((input) => input.hidden)).toBe(true)
+
+    numberOfAnimals.value = '3'
+    numberOfAnimals.addEventListener.mock.calls[0][1]()
+
+    expect(animalIdInputs.slice(0, 3).every((input) => !input.hidden)).toBe(true)
+    expect(animalIdInputs.slice(3).every((input) => input.hidden)).toBe(true)
+  })
 })

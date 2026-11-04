@@ -35,6 +35,7 @@
 
 {% block head %}
   <link rel="stylesheet" href="/assets/css/application.css">
+  <link rel="stylesheet" href="/assets/css/accessible-autocomplete.min.css">
 {% endblock %}
 
 {% block header %}
@@ -181,4 +182,8 @@
       {{ govukButton({ text: "Continue" }) }}
     </form>
   {% endif %}
+{% endblock %}
+
+{% block bodyEnd %}
+  <script type="module" src="/assets/js/all.js"></script>
 {% endblock %}

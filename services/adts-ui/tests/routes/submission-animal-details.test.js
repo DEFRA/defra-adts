@@ -142,6 +142,8 @@ describe('Submission animal details page', () => {
     expect(globalThis.fetch).toHaveBeenCalledWith('http://localhost:3200/GetAnimalDetails?speciesId=2')
     expect(response.payload).toContain('2. Animal details')
     expect(response.payload).toContain('href="/submission-02-species"')
+    expect(response.payload).toContain('href="/assets/css/accessible-autocomplete.min.css"')
+    expect(response.payload).toContain('<script type="module" src="/assets/js/all.js"></script>')
     for (const label of ['Lamb', 'Adult', 'Meat', 'Wool', 'Outdoor', 'Texel', 'Ewe', 'Ram', 'accredited organic', 'In transition', 'Number of animals']) {
       expect(response.payload).toContain(label)
     }

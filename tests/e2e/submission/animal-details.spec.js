@@ -32,6 +32,9 @@ test.describe('Animal details reference data', () => {
     await page.getByLabel('Animal 1:').fill('SYNTHETIC-EAR-TAG-1')
     await page.getByRole('button', { name: 'Continue' }).click()
 
+    await expect(page).toHaveURL('/submission-03-clinical-history')
+    await page.getByRole('link', { name: 'Back' }).click()
+
     await expect(page).toHaveURL('/submission-02-animal-details')
     await expect(page.getByLabel('Breed (optional)')).toHaveValue('Holstein')
     await expect(page.locator('#breed-select')).toHaveValue('HOLSTEIN')

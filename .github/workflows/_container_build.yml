@@ -312,8 +312,9 @@ jobs:
         run: |
           docker images
           echo "Image destination is ${{ fromJson(steps.metadata.outputs.json).tags[0] }}"
-          docker push ${{ fromJson(steps.metadata.outputs.json).tags[0] }}    
-          docker push --all-tags ${{ steps.ecr-login.outputs.registry }}/${{ inputs.ecr-repository }}
+
+#          docker push ${{ fromJson(steps.metadata.outputs.json).tags[0] }}
+#          docker push --all-tags ${{ steps.ecr-login.outputs.registry }}/${{ inputs.ecr-repository }}
 
       - name: Set immutable image reference
         id: result
@@ -339,21 +340,26 @@ jobs:
           set -euo pipefail
 
           # Ensure another process has not created the same tag.
+          echo "Force fetch tags."
           git fetch --force --tags
 
+          echo "Check for existing tags."
           if git rev-parse "${VERSION_TAG}" >/dev/null 2>&1; then
             echo "Tag ${VERSION_TAG} already exists."
             exit 1
           fi
 
+          echo "Set user details."
           git config user.name "${{ github.actor }}"
           git config user.email \
             "${{ github.actor_id }}+${{ github.actor }}@users.noreply.github.com"
 
+          echo "Create tags.
           git tag \
             --annotate "${VERSION_TAG}" \
             --message "${SERVICE} ${VERSION} (${BUMP_TYPE} release)"
 
+          echo "Push tags."
           git push origin "${VERSION_TAG}"
 
       - name: Write container build summary

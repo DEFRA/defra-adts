@@ -23,6 +23,38 @@
   }
 }
 
+.app-button--healthy {
+  background-color: $govuk-brand-colour;
+  color: govuk-colour("white");
+  box-shadow: 0 $govuk-border-width-form-element 0 govuk-shade($govuk-brand-colour, 60%);
+
+  &:link,
+  &:visited,
+  &:hover {
+    color: govuk-colour("white");
+  }
+
+  &:hover {
+    background-color: govuk-shade($govuk-brand-colour, 20%);
+  }
+}
+
+.app-button--sick {
+  background-color: govuk-tint(govuk-colour("yellow"), 25%);
+  color: $govuk-text-colour;
+  box-shadow: 0 $govuk-border-width-form-element 0 govuk-shade(govuk-colour("yellow"), 60%);
+
+  &:link,
+  &:visited,
+  &:hover {
+    color: $govuk-text-colour;
+  }
+
+  &:hover {
+    background-color: govuk-colour("yellow");
+  }
+}
+
 .app-client-details-container {
   max-width: 1350px;
 }

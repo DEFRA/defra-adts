@@ -149,6 +149,11 @@ const buildClientDetails = (payload, client) => {
 const hasSubmittedClientFields = (payload) =>
   clientFieldNames.some((fieldName) => Object.hasOwn(payload, fieldName))
 
+const isManualClientEntryPayload = (payload) =>
+  payload.intent === 'new' ||
+  payload.manualClientEntry === 'yes' ||
+  (!payload.clientId && hasSubmittedClientFields(payload))
+
 const getAnimalLocation = (payload, formData, intent) => ({
   animalsAtClientAddress: payload.animalsAtClientAddress ??
     formData.clientDetails?.animalsAtClientAddress,
@@ -251,8 +256,8 @@ const renderClientSelectionError = (h, submissionFormState, clients, payload, se
 const createPostHandler = (submissionFormStateKey) => async (request, h) => {
   const submissionFormState = request.yar.get(submissionFormStateKey) || {}
   const formData = submissionFormState.formData || {}
-  const clients = await loadClients()
   const payload = request.payload
+  const clients = isManualClientEntryPayload(payload) ? [] : await loadClients()
   const selectedClient = clients.find((client) => client.clientId === payload.clientId)
   const hasSubmittedFields = hasSubmittedClientFields(payload)
   const submittedClientDetails = getSubmittedClientDetails(payload, selectedClient, formData)

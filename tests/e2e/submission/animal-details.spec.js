@@ -33,7 +33,7 @@ test.describe('Animal details reference data', () => {
     await page.getByRole('button', { name: 'Continue' }).click()
 
     await expect(page).toHaveURL('/submission-03-clinical-history')
-    await page.getByRole('link', { name: 'Back' }).click()
+    await page.getByRole('link', { name: 'Back', exact: true }).click()
 
     await expect(page).toHaveURL('/submission-02-animal-details')
     await expect(page.getByLabel('Breed (optional)')).toHaveValue('Holstein')

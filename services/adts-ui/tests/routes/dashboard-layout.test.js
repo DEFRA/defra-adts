@@ -15,6 +15,8 @@
  */
 
 import { afterAll, beforeAll, describe, expect, jest, test } from '@jest/globals'
+import path from 'node:path'
+import * as sass from 'sass'
 import createServer from '../../src/app.js'
 
 describe('Dashboard Layout', () => {
@@ -69,16 +71,33 @@ describe('Dashboard Layout', () => {
       expect(html).not.toContain('>Clients<')
     })
 
-    test('renders the submission actions as standard GOV.UK links', () => {
-      const actions = [...html.matchAll(/<li>\s*(<a\b[^>]*>[\s\S]*?<\/a>)\s*<\/li>/g)]
-        .map(([, link]) => link)
+    test('renders the submission actions as GOV.UK styled link buttons', () => {
+      const actions = [...html.matchAll(/<a\b[^>]*href="\/submission-01-client-details"[^>]*>[\s\S]*?<\/a>/g)]
+        .map(([link]) => link)
 
       expect(actions).toHaveLength(2)
-      expect(actions[0]).toContain('class="govuk-link"')
-      expect(actions[0]).toContain('href="/submission-01-client-details"')
+      for (const action of actions) {
+        expect(action).toContain('role="button"')
+        expect(action).toContain('draggable="false"')
+        expect(action).toContain('data-module="govuk-button"')
+        expect(action).toMatch(/class="[^"]*\bgovuk-button\b/)
+        expect(action).not.toContain('class="govuk-link"')
+      }
+      expect(actions[0]).toContain('app-button--sick')
       expect(actions[0]).toContain('Sick animal submission')
+      expect(actions[1]).toContain('app-button--healthy')
       expect(actions[1]).toContain('Healthy animal submission')
-      expect(actions[0]).not.toContain('role="button"')
+      expect(html).toMatch(/<div class="govuk-button-group">\s*<a[^>]*app-button--sick/)
+    })
+
+    test('styles healthy as the brand colour and sick as yellow tint 25%', () => {
+      const { css } = sass.compile(
+        path.join(process.cwd(), 'src/assets/scss/application.scss'),
+        { loadPaths: [path.join(process.cwd(), 'node_modules')], style: 'compressed', quietDeps: true, silenceDeprecations: ['import', 'global-builtin', 'color-functions'] }
+      )
+
+      expect(css).toMatch(/\.app-button--healthy\{background-color:#1d70b8;color:#fff/)
+      expect(css).toMatch(/\.app-button--sick\{background-color:#ffe640;color:#0b0c0c/)
     })
 
     test('both submission links navigate to the client details page', async () => {

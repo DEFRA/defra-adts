@@ -131,7 +131,7 @@ describe('Submission animal details page', () => {
     const response = await post(selection, { ageCategory: 'lamb', purpose: 'meat', numberOfAnimals: '1' })
 
     expect(response.statusCode).toBe(302)
-    expect(response.headers.location).toBe(url)
+    expect(response.headers.location).toBe('/submission-03-clinical-history')
     expect(saved(await get(selection))).toEqual({
       speciesId: '2',
       species: 'Sheep',

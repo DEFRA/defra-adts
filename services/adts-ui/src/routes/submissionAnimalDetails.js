@@ -8,6 +8,7 @@ import {
 
 const pageName = 'submission-02-animal-details'
 const speciesPageName = 'submission-02-species'
+const nextPageName = 'submission-03-clinical-history'
 
 const optionsOf = (list) => (Array.isArray(list) ? list : [])
 const hasValue = (options, value) => options.some((option) => option.value === value)
@@ -232,7 +233,7 @@ const postAnimalDetails = async (request, h, submissionFormStateKey) => {
   })
   request.yar.touch()
 
-  return h.redirect(`/${pageName}`)
+  return h.redirect(`/${nextPageName}`)
 }
 
 const submissionAnimalDetails = (server, submissionFormStateKey) => {

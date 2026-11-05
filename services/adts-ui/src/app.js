@@ -15,6 +15,7 @@ import updateClients from './routes/updateClients.js'
 import selectClient from './routes/selectClient.js'
 import submissionSpecies from './routes/submissionSpecies.js'
 import submissionAnimalDetails from './routes/submissionAnimalDetails.js'
+import submissionClinicalHistory from './routes/submissionClinicalHistory.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const SUBMISSION_FORM_STATE_KEY = 'submissionFormState'
@@ -71,6 +72,7 @@ const createServer = async () => {
   selectClient(server, SUBMISSION_FORM_STATE_KEY)
   submissionSpecies(server, SUBMISSION_FORM_STATE_KEY)
   submissionAnimalDetails(server, SUBMISSION_FORM_STATE_KEY)
+  submissionClinicalHistory(server, SUBMISSION_FORM_STATE_KEY)
   results(server)
   health(server)
 

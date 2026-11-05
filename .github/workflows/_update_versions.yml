@@ -141,33 +141,31 @@ jobs:
 
           } > "${VERSION_FILE}.new"
           
-          tail -300 "${VERSION_FILE}.new" > "$VERSION_FILE"
+          mv "${VERSION_FILE}.new" "$VERSION_FILE"
           cat "$VERSION_FILE"
 
-#      - name: Commit and push VERSIONS.txt
-#        id: commit
-#        shell: bash
-#        run: |
-#          set -euo pipefail
-#
-#          if git diff --quiet -- VERSIONS.txt; then
-#            echo "VERSIONS.txt is already up to date."
-#            echo "changed=false" >> "${GITHUB_OUTPUT}"
-#            exit 0
-#          fi
-#
-#          git config user.name "github-actions[bot]"
-#          git config user.email \
-#            "41898282+github-actions[bot]@users.noreply.github.com"
-#
-#          git add VERSIONS.txt
-#          git commit \
-#            --message "chore: update application versions [skip ci]"
-#
-#          # The workflow-level concurrency setting prevents two instances of
-#          # this workflow updating the branch at the same time. Rebase once
-#          # before pushing in case another repository update arrived.
-#          git pull --rebase origin main
-#          git push origin HEAD:main
-#
-#          echo "changed=true" >> "${GITHUB_OUTPUT}"
+      - name: Commit and push VERSIONS.txt
+        id: commit
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if git diff --quiet -- VERSIONS.txt; then
+            echo "VERSIONS.txt is already up to date."
+            exit 0
+          fi
+
+          git config user.name "${{ github.actor }}"
+          git config user.email \
+            "${{ github.actor_id }}+${{ github.actor }}@users.noreply.github.com"
+
+          git add VERSIONS.txt
+          git commit \
+            --message "chore: update service versions [skip ci]"
+          git push
+
+          # The workflow-level concurrency setting prevents two instances of
+          # this workflow updating the branch at the same time. Rebase once
+          # before pushing in case another repository update arrived.
+          # git pull --rebase origin main
+          # git push origin HEAD:main

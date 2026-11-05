@@ -63,6 +63,7 @@ describe('Submission clinical history page', () => {
     ['2023-02-29', 'real date'],
     ['2024-13-01', 'real date'],
     ['2024-04-31', 'real date'],
+    ['2024-4-30', 'real date'],
     ['2024/04/30', 'real date']
   ])('rejects invalid input %j without saving it', async (payload, errorMessage) => {
     const response = await post({ sampleTakenDate: payload })

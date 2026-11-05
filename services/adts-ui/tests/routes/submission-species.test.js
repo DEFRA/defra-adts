@@ -45,51 +45,41 @@ describe('Submission species page', () => {
   const getSaved = (response) => server.inject({ method: 'GET', url, headers: { cookie: getCookieHeader(response) } })
   const savedAnimalDetails = (response) => response.request.response.source.context.submissionFormState.formData.animalDetails
 
-  test('renders common species as radios with an Other option revealing a species select', async () => {
+  test('renders all available species in a select enhanced with autocomplete', async () => {
     const response = await server.inject({ method: 'GET', url })
 
     expect(response.statusCode).toBe(200)
     expect(response.payload).toContain('2. Animal details')
-    for (const name of ['Cattle', 'Sheep', 'Chicken', 'Pig', 'Turkey', 'Duck', 'Alpaca', 'Goat', 'Other']) {
-      expect(response.payload).toMatch(new RegExp(`>\\s*${name}\\s*<`))
-    }
-    expect(response.payload).toContain('type="radio"')
+    expect(response.payload).toContain('<select class="govuk-select" id="species" name="species"')
+    expect(response.payload).not.toContain('type="radio"')
     expect(response.payload).toContain('<form method="post" action="/submission-02-species"')
-    expect(response.payload).toContain('Specify species')
+    expect(response.payload).toContain('<option value="Cattle">Cattle</option>')
     expect(response.payload).toContain('<option value="Llama">Llama</option>')
+    expect(response.payload).toContain('href="/assets/css/accessible-autocomplete.min.css"')
     expect(response.payload).toContain('No client name set')
   })
 
-  test('AC1: persists a single common species with its id and redirects to animal details', async () => {
+  test('persists a selected species and redirects to animal details', async () => {
     const response = await post({ species: 'Sheep' })
 
     expect(response.statusCode).toBe(302)
     expect(response.headers.location).toBe('/submission-02-animal-details')
     const revisit = await getSaved(response)
     expect(savedAnimalDetails(revisit)).toEqual({ speciesId: '2', species: 'Sheep' })
-    expect(revisit.payload).toMatch(/value="Sheep"\s+checked/)
+    expect(revisit.payload).toMatch(/<option value="Sheep" selected>Sheep<\/option>/)
   })
 
-  test('AC1a/AC1b: persists a species chosen under Other and re-selects Other on return', async () => {
-    const response = await post({ species: 'other', otherSpecies: 'Llama' })
+  test('allows selecting any species in the backend list', async () => {
+    const response = await post({ species: 'Llama' })
 
     expect(response.statusCode).toBe(302)
     const revisit = await getSaved(response)
     expect(savedAnimalDetails(revisit)).toEqual({ speciesId: '20', species: 'Llama' })
-    expect(revisit.payload).toMatch(/value="other"\s+checked/)
-    expect(revisit.payload).toContain('data-default-value="Llama"')
+    expect(revisit.payload).toMatch(/<option value="Llama" selected>Llama<\/option>/)
   })
 
-  test('AC1c: requires a species when Other is selected', async () => {
-    const response = await post({ species: 'other', otherSpecies: '' })
-
-    expect(response.statusCode).toBe(400)
-    expect(response.payload).toContain('There is a problem')
-    expect(response.payload).toContain('Specify the species')
-  })
-
-  test('rejects an Other species that is not in the available list', async () => {
-    const response = await post({ species: 'other', otherSpecies: 'Dragon' })
+  test('rejects a species that is not in the available list', async () => {
+    const response = await post({ species: 'Dragon' })
 
     expect(response.statusCode).toBe(400)
     expect(response.payload).toContain('Select a species from the list')
@@ -104,7 +94,7 @@ describe('Submission species page', () => {
 
   test('does not save when validation fails and keeps previously saved species', async () => {
     const saved = await post({ species: 'Pig' })
-    const failed = await post({ species: 'other' }, { cookie: getCookieHeader(saved) })
+    const failed = await post({ species: 'Dragon' }, { cookie: getCookieHeader(saved) })
     expect(failed.statusCode).toBe(400)
 
     const revisit = await server.inject({ method: 'GET', url, headers: { cookie: getCookieHeader(saved) } })
@@ -119,13 +109,95 @@ describe('Submission species page', () => {
   })
 
   test('preserves existing form state such as the selected client', async () => {
-    const client = await server.inject({ method: 'POST', url: '/submission-01-client-details', payload: { clientId: '101' } })
+    const client = await server.inject({
+      method: 'POST',
+      url: '/submission-01-client-details',
+      payload: {
+        clientId: '101',
+        name: 'Updated Client Name',
+        farmName: 'Updated Farm',
+        addressLine1: '2 Farm Road',
+        addressLine2: 'New Village',
+        addressLine3: '',
+        county: 'Northshire',
+        postcode: 'AB1 2CD',
+        cph: '48/234/2348'
+      }
+    })
+    globalThis.fetch.mockClear()
     const response = await post({ species: 'Goat' }, { cookie: getCookieHeader(client) })
     const revisit = await getSaved(response)
 
-    expect(revisit.request.response.source.context.submissionFormState.formData.clientDetails).toEqual({ clientId: '101' })
-    expect(revisit.payload).toContain('Acme Farm')
-    expect(revisit.payload).toContain('12/123/1234')
+    expect(revisit.request.response.source.context.submissionFormState.formData.clientDetails).toEqual({
+      clientId: '101',
+      cph: '48/234/2348',
+      name: 'Updated Client Name',
+      farmName: 'Updated Farm',
+      addressLine1: '2 Farm Road',
+      addressLine2: 'New Village',
+      addressLine3: '',
+      county: 'Northshire',
+      postcode: 'AB1 2CD'
+    })
+    expect(revisit.payload).toContain('Updated Client Name')
+    expect(revisit.payload).toContain('Updated Farm')
+    expect(revisit.payload).toContain('2 Farm Road, New Village, Northshire, AB1 2CD')
+    expect(revisit.payload).toContain('48/234/2348')
+    expect(globalThis.fetch).not.toHaveBeenCalledWith('http://localhost:3200/GetClients')
+  })
+
+  test('shows manually entered client details on the species page', async () => {
+    const manualEntry = await server.inject({
+      method: 'POST',
+      url: '/submission-01-client-details',
+      payload: { intent: 'new' }
+    })
+    const clientDetails = await server.inject({
+      method: 'POST',
+      url: '/submission-01-client-details',
+      headers: { cookie: getCookieHeader(manualEntry) },
+      payload: {
+        clientId: '',
+        name: 'Jane Smith',
+        farmName: 'Green Farm',
+        addressLine1: '1 Farm Lane',
+        addressLine2: 'Village',
+        addressLine3: '',
+        county: 'Northshire',
+        postcode: 'AB1 2CD',
+        cph: '48/234/2348',
+        animalsAtClientAddress: 'yes'
+      }
+    })
+
+    expect(clientDetails.statusCode).toBe(302)
+    expect(clientDetails.headers.location).toBe('/submission-02-species')
+
+    globalThis.fetch.mockClear()
+    const response = await server.inject({
+      method: 'GET',
+      url,
+      headers: { cookie: getCookieHeader(clientDetails) }
+    })
+
+    expect(response.statusCode).toBe(200)
+    expect(response.payload).toContain('Jane Smith')
+    expect(response.payload).toContain('Green Farm')
+    expect(response.payload).toContain('1 Farm Lane, Village, Northshire, AB1 2CD')
+    expect(response.payload).toContain('48/234/2348')
+    expect(response.request.response.source.context.submissionFormState.formData.clientDetails).toEqual({
+      name: 'Jane Smith',
+      farmName: 'Green Farm',
+      addressLine1: '1 Farm Lane',
+      addressLine2: 'Village',
+      addressLine3: '',
+      county: 'Northshire',
+      postcode: 'AB1 2CD',
+      cph: '48/234/2348',
+      animalsAtClientAddress: 'yes'
+    })
+    expect(globalThis.fetch).toHaveBeenCalledWith('http://localhost:3200/GetSpecies')
+    expect(globalThis.fetch).not.toHaveBeenCalledWith('http://localhost:3200/GetClients')
   })
 
   test('warns and blocks continuing when the species list cannot be loaded', async () => {
@@ -136,7 +208,7 @@ describe('Submission species page', () => {
     })
 
     const page = await server.inject({ method: 'GET', url })
-    expect(page.payload).toContain('full list of species could not be loaded')
+    expect(page.payload).toContain('The list of species could not be loaded. Try again later.')
 
     const response = await post({ species: 'Cattle' })
     expect(response.statusCode).toBe(400)

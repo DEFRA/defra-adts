@@ -1,6 +1,5 @@
 {% extends "govuk/template.njk" %}
 
-{% from "govuk/components/button/macro.njk" import govukButton %}
 {% from "govuk/components/header/macro.njk" import govukHeader %}
 {% from "macros/submissionSearchForm.njk" import submissionSearchForm %}
 
@@ -33,11 +32,11 @@
   <div class="govuk-grid-row">
     <div class="govuk-grid-column-full">
       <p class="govuk-body">Signed in as Test User 2</p>
+      <h2 class="govuk-heading-m">New submission</h2>
+      <p class="govuk-body">Start a new sick animal submission or healthy animal submission.</p>
       <ul class="govuk-list">
-        <li>{{ govukButton({ text: "Create a sick animal submission", href: "/submission-01-client-details" }) }}</li>
-        <li>{{ govukButton({ text: "Create a healthy animal submission", href: "/submission-01-client-details" }) }}</li>
-        <li>{{ govukButton({ text: "Create a new client", href: "/create-client" }) }}</li>
-        <li>{{ govukButton({ text: "Update an existing client's details", href: "/update-client" }) }}</li>
+        <li><a class="govuk-link" href="/submission-01-client-details">Sick animal submission</a></li>
+        <li><a class="govuk-link" href="/submission-01-client-details">Healthy animal submission</a></li>
       </ul>
 
       <hr class="govuk-section-break govuk-section-break--m govuk-section-break--visible">

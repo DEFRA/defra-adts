@@ -6,7 +6,9 @@ test.describe('Client lookup via LIMS', () => {
   test('renders LIMS clients as options and queries LIMS server-side', async ({ page }) => {
     await page.goto('/submission-01-client-details')
 
-    await expect(page.locator('option[value="client-001"]')).toHaveText('Example Farm')
+    await expect(page.locator('option[value="client-001"]')).toHaveText(
+      'Example Farm, North Field, 1 Test Lane, Teston, Example County, ZZ1 1ZZ, 12/345/6789'
+    )
     await expect(page.locator('option[value="42"]')).toHaveText('Second Example Farm')
 
     const limsRequests = await (await page.request.get(`${limsUrl}/__requests`)).json()

@@ -25,6 +25,7 @@ RUN npm run build
 FROM defradigital/node:$PARENT_VERSION AS production
 
 ENV TZ="Europe/London"
+ENV NODE_ENV=production
 
 ARG PORT
 ENV PORT=${PORT}

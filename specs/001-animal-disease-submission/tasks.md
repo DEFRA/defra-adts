@@ -32,7 +32,7 @@
 
 ### Implementation
 
-- [X] T009 [P] Implement Step 1 as selection of an existing client from the backend list, with standalone create/edit client pages that are not wired into the submission journey, using the field requirements recorded in the living catalogue in `specs/001-animal-disease-submission/data-model.md`. Implement in `services/adts-ui/src/routes/selectClient.js`, `services/adts-ui/src/routes/createClient.js`, `services/adts-ui/src/routes/editClient.js`, and their Nunjucks views under `services/adts-ui/src/views/`; cover existing-client lookup/selection and the standalone create/edit pages in `services/adts-ui/tests/routes/submission-client-details.test.js` and `services/adts-ui/tests/routes/create-client.test.js`.
+- [X] T009 [P] Implement Step 1 as one submission-scoped client details form: selecting an existing client supplies editable initial values, and users can enter values manually when there is no suitable existing client. Retain the entered values in the report data; do not call a client create/update endpoint. Implemented in `services/adts-ui/src/routes/selectClient.js` and `services/adts-ui/src/views/select-client.njk`, with route coverage in `services/adts-ui/tests/routes/submission-client-details.test.js`.
 - [X] T010 [P] Implement animal details using the field requirements recorded for that page in the living catalogue in `specs/001-animal-disease-submission/data-model.md`; update the catalogue as each relevant ticket, screenshot, or v1 reference is reviewed, and resolve or explicitly track open questions before implementing affected fields. Implement in `services/adts-ui/src/routes/submissionAnimalDetails.js` and its Nunjucks view under `services/adts-ui/src/views/`; validate one species with one or more same-species animals and cover the route in `services/adts-ui/tests/routes/submission-animal-details.test.js`.
 - [ ] T010a Reconcile SUB-07 AC4 (optional age detail with unit and estimate flag, persisted alongside the age category) with the design screenshots, which show age categories only. Confirm with the product owner whether AC4 still applies; if so, add the optional age detail fields back to `services/adts-ui/src/routes/submissionAnimalDetails.js`, its view and `services/adts-ui/tests/routes/submission-animal-details.test.js`, and restore `ageUnits` in the `GetAnimalDetails` contract and `services/adts-backend/src/animalDetails.js`.
 - [ ] T011 [P] Implement clinical-history details using the field requirements recorded for that page in the living catalogue in `specs/001-animal-disease-submission/data-model.md`; update the catalogue as each relevant ticket, screenshot, or v1 reference is reviewed, and resolve or explicitly track open questions before implementing affected fields. Implement in `services/adts-ui/src/routes/submissionClinicalHistory.js` and its Nunjucks view under `services/adts-ui/src/views/`; cover the route and its validation in `services/adts-ui/tests/routes/submission-clinical-history.test.js`.
@@ -100,7 +100,7 @@
 ### Parallel Example: User Story 1
 
 ```text
-Task: T009 — client selection page, standalone client create/edit pages, and route tests
+Task: T009 — submission client details form and route tests
 Task: T010 — animal-details page and route tests
 Task: T011 — clinical-history page and route tests
 Task: T012 — test selection, basket, and delivery-address pages and route tests

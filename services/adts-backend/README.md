@@ -5,12 +5,28 @@ Changes to this directory trigger the service's CI build.
 The UI calls this service using `BACKEND_SERVICE_URL`. The backend forwards
 submission and client lookup requests to `SUBMISSIONS_SERVICE_URL`.
 
-For local development, run the submissions service on port 3100, then start
-the backend with:
+For local development, start the seeded local DynamoDB from the repository root:
 
 ```bash
-PORT=3200 SUBMISSIONS_SERVICE_URL=http://localhost:3100 npm start
+./local/dynamodb/test-db.sh up
 ```
+
+Then start the submissions service on port 3100 and the backend on port 3200:
+
+```bash
+PORT=3100 npm start --prefix services/adts-submissions-service
+DYNAMODB_ENDPOINT=http://localhost:8000 \
+AWS_ACCESS_KEY_ID=local \
+AWS_SECRET_ACCESS_KEY=local \
+PORT=3200 \
+SUBMISSIONS_SERVICE_URL=http://localhost:3100 \
+npm start --prefix services/adts-backend
+```
+
+Verify the reference data connection with `curl http://localhost:3200/GetSpecies`.
+It should return the seeded species list. A `502` from this endpoint usually means
+the backend is not configured to use the local DynamoDB or the local database is
+not running; restart the backend after changing its environment variables.
 
 ## Running tests
 
@@ -65,4 +81,6 @@ be reached.
 | `AWS_REGION` | `eu-west-2` | AWS region. |
 | `REFERENCE_DATA_TABLE` | `adts-reference-data` | Reference data table name. |
 
-Locally, the SDK also needs credentials, so set `AWS_ACCESS_KEY_ID=local AWS_SECRET_ACCESS_KEY=local`.
+The local DynamoDB SDK connection requires dummy credentials, provided in the
+backend start command above. These credentials are for DynamoDB Local only; do
+not use them when connecting to AWS.

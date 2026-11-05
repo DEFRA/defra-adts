@@ -9,9 +9,6 @@ import staticAssets from './routes/assets.js'
 import health from './routes/health.js'
 import home from './routes/home.js'
 import results from './routes/results.js'
-import createClient from './routes/createClient.js'
-import editClient from './routes/editClient.js'
-import updateClients from './routes/updateClients.js'
 import selectClient from './routes/selectClient.js'
 import submissionSpecies from './routes/submissionSpecies.js'
 import submissionAnimalDetails from './routes/submissionAnimalDetails.js'
@@ -38,6 +35,7 @@ const createServer = async () => {
       options: {
         cookieOptions: {
           password: sessionSecret,
+          isSecure: process.env.NODE_ENV !== 'development',
           isHttpOnly: true,
           isSameSite: 'Lax',
           path: '/'
@@ -65,9 +63,6 @@ const createServer = async () => {
 
   staticAssets(server)
   home(server)
-  createClient(server)
-  editClient(server)
-  updateClients(server)
   selectClient(server, SUBMISSION_FORM_STATE_KEY)
   submissionSpecies(server, SUBMISSION_FORM_STATE_KEY)
   submissionAnimalDetails(server, SUBMISSION_FORM_STATE_KEY)

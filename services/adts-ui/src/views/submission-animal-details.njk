@@ -1,6 +1,7 @@
 {% extends "govuk/template.njk" %}
 
 {% from "govuk/components/header/macro.njk" import govukHeader %}
+{% from "govuk/components/back-link/macro.njk" import govukBackLink %}
 {% from "govuk/components/notification-banner/macro.njk" import govukNotificationBanner %}
 {% from "govuk/components/error-summary/macro.njk" import govukErrorSummary %}
 {% from "govuk/components/radios/macro.njk" import govukRadios %}
@@ -57,6 +58,7 @@
     </span>
   </div>
 
+  {{ govukBackLink({ text: "Back", href: "/submission-02-species" }) }}
   {{ submissionProgress(2) }}
   {{ clientSummaryBar(clientSummary) }}
 

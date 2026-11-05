@@ -142,6 +142,7 @@ describe('Submission animal details page', () => {
     expect(response.statusCode).toBe(200)
     expect(globalThis.fetch).toHaveBeenCalledWith('http://localhost:3200/GetAnimalDetails?speciesId=2')
     expect(response.payload).toContain('2. Animal details')
+    expect(response.payload).toContain('href="/submission-02-species" class="govuk-back-link"')
     expect(response.payload).toContain('href="/submission-02-species"')
     expect(response.payload).toContain('href="/assets/css/accessible-autocomplete.min.css"')
     expect(response.payload).toContain('<script type="module" src="/assets/js/all.js"></script>')

@@ -50,6 +50,7 @@ describe('Submission species page', () => {
 
     expect(response.statusCode).toBe(200)
     expect(response.payload).toContain('2. Animal details')
+    expect(response.payload).toContain('href="/submission-01-client-details" class="govuk-back-link"')
     expect(response.payload).toContain('<select class="govuk-select" id="species" name="species"')
     expect(response.payload).not.toContain('type="radio"')
     expect(response.payload).toContain('<form method="post" action="/submission-02-species"')

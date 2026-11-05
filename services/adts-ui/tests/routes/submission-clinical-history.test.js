@@ -40,6 +40,7 @@ describe('Submission clinical history page', () => {
 
     expect(response.statusCode).toBe(200)
     expect(response.payload).toContain('3. Clinical history')
+    expect(response.payload).toContain('href="/submission-02-animal-details" class="govuk-back-link"')
     expect(response.payload).toContain('Date the sample was taken')
     expect(response.payload).toContain('type="date"')
     expect(response.payload).toContain('name="sampleTakenDate"')

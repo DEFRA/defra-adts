@@ -86,7 +86,7 @@ jobs:
       - name: Check out source code
         uses: actions/checkout@v7
         with:
-          persist-credentials: false
+          fetch-depth: 0
 
       - name: Validate container build inputs
         shell: bash

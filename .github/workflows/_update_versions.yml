@@ -130,14 +130,7 @@ jobs:
     
               # Add separator immediately after the header
               if (( row == 0 )); then
-                separator_width=$(
-                  (
-                    ui_width +
-                    backend_width +
-                    submissions_width +
-                    4
-                  )
-                )
+                separator_width=$(( ui_width + backend_width + submissions_width + 4 ))
                 
                 printf '%*s\n' "$separator_width" '' | tr ' ' '-'
               fi
@@ -148,7 +141,7 @@ jobs:
 
           } > "${VERSION_FILE}.new"
           
-          mv "${VERSION_FILE}.new" "$VERSION_FILE"
+          tail -300 "${VERSION_FILE}.new" > "$VERSION_FILE"
           cat "$VERSION_FILE"
 
 #      - name: Commit and push VERSIONS.txt

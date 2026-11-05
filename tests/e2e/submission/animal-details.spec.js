@@ -33,7 +33,8 @@ test.describe('Animal details reference data', () => {
     await page.getByRole('button', { name: 'Continue' }).click()
 
     await expect(page).toHaveURL('/submission-02-animal-details')
-    await expect(page.getByLabel('Breed (optional)')).toHaveValue('HOLSTEIN')
+    await expect(page.getByLabel('Breed (optional)')).toHaveValue('Holstein')
+    await expect(page.locator('#breed-select')).toHaveValue('HOLSTEIN')
     await expect(page.getByRole('radio', { name: 'Adult' })).toBeChecked()
     await expect(page.getByRole('radio', { name: 'Dairy' })).toBeChecked()
     await expect(page.getByRole('radio', { name: 'Housed' })).toBeChecked()

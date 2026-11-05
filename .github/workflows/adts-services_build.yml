@@ -10,8 +10,6 @@ on:
   pull_request:
     branches:
       - main
-    paths-ignore:
-      - VERSIONS.txt
 
   workflow_dispatch:
 
@@ -227,7 +225,6 @@ jobs:
       aws-account-id: ${{ vars.AWS_ECR_ROLE_ACCOUNT_ID }}
       aws-role: ${{ vars.AWS_ECR_ROLE_NAME }}
       platforms: linux
-      is-release: true
 
   build_backend_container:
     name: Publish Backend container image
@@ -262,7 +259,6 @@ jobs:
       aws-account-id: ${{ vars.AWS_ECR_ROLE_ACCOUNT_ID }}
       aws-role: ${{ vars.AWS_ECR_ROLE_NAME }}
       platforms: linux
-      is-release: true
 
   build_submissions_container:
     name: Publish Submissions container image
@@ -297,41 +293,37 @@ jobs:
       aws-account-id: ${{ vars.AWS_ECR_ROLE_ACCOUNT_ID }}
       aws-role: ${{ vars.AWS_ECR_ROLE_NAME }}
       platforms: linux
-      is-release: true
 
   update_versions:
     name: Versions
 
     needs:
       - detect_changes
-      - validate_ui_service
-      - validate_backend_service
-      - validate_submissions_service
       - e2e_testing
+      - build_ui_container
+      - build_backend_container
+      - build_submissions_container
 
-#      - build_ui_container
-#      - build_backend_container
-#      - build_submissions_container
 
     permissions:
       contents: write
 
-#    if: |
-#      ${{
-#        !cancelled() &&
-#        needs.detect_changes.outputs.any_service == 'true' &&
-#        (
-#          needs.detect_changes.outputs.ui_service != 'true' ||
-#          needs.build_ui_container.result == 'success'
-#        ) &&
-#        (
-#          needs.detect_changes.outputs.backend_service != 'true' ||
-#          needs.build_backend_container.result == 'success'
-#        ) &&
-#        (
-#          needs.detect_changes.outputs.submissions_service != 'true' ||
-#          needs.build_submissions_container.result == 'success'
-#        )
-#      }}
+    if: |
+      ${{
+        !cancelled() &&
+        needs.detect_changes.outputs.any_service == 'true' &&
+        (
+          needs.detect_changes.outputs.ui_service != 'true' ||
+          needs.build_ui_container.result == 'success'
+        ) &&
+        (
+          needs.detect_changes.outputs.backend_service != 'true' ||
+          needs.build_backend_container.result == 'success'
+        ) &&
+        (
+          needs.detect_changes.outputs.submissions_service != 'true' ||
+          needs.build_submissions_container.result == 'success'
+        )
+      }}
 
     uses: ./.github/workflows/_update_versions.yml

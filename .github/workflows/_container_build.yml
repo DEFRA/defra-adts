@@ -44,11 +44,6 @@ on:
         default: "linux/amd64"
         type: string
 
-      is-release:
-        description: Set true if the current image built should be a release and labeled as ':latest'
-        default: false
-        type: boolean
-
     outputs:
       image-uri:
         description: ECR image repository URI
@@ -339,26 +334,21 @@ jobs:
           set -euo pipefail
 
           # Ensure another process has not created the same tag.
-          echo "Force fetch tags."
           git fetch --force --tags
 
-          echo "Check for existing tags."
           if git rev-parse "${VERSION_TAG}" >/dev/null 2>&1; then
             echo "Tag ${VERSION_TAG} already exists."
             exit 1
           fi
 
-          echo "Set user details."
           git config user.name "${{ github.actor }}"
           git config user.email \
             "${{ github.actor_id }}+${{ github.actor }}@users.noreply.github.com"
 
-          echo "Create tags."
           git tag \
             --annotate "${VERSION_TAG}" \
             --message "${SERVICE} ${VERSION} (${BUMP_TYPE} release)"
 
-          echo "Push tags."
           git push origin "${VERSION_TAG}"
 
       - name: Write container build summary

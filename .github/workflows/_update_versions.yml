@@ -5,7 +5,7 @@ on:
 
 jobs:
   versions:
-    name: Version file update
+    name: VERSIONS.txt file update
 
     permissions:
       contents: write
@@ -76,9 +76,9 @@ jobs:
           } > "$tmp_file"
         
 
-          # Find the maximum required width of the first two columns.
+          # Find max width required for the first two columns.
           #
-          # +1 ensures there is always at least one space between
+          # Add 1 to ensure there is always at least one space between
           # the longest value and the | separator.
           ui_width=$(
             awk -F'|' '
@@ -162,10 +162,9 @@ jobs:
           git add VERSIONS.txt
           git commit \
             --message "chore: update service versions [skip ci]"
-          git push
 
           # The workflow-level concurrency setting prevents two instances of
           # this workflow updating the branch at the same time. Rebase once
           # before pushing in case another repository update arrived.
-          # git pull --rebase origin main
-          # git push origin HEAD:main
+          git pull --rebase origin main
+          git push origin HEAD:main

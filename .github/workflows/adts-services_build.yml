@@ -239,8 +239,8 @@ jobs:
         && needs.detect_changes.outputs.backend_service == 'true'
         && needs.validate_backend_service.result == 'success'
         && needs.e2e_testing.result == 'success'
+        && github.event_name != 'pull_request'
       }}
-#        && github.event_name != 'pull_request'
 
     permissions:
       contents: write
@@ -294,3 +294,18 @@ jobs:
       aws-role: ${{ vars.AWS_ECR_ROLE_NAME }}
       platforms: linux
       is-release: true
+
+  update_versions:
+    name: Update Versions
+
+    needs:
+      - detect_changes
+      - validate_ui_service
+      - validate_backend_service
+      - validate_submissions_service
+      - e2e_testing
+
+    permissions:
+      contents: write
+
+    uses: ./.github/workflows/_update_versions.yml

@@ -1,0 +1,147 @@
+name: Versions
+
+on:
+  workflow_call:
+
+jobs:
+  versions:
+    name: Versions
+
+    permissions:
+      contents: write
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Update versions file
+        shell: bash
+        run: |
+          set -euo pipefail
+            
+          VERSION_FILE="VERSIONS.txt"
+        
+          # New values
+          UI_TAG_PREFIX="adts-ui-v"
+          BACKEND_TAG_PREFIX="adts-backend-v"
+          SUBMISSIONS_TAG_PREFIX="adts-submissions-service-v"
+          
+          LAST_UI_TAG="$(
+            git tag \
+              --list "${UI_TAG_PREFIX}[0-9]*.[0-9]*.[0-9]*" \
+              --sort=-v:refname |
+            head -n 1
+          )"
+          
+          LAST_BACKEND_TAG="$(
+            git tag \
+              --list "${BACKEND_TAG_PREFIX}[0-9]*.[0-9]*.[0-9]*" \
+              --sort=-v:refname |
+            head -n 1
+          )"
+          
+          LAST_SUBMISSIONS_TAG="$(
+            git tag \
+              --list "${SUBMISSIONS_TAG_PREFIX}[0-9]*.[0-9]*.[0-9]*" \
+              --sort=-v:refname |
+            head -n 1
+          )"
+          
+          tmp_file=$(mktemp)
+          trap 'rm -f "$tmp_file"' EXIT
+        
+          # Read the existing rows, ignoring the separator line,
+          # and append the new row.
+          {
+            awk -F'|' '
+              !/^-+$/ {
+                for (i = 1; i <= NF; i++) {
+                  gsub(/^[[:space:]]+|[[:space:]]+$/, "", $i)
+                }
+                
+                if (NF >= 3) {
+                  print $1 "|" $2 "|" $3
+                }
+              }
+            ' "$VERSION_FILE"
+      
+            printf '%s|%s|%s\n' \
+              "LAST_UI_TAG" \
+              "$LAST_BACKEND_TAG" \
+              "$LAST_SUBMISSIONS_TAG"
+          } > "$tmp_file"
+        
+
+          # Find the maximum required width of the first two columns.
+          #
+          # +1 ensures there is always at least one space between
+          # the longest value and the | separator.
+          ui_width=$(
+            awk -F'|' '
+              {
+                if (length($1) > max)
+                  max = length($1)
+              }
+              END {
+                print max + 1
+              }
+            ' "$tmp_file"
+          )
+          
+          backend_width=$(
+            awk -F'|' '
+              {
+                if (length($2) > max)
+                  max = length($2)
+              }
+              END {
+                print max + 1
+              }
+            ' "$tmp_file"
+          )
+          
+          submissions_width=$(
+            awk -F'|' '
+            {
+              if (length($3) > max)
+                max = length($3)
+            }
+            END {
+              print max
+            }
+            ' "$tmp_file"
+          )
+
+
+          # Rewrite VERSIONS.txt with all rows correctly aligned.
+          {
+            row=0
+        
+            while IFS='|' read -r col1 col2 col3; do
+            
+              printf "%-${ui_width}s| %-${backend_width}s| %s\n" \
+                "$col1" \
+                "$col2" \
+                "$col3"
+    
+              # Add separator immediately after the header
+              if (( row == 0 )); then
+                separator_width=$(
+                  (
+                    ui_width +
+                    backend_width +
+                    submissions_width +
+                    4
+                  )
+                )
+                
+                printf '%*s\n' "$separator_width" '' | tr ' ' '-'
+              fi
+              
+              ((++row))
+          
+            done < "$tmp_file"
+
+          } > "${VERSION_FILE}.new"
+          
+          mv "${VERSION_FILE}.new" "$VERSION_FILE"
+          cat "$VERSION_FILE"

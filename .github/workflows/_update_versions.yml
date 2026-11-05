@@ -70,7 +70,7 @@ jobs:
             ' "$VERSION_FILE"
       
             printf '%s|%s|%s\n' \
-              "LAST_UI_TAG" \
+              "$LAST_UI_TAG" \
               "$LAST_BACKEND_TAG" \
               "$LAST_SUBMISSIONS_TAG"
           } > "$tmp_file"

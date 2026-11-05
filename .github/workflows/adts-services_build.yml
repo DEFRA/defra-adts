@@ -307,7 +307,29 @@ jobs:
       - validate_submissions_service
       - e2e_testing
 
+#      - build_ui_container
+#      - build_backend_container
+#      - build_submissions_container
+
     permissions:
       contents: write
+
+#    if: |
+#      ${{
+#        !cancelled() &&
+#        needs.detect_changes.outputs.any_service == 'true' &&
+#        (
+#          needs.detect_changes.outputs.ui_service != 'true' ||
+#          needs.build_ui_container.result == 'success'
+#        ) &&
+#        (
+#          needs.detect_changes.outputs.backend_service != 'true' ||
+#          needs.build_backend_container.result == 'success'
+#        ) &&
+#        (
+#          needs.detect_changes.outputs.submissions_service != 'true' ||
+#          needs.build_submissions_container.result == 'success'
+#        )
+#      }}
 
     uses: ./.github/workflows/_update_versions.yml

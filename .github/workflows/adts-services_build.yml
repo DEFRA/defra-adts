@@ -23,7 +23,7 @@ concurrency:
 
 jobs:
   detect_changes:
-    name: Detect application changes
+    name: Detect service changes
     runs-on: ubuntu-latest
 
     outputs:
@@ -36,7 +36,7 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v6
 
-      - name: Detect changed applications
+      - name: Detect changed services
         id: filter
         uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d  #v4.0.3
         with:

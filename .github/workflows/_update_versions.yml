@@ -142,7 +142,6 @@ jobs:
           } > "${VERSION_FILE}.new"
           
           mv "${VERSION_FILE}.new" "$VERSION_FILE"
-          cat "$VERSION_FILE"
 
       - name: Commit and push VERSIONS.txt
         id: commit
@@ -168,3 +167,15 @@ jobs:
           # before pushing in case another repository update arrived.
           git pull --rebase origin main
           git push origin HEAD:main
+
+      - name: Version summary
+        if: always()
+        shell: bash
+        run: |
+          {
+            echo "## Service versions"
+            echo
+            echo '```text'
+            cat VERSIONS.txt
+            echo '```'
+          } >> "${GITHUB_STEP_SUMMARY}"

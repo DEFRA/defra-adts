@@ -100,6 +100,41 @@ describe('Submission animal details page', () => {
     expect(response.headers.location).toBe('/submission-02-species')
   })
 
+  test('shows manually entered client details after continuing to animal details', async () => {
+    const session = {}
+    const clientResponse = await server.inject({
+      method: 'POST',
+      url: '/submission-01-client-details',
+      payload: {
+        name: 'Jane Smith',
+        farmName: 'Green Farm',
+        addressLine1: '1 Farm Lane',
+        addressLine2: 'Village',
+        county: 'Northshire',
+        postcode: 'AB1 2CD',
+        cph: '48/234/2348'
+      }
+    })
+    track(session, clientResponse)
+
+    const speciesResponse = await server.inject({
+      method: 'POST',
+      url: '/submission-02-species',
+      headers: { cookie: sessions.get(session) },
+      payload: { species: 'Sheep' }
+    })
+    track(session, speciesResponse)
+
+    globalThis.fetch.mockClear()
+    const response = await get(session)
+
+    expect(response.statusCode).toBe(200)
+    expect(response.payload).toContain('Jane Smith')
+    expect(response.payload).toContain('1 Farm Lane, Village, Northshire, AB1 2CD')
+    expect(response.payload).toContain('48/234/2348')
+    expect(globalThis.fetch).not.toHaveBeenCalledWith('http://localhost:3200/GetClients')
+  })
+
   test('AC2: loads options from the backend using the saved speciesId and renders them for the species', async () => {
     const selection = await selectSpecies('Sheep')
     const response = await get(selection)
@@ -108,6 +143,8 @@ describe('Submission animal details page', () => {
     expect(globalThis.fetch).toHaveBeenCalledWith('http://localhost:3200/GetAnimalDetails?speciesId=2')
     expect(response.payload).toContain('2. Animal details')
     expect(response.payload).toContain('href="/submission-02-species"')
+    expect(response.payload).toContain('href="/assets/css/accessible-autocomplete.min.css"')
+    expect(response.payload).toContain('<script type="module" src="/assets/js/all.js"></script>')
     for (const label of ['Lamb', 'Adult', 'Meat', 'Wool', 'Outdoor', 'Texel', 'Ewe', 'Ram', 'accredited organic', 'In transition', 'Number of animals']) {
       expect(response.payload).toContain(label)
     }

@@ -40,12 +40,25 @@ npm run lint
 npm run kill
 ```
 
-The UI expects `adts-backend` on port 3200. The backend expects `adts-submissions-service` on port 3100. Start both services in separate terminals:
+The UI expects `adts-backend` on port 3200. For the species and animal-details
+pages, the backend needs the seeded local DynamoDB. Start it from the repository
+root:
+
+```bash
+./local/dynamodb/test-db.sh up
+```
+
+The backend also expects `adts-submissions-service` on port 3100. Start the
+submissions service and backend in separate terminals:
 
 ```bash
 PORT=3100 npm start --prefix services/adts-submissions-service
-PORT=3200 SUBMISSIONS_SERVICE_URL=http://localhost:3100 npm start --prefix services/adts-backend
+DYNAMODB_ENDPOINT=http://localhost:8000 AWS_ACCESS_KEY_ID=local AWS_SECRET_ACCESS_KEY=local PORT=3200 SUBMISSIONS_SERVICE_URL=http://localhost:3100 npm start --prefix services/adts-backend
 ```
+
+Check `curl http://localhost:3200/GetSpecies`; it should return the seeded
+species list. If it returns `502`, confirm the local database is running and
+restart the backend with the environment variables above.
 
 ## Running tests
 

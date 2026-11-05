@@ -15,9 +15,10 @@ For each page, record the field, user-facing label, requiredness, validation, so
 
 | Field | User-facing label | Requiredness | Validation / notes | Evidence and status |
 |---|---|---|---|---|
-| `clientId` | Client | Not specified | Search/select an existing client. The prompt says a user can search by client name, address, or CPH. Existing clients are loaded through `GetClients`; the UI enhances the select with accessible autocomplete. A result is presented with client name, farm name/address, county, postcode, and CPH as shown in the screenshot. | Screenshot and current implementation. The route accepts an empty selection, so the implementation does not currently enforce selecting a client before continuing. Whether selection should be mandatory remains unspecified. |
+| `clientDetails` | Client details | Requiredness and validation not specified | Search/select an existing client by name, address, or CPH to prefill the form, or enter details manually. The same Step 1 page is rerendered to edit the selected client; accessible autocomplete is progressive enhancement over a native select. Client details are stored with the submission; no client create/update request is made to LIMS. | Implemented from the supplied screenshots and clarified business behavior. Requiredness and field validation remain unspecified; report-to-LIMS mapping is pending the submission contract. |
+| `clientDetails.animalAddressDetails` | New animal address | Optional; shown when animals are not at the client address and the user chooses manual entry | Uses the same name, farm name, address lines, county, postcode, and CPH inputs as manual client entry. Stored separately from the client fields and from the existing animal-address lookup value. | Implemented on Step 1; downstream report-to-LIMS mapping is pending the submission contract. |
 
-The page heading is “1. Client details”; its introduction says “Tell us about the owner (your client) of the animal or animals you want to test.” The client search prompt is “Enter the name of your client, their address, or the County Parish Holding (CPH) eg 48/234/2348:”. Step 1 only selects an existing client returned by the backend (`GetClients`); it does not link to, or create/edit, clients. Creating or editing a client is a separate, standalone capability (see below) that is not part of the submission journey or its session state.
+The page heading is “1. Client details”; its introduction says “Tell us about the owner (your client) of the animal or animals you want to test.” The current client search prompt is “Enter the name of your client, their address, or the County Parish Holding (CPH) eg 48/234/2348:”. Selecting an existing client supplies editable starting values on the same Step 1 page; a user without a suitable match can enter the values manually. If animals are at a different address, the user can search for that address or open a second manual-entry form with the same fields as the client form; both forms can be completed together. The page uses native form submissions and works without JavaScript; accessible autocomplete and the selected-client edit-button behavior enhance it when JavaScript is available. These values belong to the submission, not a client create/update request to LIMS.
 
 ### Step 2: Animal details — Species
 
@@ -30,7 +31,7 @@ The page heading is “1. Client details”; its introduction says “Tell us ab
 
 | Field | User-facing label | Requiredness | Validation / notes | Evidence and status |
 |---|---|---|---|---|
-| `animalDetails.speciesId`, `animalDetails.species` | Species | Required to continue | Single value. Common species are radios; choosing “Other” reveals “Specify species”, a select enhanced with type-ahead, listing all species from `GetSpecies` (`speciesId`, `name`). The chosen name must exist in that list; its `speciesId` and name are persisted (not the “Other” marker). On return, a species outside the common list re-selects Other. Changing species discards previously saved species-dependent answers. | AC1, AC1a, AC1b, AC1c and screenshot. Implemented. |
+| `animalDetails.speciesId`, `animalDetails.species` | Species | Required to continue | Single value selected from all species returned by `GetSpecies` (`speciesId`, `name`) in a native select enhanced with accessible autocomplete. The chosen name must exist in that list; its `speciesId` and name are persisted. Changing species discards previously saved species-dependent answers. | AC1 and backend species list. Implemented. The select is usable without JavaScript. |
 | `animalDetails.ageCategory` | Age category | Required (no “optional” in the design) when the species offers options | Radios from `ageCategories` for the species (AC2), e.g. Adult, Mixed, Neonatal (1 week old or less), Post weaned, Pre weaned, Unknown, Doesn’t apply. Categories only in the current build. | Screenshot 3. Implemented. |
 | `animalDetails.ageDetail` (`value`, `unit`, `isEstimate`) | Age detail (optional), unit, estimate flag | Optional | **To do (T010a):** AC4 requires it to be persisted alongside the age category, but the screenshots show no such fields; confirm before building. | SUB-07 AC4. Not implemented. |
 | `animalDetails.purpose` | Purpose | Required when the species offers options | Radios from `purposes` for the species (AC2), e.g. Beef finisher, Dairy, Calf rearer, Captive/zoo, Suckler, I don’t know, Doesn’t apply. | Screenshot 4. Implemented. |
@@ -55,16 +56,11 @@ Open questions: the maximum number of animals per submission and the animal ID f
 |---|---|---|---|---|
 | `clinicalHistory.sampleTakenDate` | Date the sample was taken | Not specified by the ticket; blank is accepted | Use the native HTML date input and set its maximum to today. Reject invalid or future dates server-side and store accepted values as `yyyy-mm-dd`. The browser may display the date in a locale-specific format. | SUB-09 AC1–AC3, supplied screenshot, and user decision to use the standard HTML date picker with a maximum date of today. Implemented. |
 
-### Standalone client management (outside the submission journey)
+### Client details collection
 
-Authorised users can create or edit clients, but this is deliberately **not** wired into the submission pages. Step 1 only selects an existing client, which avoids pushing duplicate clients to the backend from within a submission.
+There is no LIMS client create/update operation. The standalone `/create-client`, `/update-client`, and `/edit-client/{clientId}` pages and corresponding home-page actions have been removed. The submission's Step 1 page supports selecting an existing client to prefill the editable form or entering details manually. Values are retained in the report data and used only for that submission; they are not treated as a client-record mutation.
 
-- Current implementation: `services/adts-ui/src/routes/createClient.js`, `services/adts-ui/src/routes/editClient.js`, `services/adts-ui/src/routes/clientForm.js`, `services/adts-ui/src/views/create-client.njk`, and `services/adts-ui/tests/routes/create-client.test.js`.
-- Routes: `/create-client` and `/edit-client/{clientId}` (the client is looked up from `GetClients`; unknown clients return 404).
-- These pages neither read nor write submission form state, show no submission progress, and redirect to `/` after saving.
-- Persistence is not implemented: the backend exposes no create/update client endpoint, so the POST handlers validate the payload and carry a TODO.
-
-Fields (all optional strings; unspecified validation is not inferred): `cph`, `name`, `farmName`, `addressLine1`, `addressLine2`, `addressLine3`, `county` (displayed as returned by the backend; blank if absent), `postcode`.
+Fields are `cph`, `name`, `farmName`, `addressLine1`, `addressLine2`, `addressLine3`, `county`, and `postcode`. Their requiredness and validation have not been approved. When an existing record is selected, its `clientId` is retained as a reference alongside the editable field values; a manually entered client has no `clientId`. Confirm whether that reference belongs in the final report contract and how the collected values map to the LIMS submission payload.
 
 ## Submission Draft
 
@@ -90,13 +86,21 @@ Concrete field names and validation are captured incrementally in the living fie
 {
   "formData": {
     "clientDetails": {
-      "clientId": ""
+      "clientId": "101",
+      "cph": "",
+      "name": "",
+      "farmName": "",
+      "addressLine1": "",
+      "addressLine2": "",
+      "addressLine3": "",
+      "county": "",
+      "postcode": ""
     }
   }
 }
 ```
 
-`clientId` identifies the selected existing client; a submission can only reference an existing client. Only the `clientId` is persisted. Display details (name, farm, address, county, postcode, CPH) are read from the client record returned by `GetClients` each time they are shown and are never copied into the submission. The backend returns fully formed client records, so the UI makes no separate county lookup.
+The UI stores all client detail fields and animal-location answers under `formData.clientDetails`. Manually entered animal address fields are stored separately as `animalAddressDetails`; an address entered through the existing lookup remains in `animalAddress`. `clientId` is present only when the user selected an existing client; manually entered client details do not receive an identifier. Existing records are read through `GetClients`; there is no separate client create/update request. The final report-to-LIMS field mapping still depends on the confirmed submission contract. The backend returns fully formed client records, so the UI makes no separate county lookup.
 
 The UI stores this object in the Yar value keyed by `submissionFormState`, under `formData.clientDetails`. Each submission page should preserve the existing `submissionFormState` properties and update only its own section of `formData`.
 

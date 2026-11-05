@@ -2,14 +2,13 @@
 
 {% from "govuk/components/header/macro.njk" import govukHeader %}
 {% from "govuk/components/notification-banner/macro.njk" import govukNotificationBanner %}
-{% from "govuk/components/radios/macro.njk" import govukRadios %}
 {% from "govuk/components/select/macro.njk" import govukSelect %}
 {% from "govuk/components/button/macro.njk" import govukButton %}
 {% from "govuk/components/error-summary/macro.njk" import govukErrorSummary %}
 {% from "macros/submissionProgress.njk" import submissionProgress %}
 {% from "macros/clientSummary.njk" import clientSummaryBar %}
 
-{% block pageTitle %}{% if clientSummaryError or errors.species or errors.otherSpecies %}Error: {% endif %}Animal details – ADTS{% endblock %}
+{% block pageTitle %}{% if clientSummaryError or errors.species %}Error: {% endif %}Animal details – ADTS{% endblock %}
 
 {% block head %}
   <link rel="stylesheet" href="/assets/css/application.css">
@@ -46,14 +45,9 @@
     }) }}
   {% endif %}
 
-  {% if errors.species or errors.otherSpecies %}
+  {% if errors.species %}
     {% set errorList = [] %}
-    {% if errors.species %}
-      {% set errorList = (errorList.push({ text: errors.species, href: "#species" }), errorList) %}
-    {% endif %}
-    {% if errors.otherSpecies %}
-      {% set errorList = (errorList.push({ text: errors.otherSpecies, href: "#otherSpecies" }), errorList) %}
-    {% endif %}
+    {% set errorList = (errorList.push({ text: errors.species, href: "#species" }), errorList) %}
     {{ govukErrorSummary({ titleText: "There is a problem", errorList: errorList }) }}
   {% endif %}
 
@@ -67,35 +61,19 @@
       <span class="govuk-warning-text__icon" aria-hidden="true">!</span>
       <strong class="govuk-warning-text__text">
         <span class="govuk-visually-hidden">Warning</span>
-        The full list of species could not be loaded, so you can only choose from the common species.
+        The list of species could not be loaded. Try again later.
       </strong>
     </div>
   {% endif %}
 
   <form method="post" action="/submission-02-species" novalidate>
-    {% set otherHtml %}
-      {{ govukSelect({
-        id: "otherSpecies",
-        name: "otherSpecies",
-        label: { text: "Specify species" },
-        attributes: { "data-default-value": otherSpecies },
-        errorMessage: { text: errors.otherSpecies } if errors.otherSpecies,
-        items: otherSpeciesOptions
-      }) }}
-    {% endset %}
-
-    {{ govukRadios({
-      classes: "govuk-radios--small",
-      idPrefix: "species",
+    {{ govukSelect({
+      id: "species",
       name: "species",
-      fieldset: { legend: { text: "Species", classes: "govuk-fieldset__legend--l", isPageHeading: false } },
+      label: { text: "Species", classes: "govuk-label--l" },
+      attributes: { "data-default-value": selectedSpecies },
       errorMessage: { text: errors.species } if errors.species,
-      items: speciesItems.concat([{
-        value: "other",
-        text: "Other",
-        checked: otherChecked,
-        conditional: { html: otherHtml }
-      }])
+      items: speciesOptions
     }) }}
 
     {{ govukButton({ text: "Continue" }) }}

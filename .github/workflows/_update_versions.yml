@@ -5,7 +5,7 @@ on:
 
 jobs:
   versions:
-    name: Versions
+    name: Version file update
 
     permissions:
       contents: write
@@ -13,6 +13,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Check out source code
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
       - name: Update versions file
         shell: bash
         run: |

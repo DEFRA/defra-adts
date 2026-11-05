@@ -1,4 +1,4 @@
-name: Build
+name: Workflow
 
 on:
   push:
@@ -298,7 +298,7 @@ jobs:
       is-release: true
 
   update_versions:
-    name: Update Versions
+    name: Versions
 
     needs:
       - detect_changes

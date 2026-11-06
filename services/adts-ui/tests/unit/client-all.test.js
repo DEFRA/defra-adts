@@ -30,8 +30,8 @@ describe('client initialization', () => {
     const editButton = { hidden: false }
     globalThis.document = {
       querySelector: jest.fn((selector) => {
-        if (selector === '#client') return clientSelect
-        if (selector === '#species') return speciesSelect
+        if (selector === 'select#client') return clientSelect
+        if (selector === 'select#species') return speciesSelect
         if (selector === '[data-client-edit-button]') return editButton
         return null
       })
@@ -41,7 +41,7 @@ describe('client initialization', () => {
     await import('../../src/client/all.js')
 
     expect(initAll).toHaveBeenCalledTimes(1)
-    expect(globalThis.document.querySelector).toHaveBeenCalledWith('#client')
+    expect(globalThis.document.querySelector).toHaveBeenCalledWith('select#client')
     expect(enhanceSelectElement).toHaveBeenCalledWith({
       defaultValue: 'Acme Farm',
       selectElement: clientSelect
@@ -66,7 +66,7 @@ describe('client initialization', () => {
     await import('../../src/client/all.js')
 
     expect(initAll).toHaveBeenCalledTimes(1)
-    expect(globalThis.document.querySelector).toHaveBeenCalledWith('#client')
+    expect(globalThis.document.querySelector).toHaveBeenCalledWith('select#client')
     expect(enhanceSelectElement).not.toHaveBeenCalled()
   })
 

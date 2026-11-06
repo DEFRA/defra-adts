@@ -3,9 +3,9 @@ import accessibleAutocomplete from 'accessible-autocomplete'
 
 initAll()
 
-const clientSelect = document.querySelector('#client')
+const clientSelect = document.querySelector('select#client')
 
-const speciesSelect = document.querySelector('#species')
+const speciesSelect = document.querySelector('select#species')
 
 if (speciesSelect) {
   accessibleAutocomplete.enhanceSelectElement({
@@ -32,7 +32,7 @@ if (clientSelect) {
   }
 }
 
-const breedSelect = document.querySelector('#breed')
+const breedSelect = document.querySelector('select#breed')
 
 if (breedSelect) {
   accessibleAutocomplete.enhanceSelectElement({

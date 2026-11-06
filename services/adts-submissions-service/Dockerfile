@@ -1,4 +1,4 @@
-ARG PARENT_VERSION=3.2.3-node24.21.0
+ARG PARENT_VERSION=3.2.6-node24.22.2
 ARG PORT=9180
 
 FROM defradigital/node-development:$PARENT_VERSION AS development

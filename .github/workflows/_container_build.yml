@@ -44,11 +44,6 @@ on:
         default: "linux/amd64"
         type: string
 
-      is-release:
-        description: Set true if the current image built should be a release and labeled as ':latest'
-        default: false
-        type: boolean
-
     outputs:
       image-uri:
         description: ECR image repository URI
@@ -71,7 +66,7 @@ jobs:
     runs-on: ubuntu-latest
 
     permissions:
-      contents: read
+      contents: write
       id-token: write
       security-events: write
 
@@ -86,7 +81,7 @@ jobs:
       - name: Check out source code
         uses: actions/checkout@v7
         with:
-          persist-credentials: false
+          fetch-depth: 0
 
       - name: Validate container build inputs
         shell: bash
@@ -138,7 +133,7 @@ jobs:
               exit 0
             fi
 
-            VERSION="0.1.0"
+            VERSION="0.5.0"
             CHANGE_RANGE="HEAD"
             CHANGED="true"
             BUMP_TYPE="initial"
@@ -235,7 +230,6 @@ jobs:
           tags: |
             type=raw,value=v${{ steps.version.outputs.version }}
             type=raw,value=v${{ steps.version.outputs.version }},suffix=-${{ github.sha }}
-            type=raw,value=latest
           labels: |
             org.opencontainers.image.title=${{ inputs.service-name }}
             org.opencontainers.image.version=${{ steps.version.outputs.version }}
@@ -276,10 +270,6 @@ jobs:
           provenance: mode=max
           sbom: true
 
-      - name: Show images
-        run: |
-          docker images
-
       # Scan the image before it is pushed
       - name: Scan image with Trivy
         id: trivy-scan
@@ -315,10 +305,10 @@ jobs:
       # Push image to ECR.
       - name: Push container image
         run: |
+          docker images
           echo "Image destination is ${{ fromJson(steps.metadata.outputs.json).tags[0] }}"
           docker push ${{ fromJson(steps.metadata.outputs.json).tags[0] }}
-          docker tag ${{ fromJson(steps.metadata.outputs.json).tags[0] }} ${{ fromJson(steps.metadata.outputs.json).tags[1] }}
-          docker tag ${{ fromJson(steps.metadata.outputs.json).tags[0] }} ${{ fromJson(steps.metadata.outputs.json).tags[2] }}
+          docker push --all-tags ${{ steps.ecr-login.outputs.registry }}/${{ inputs.ecr-repository }}
 
       - name: Set immutable image reference
         id: result
@@ -351,9 +341,9 @@ jobs:
             exit 1
           fi
 
-          git config user.name "github-actions[bot]"
+          git config user.name "${{ github.actor }}"
           git config user.email \
-            "41898282+github-actions[bot]@users.noreply.github.com"
+            "${{ github.actor_id }}+${{ github.actor }}@users.noreply.github.com"
 
           git tag \
             --annotate "${VERSION_TAG}" \

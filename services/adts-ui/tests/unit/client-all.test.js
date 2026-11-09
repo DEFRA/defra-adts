@@ -34,7 +34,8 @@ describe('client initialization', () => {
         if (selector === 'select#species') return speciesSelect
         if (selector === '[data-client-edit-button]') return editButton
         return null
-      })
+      }),
+      querySelectorAll: jest.fn().mockReturnValue([])
     }
     clientSelect.addEventListener = jest.fn()
 
@@ -60,7 +61,8 @@ describe('client initialization', () => {
 
   test('does not enhance a client select when it is not present', async () => {
     globalThis.document = {
-      querySelector: jest.fn().mockReturnValue(null)
+      querySelector: jest.fn().mockReturnValue(null),
+      querySelectorAll: jest.fn().mockReturnValue([])
     }
 
     await import('../../src/client/all.js')

@@ -89,7 +89,7 @@ describe('Dashboard Layout', () => {
       expect(actions[0]).toContain('Sick animal submission')
       expect(actions[1]).toContain('app-button--healthy')
       expect(actions[1]).toContain('Healthy animal submission')
-      expect(html).toMatch(/<div class="govuk-button-group">\s*<a[^>]*app-button--sick/)
+      expect(html).toMatch(/<div class="app-button-stack">\s*<a[^>]*app-button--sick/)
     })
 
     test('styles healthy as the brand colour and sick as yellow tint 25%', () => {
@@ -100,6 +100,15 @@ describe('Dashboard Layout', () => {
 
       expect(css).toMatch(/\.app-button--healthy\{background-color:#1d70b8;color:#fff/)
       expect(css).toMatch(/\.app-button--sick\{background-color:#ffe640;color:#0b0c0c/)
+    })
+
+    test('stacks the submission buttons vertically', () => {
+      const { css } = sass.compile(
+        path.join(process.cwd(), 'src/assets/scss/application.scss'),
+        { loadPaths: [path.join(process.cwd(), 'node_modules')], style: 'compressed', quietDeps: true, silenceDeprecations: ['import', 'global-builtin', 'color-functions'] }
+      )
+
+      expect(css).toMatch(/\.app-button-stack\{display:flex;flex-direction:column;align-items:flex-start/)
     })
 
     test('both submission links navigate to the client details page', async () => {

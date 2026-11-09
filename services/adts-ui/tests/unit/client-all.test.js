@@ -72,6 +72,45 @@ describe('client initialization', () => {
     expect(enhanceSelectElement).not.toHaveBeenCalled()
   })
 
+  test('enhances each county select using its own default value', async () => {
+    const countySelect = { dataset: { defaultValue: 'Dorset' } }
+    const animalAddressCountySelect = { dataset: { defaultValue: 'Argyll and Bute' } }
+    globalThis.document = {
+      querySelector: jest.fn().mockReturnValue(null),
+      querySelectorAll: jest.fn((selector) => selector === 'select#county, select#animalAddressCounty'
+        ? [countySelect, animalAddressCountySelect]
+        : [])
+    }
+
+    await import('../../src/client/all.js')
+
+    expect(globalThis.document.querySelectorAll).toHaveBeenCalledWith('select#county, select#animalAddressCounty')
+    expect(enhanceSelectElement).toHaveBeenCalledTimes(2)
+    expect(enhanceSelectElement).toHaveBeenCalledWith({
+      defaultValue: 'Dorset',
+      selectElement: countySelect
+    })
+    expect(enhanceSelectElement).toHaveBeenCalledWith({
+      defaultValue: 'Argyll and Bute',
+      selectElement: animalAddressCountySelect
+    })
+  })
+
+  test('enhances the breed select without a default value', async () => {
+    const breedSelect = { dataset: {} }
+    globalThis.document = {
+      querySelector: jest.fn((selector) => selector === 'select#breed' ? breedSelect : null),
+      querySelectorAll: jest.fn().mockReturnValue([])
+    }
+
+    await import('../../src/client/all.js')
+
+    expect(enhanceSelectElement).toHaveBeenCalledWith({
+      defaultValue: '',
+      selectElement: breedSelect
+    })
+  })
+
   test('shows only the animal ID inputs matching the selected number of animals', async () => {
     const numberOfAnimals = {
       value: '1',

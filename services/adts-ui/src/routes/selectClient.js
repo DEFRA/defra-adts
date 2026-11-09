@@ -97,7 +97,7 @@ const getCountyOptions = (counties, selectedCounty) => {
   ]
 }
 
-const getClientDetailsViewContext = (submissionFormState, clients, counties, overrides = {}) => {
+const getClientDetailsViewContext = (submissionFormState, clients, counties, overrides) => {
   const savedDetails = submissionFormState.formData?.clientDetails || {}
   const selectedClientId = overrides.selectedClientId ?? savedDetails.clientId ?? ''
   const selectedClient = clients.find((client) => client.clientId === selectedClientId)

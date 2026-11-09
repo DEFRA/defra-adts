@@ -8,6 +8,7 @@ import { createDocumentClient } from './data/dynamo.js'
 import { getAnimalDetails } from './data/animalDetails.js'
 import { getSpecies } from './data/species.js'
 import { getSubmissions } from './data/submissions.js'
+import { createClientsHandler } from './handlers/clients.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -117,7 +118,7 @@ const registerSubmissionsRoutes = (server, getDynamoClient) => {
     {
       method: 'GET',
       path: '/GetClients',
-      handler: createProxyGet('GetClients')
+      handler: createClientsHandler(getDynamoClient)
     },
     {
       method: 'GET',

@@ -81,6 +81,8 @@ describe('Dashboard Layout', () => {
         expect(action).toContain('draggable="false"')
         expect(action).toContain('data-module="govuk-button"')
         expect(action).toMatch(/class="[^"]*\bgovuk-button\b/)
+        expect(action).toContain('govuk-button--start')
+        expect(action).toContain('govuk-button__start-icon')
         expect(action).not.toContain('class="govuk-link"')
       }
       expect(actions[0]).toContain('app-button--sick')

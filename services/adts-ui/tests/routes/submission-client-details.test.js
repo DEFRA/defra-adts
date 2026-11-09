@@ -7,6 +7,27 @@ const getCookieHeader = (response) => {
 }
 
 const url = '/submission-01-client-details'
+
+const DEFAULT_CLIENTS = [
+  { clientId: 101, name: 'Acme Farm' },
+  { clientId: '102', name: 'Green Acres' }
+]
+const DEFAULT_COUNTIES = [
+  { countyCode: 'AB', name: 'Argyll and Bute' },
+  { countyCode: 'DEV', name: 'Devon' },
+  { countyCode: 'MER', name: 'Merseyside' }
+]
+
+const jsonResponse = (body) => new Response(JSON.stringify(body), {
+  status: 200,
+  headers: { 'Content-Type': 'application/json' }
+})
+
+const routeBackend = ({ clients = DEFAULT_CLIENTS, counties = DEFAULT_COUNTIES } = {}) => async (requestUrl) => {
+  if (requestUrl === 'http://localhost:3200/GetClients') return jsonResponse(clients)
+  if (requestUrl === 'http://localhost:3200/GetCounties') return jsonResponse(counties)
+  throw new Error(`Unexpected backend request: ${requestUrl}`)
+}
 describe('Submission client details page', () => {
   let server
 
@@ -17,16 +38,7 @@ describe('Submission client details page', () => {
   })
 
   beforeEach(() => {
-    jest.spyOn(globalThis, 'fetch').mockImplementation(async (url) => {
-      expect(url).toBe('http://localhost:3200/GetClients')
-      return new Response(JSON.stringify([
-        { clientId: 101, name: 'Acme Farm' },
-        { clientId: '102', name: 'Green Acres' }
-      ]), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' }
-      })
-    })
+    jest.spyOn(globalThis, 'fetch').mockImplementation(routeBackend())
   })
 
   afterEach(() => {
@@ -223,18 +235,20 @@ describe('Submission client details page', () => {
   })
 
   test('prefills the edit form from the selected client and stores edited values for the submission', async () => {
-    globalThis.fetch.mockImplementation(async () => new Response(JSON.stringify([
-      {
-        clientId: 101,
-        name: 'Acme Farm',
-        farmName: 'Acme Holdings',
-        addressLine1: '1 Farm Road',
-        addressLine2: 'Farmsville',
-        county: 'Merseyside',
-        postcode: 'L20 6EC',
-        cph: '12/123/1234'
-      }
-    ]), { status: 200 }))
+    globalThis.fetch.mockImplementation(routeBackend({
+      clients: [
+        {
+          clientId: 101,
+          name: 'Acme Farm',
+          farmName: 'Acme Holdings',
+          addressLine1: '1 Farm Road',
+          addressLine2: 'Farmsville',
+          county: 'Merseyside',
+          postcode: 'L20 6EC',
+          cph: '12/123/1234'
+        }
+      ]
+    }))
 
     const editResponse = await server.inject({
       method: 'POST',
@@ -251,7 +265,7 @@ describe('Submission client details page', () => {
     expect(editResponse.payload).toContain('type="hidden" name="clientId" value="101"')
     expect(editResponse.payload).toContain('value="Acme Holdings"')
     expect(editResponse.payload).toContain('value="1 Farm Road"')
-    expect(editResponse.payload).toContain('value="Merseyside"')
+    expect(editResponse.payload).toContain('<option value="Merseyside" selected>Merseyside</option>')
     expect(editResponse.payload).toContain('value="L20 6EC"')
     expect(editResponse.payload).toMatch(/name="animalsAtClientAddress"[^>]*value="no"[^>]*checked/)
     expect(editResponse.payload).toContain('value="48/234/2348"')
@@ -293,7 +307,76 @@ describe('Submission client details page', () => {
     expect(revisitResponse.payload).toContain(
       '<option value="101" selected>Acme Farm, Acme Holdings, 1 Farm Road, Farmsville, Merseyside, L20 6EC, 12/123/1234</option>'
     )
-    expect(globalThis.fetch).not.toHaveBeenCalledWith('http://localhost:3200/GetCounties')
+    expect(globalThis.fetch).toHaveBeenCalledWith('http://localhost:3200/GetCounties')
+  })
+
+  test('renders county as a select for the client and animal address', async () => {
+    const clientResponse = await server.inject({
+      method: 'POST',
+      url,
+      payload: { clientId: '101', intent: 'edit', animalsAtClientAddress: 'no' }
+    })
+
+    expect(clientResponse.statusCode).toBe(200)
+    expect(clientResponse.payload).toMatch(/<select class="govuk-select[^"]*" id="county" name="county"/)
+    expect(clientResponse.payload).toContain('<option value="Devon">Devon</option>')
+    expect(clientResponse.payload).toContain('<option value="Argyll and Bute">Argyll and Bute</option>')
+    expect(clientResponse.request.response.source.context.countyOptions).toEqual([
+      { value: '', text: 'Select a county', selected: true },
+      { value: 'Argyll and Bute', text: 'Argyll and Bute', selected: false },
+      { value: 'Devon', text: 'Devon', selected: false },
+      { value: 'Merseyside', text: 'Merseyside', selected: false }
+    ])
+
+    const animalAddressResponse = await server.inject({
+      method: 'POST',
+      url,
+      payload: { clientId: '101', intent: 'newAnimalAddress', animalsAtClientAddress: 'no' }
+    })
+
+    expect(animalAddressResponse.statusCode).toBe(200)
+    expect(animalAddressResponse.payload).toMatch(
+      /<select class="govuk-select[^"]*" id="animalAddressCounty" name="animalAddressCounty"/
+    )
+    expect(animalAddressResponse.request.response.source.context.animalAddressCountyOptions).toHaveLength(4)
+    expect(globalThis.fetch).toHaveBeenCalledWith('http://localhost:3200/GetCounties')
+  })
+
+  test('keeps a saved county that is missing from the reference data as an option', async () => {
+    globalThis.fetch.mockImplementation(routeBackend({
+      clients: [{ clientId: 101, name: 'Acme Farm', county: 'Old County' }],
+      counties: [{ countyCode: 'DEV', name: 'Devon' }]
+    }))
+
+    const response = await server.inject({
+      method: 'POST',
+      url,
+      payload: { clientId: '101', intent: 'edit', animalsAtClientAddress: 'no' }
+    })
+
+    expect(response.statusCode).toBe(200)
+    expect(response.payload).toContain('<option value="Old County" selected>Old County</option>')
+  })
+
+  test('still renders the page with no county options when counties cannot be loaded', async () => {
+    globalThis.fetch.mockImplementation(async (requestUrl) => {
+      if (requestUrl === 'http://localhost:3200/GetCounties') throw new Error('Adapter unavailable')
+      return jsonResponse(DEFAULT_CLIENTS)
+    })
+    jest.spyOn(console, 'error').mockImplementation(() => {})
+
+    const response = await server.inject({
+      method: 'POST',
+      url,
+      payload: { clientId: '101', intent: 'edit', animalsAtClientAddress: 'no' }
+    })
+
+    expect(response.statusCode).toBe(200)
+    expect(response.payload).toMatch(/<select class="govuk-select[^"]*" id="county" name="county"/)
+    expect(response.request.response.source.context.countyOptions).toEqual([
+      { value: '', text: 'Select a county', selected: true }
+    ])
+    expect(console.error).toHaveBeenCalledWith('Error loading counties:', 'Adapter unavailable')
   })
 
   test('allows entering new client details manually without a client record', async () => {

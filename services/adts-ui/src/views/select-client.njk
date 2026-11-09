@@ -96,12 +96,12 @@
           classes: "govuk-!-width-one-half"
         }) }}
       </fieldset>
-      {{ govukInput({
+      {{ govukSelect({
         id: "county",
         name: "county",
-        value: clientDetails.county,
         label: { text: "County" },
-        autocomplete: "address-level1",
+        items: countyOptions,
+        attributes: { "data-default-value": clientDetails.county },
         classes: "govuk-!-width-one-half"
       }) }}
       {{ govukInput({
@@ -209,12 +209,12 @@
             classes: "govuk-!-width-one-half"
           }) }}
         </fieldset>
-        {{ govukInput({
+        {{ govukSelect({
           id: "animalAddressCounty",
           name: "animalAddressCounty",
-          value: animalAddressDetails.county,
           label: { text: "County" },
-          autocomplete: "address-level1",
+          items: animalAddressCountyOptions,
+          attributes: { "data-default-value": animalAddressDetails.county },
           classes: "govuk-!-width-one-half"
         }) }}
         {{ govukInput({

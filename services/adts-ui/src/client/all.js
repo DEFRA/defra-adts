@@ -32,6 +32,15 @@ if (clientSelect) {
   }
 }
 
+const countySelects = document.querySelectorAll('select#county, select#animalAddressCounty')
+
+countySelects.forEach((countySelect) => {
+  accessibleAutocomplete.enhanceSelectElement({
+    defaultValue: countySelect.dataset.defaultValue,
+    selectElement: countySelect
+  })
+})
+
 const breedSelect = document.querySelector('select#breed')
 
 if (breedSelect) {

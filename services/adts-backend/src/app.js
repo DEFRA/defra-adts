@@ -6,6 +6,7 @@ import Joi from 'joi'
 import { constants } from 'http2'
 import { createDocumentClient } from './data/dynamo.js'
 import { getAnimalDetails } from './data/animalDetails.js'
+import { getCounties } from './data/counties.js'
 import { getSpecies } from './data/species.js'
 import { getSubmissions } from './data/submissions.js'
 import { createClientsHandler } from './handlers/clients.js'
@@ -122,11 +123,6 @@ const registerSubmissionsRoutes = (server, getDynamoClient) => {
     },
     {
       method: 'GET',
-      path: '/GetCounties',
-      handler: createProxyGet('GetCounties')
-    },
-    {
-      method: 'GET',
       path: '/submissions',
       handler: createSubmissionsHandler(getDynamoClient)
     }
@@ -143,6 +139,22 @@ const registerSpeciesRoute = (server, getDynamoClient) => {
       } catch (error) {
         console.error('Error retrieving species:', error.message)
         return h.response({ error: 'Unable to retrieve species' })
+          .code(constants.HTTP_STATUS_BAD_GATEWAY)
+      }
+    }
+  })
+}
+
+const registerCountiesRoute = (server, getDynamoClient) => {
+  server.route({
+    method: 'GET',
+    path: '/GetCounties',
+    handler: async (_request, h) => {
+      try {
+        return h.response(await getCounties(getDynamoClient()))
+      } catch (error) {
+        console.error('Error retrieving counties:', error.message)
+        return h.response({ error: 'Unable to retrieve counties' })
           .code(constants.HTTP_STATUS_BAD_GATEWAY)
       }
     }
@@ -188,6 +200,7 @@ const createServer = async ({ docClient } = {}) => {
   registerConnectionHealthRoute(server)
   registerSubmissionsRoutes(server, getDynamoClient)
   registerSpeciesRoute(server, getDynamoClient)
+  registerCountiesRoute(server, getDynamoClient)
   registerAnimalDetailsRoute(server, getDynamoClient)
 
   return server

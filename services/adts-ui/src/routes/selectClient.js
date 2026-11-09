@@ -1,5 +1,6 @@
 import Joi from 'joi'
 import { getClients } from '../backend/clients.js'
+import { getCounties } from '../backend/counties.js'
 import { BAD_REQUEST_STATUS } from './submissionViewHelpers.js'
 
 const pageName = 'submission-01-client-details'
@@ -81,13 +82,28 @@ const getClientAddress = (clientDetails) => [
   clientDetails.addressLine3
 ].filter(Boolean).join(', ')
 
-const getClientDetailsViewContext = (submissionFormState, clients, overrides = {}) => {
+// A saved county missing from the reference data is kept so it isn't silently dropped on revisit.
+const getCountyOptions = (counties, selectedCounty) => {
+  const names = counties.map((county) => county.name)
+  const extraOption = selectedCounty && !names.includes(selectedCounty) ? [selectedCounty] : []
+
+  return [
+    { value: '', text: 'Select a county', selected: !selectedCounty },
+    ...[...names, ...extraOption].map((name) => ({
+      value: name,
+      text: name,
+      selected: name === selectedCounty
+    }))
+  ]
+}
+
+const getClientDetailsViewContext = (submissionFormState, clients, counties, overrides = {}) => {
   const savedDetails = submissionFormState.formData?.clientDetails || {}
   const selectedClientId = overrides.selectedClientId ?? savedDetails.clientId ?? ''
   const selectedClient = clients.find((client) => client.clientId === selectedClientId)
   const selectedClientDetails = getSelectedClientDetails(savedDetails, selectedClient)
 
-  return {
+  const viewContext = {
     clientOptions: getClientOptions(clients, selectedClientId),
     animalsAtClientAddress: savedDetails.animalsAtClientAddress,
     animalAddress: savedDetails.animalAddress || '',
@@ -105,6 +121,12 @@ const getClientDetailsViewContext = (submissionFormState, clients, overrides = {
     ...overrides,
     submissionFormState
   }
+
+  return {
+    ...viewContext,
+    countyOptions: getCountyOptions(counties, viewContext.clientDetails?.county),
+    animalAddressCountyOptions: getCountyOptions(counties, viewContext.animalAddressDetails?.county)
+  }
 }
 
 const loadClients = async () => {
@@ -116,8 +138,17 @@ const loadClients = async () => {
   }
 }
 
-const renderClientDetailsPage = (h, submissionFormState, clients, overrides = {}) =>
-  h.view('select-client.njk', getClientDetailsViewContext(submissionFormState, clients, overrides))
+const loadCounties = async () => {
+  try {
+    return await getCounties()
+  } catch (error) {
+    console.error('Error loading counties:', error.message)
+    return []
+  }
+}
+
+const renderClientDetailsPage = (h, submissionFormState, clients, counties, overrides = {}) =>
+  h.view('select-client.njk', getClientDetailsViewContext(submissionFormState, clients, counties, overrides))
 
 const buildClientDetails = (payload, client) => {
   const submittedFields = clientFieldNames.some((fieldName) => Object.hasOwn(payload, fieldName))
@@ -245,11 +276,12 @@ const getClientSelectionErrorOptions = (payload, selectedClient) => {
   return options
 }
 
-const renderClientSelectionError = (h, submissionFormState, clients, payload, selectedClient) =>
+const renderClientSelectionError = (h, submissionFormState, clients, counties, payload, selectedClient) =>
   renderClientDetailsPage(
     h,
     submissionFormState,
     clients,
+    counties,
     getClientSelectionErrorOptions(payload, selectedClient)
   ).code(BAD_REQUEST_STATUS)
 
@@ -258,6 +290,7 @@ const createPostHandler = (submissionFormStateKey) => async (request, h) => {
   const formData = submissionFormState.formData || {}
   const payload = request.payload
   const clients = isManualClientEntryPayload(payload) ? [] : await loadClients()
+  const counties = await loadCounties()
   const selectedClient = clients.find((client) => client.clientId === payload.clientId)
   const hasSubmittedFields = hasSubmittedClientFields(payload)
   const submittedClientDetails = getSubmittedClientDetails(payload, selectedClient, formData)
@@ -273,11 +306,11 @@ const createPostHandler = (submissionFormStateKey) => async (request, h) => {
   })
 
   if (intentViewOptions) {
-    return renderClientDetailsPage(h, submissionFormState, clients, intentViewOptions)
+    return renderClientDetailsPage(h, submissionFormState, clients, counties, intentViewOptions)
   }
 
   if (shouldShowClientSelectionError(payload, selectedClient, hasSubmittedFields)) {
-    return renderClientSelectionError(h, submissionFormState, clients, payload, selectedClient)
+    return renderClientSelectionError(h, submissionFormState, clients, counties, payload, selectedClient)
   }
 
   request.yar.set(submissionFormStateKey, {
@@ -300,8 +333,9 @@ const selectClient = (server, submissionFormStateKey) => {
       handler: async (request, h) => {
         const submissionFormState = request.yar.get(submissionFormStateKey) || {}
         const clients = await loadClients()
+        const counties = await loadCounties()
 
-        return renderClientDetailsPage(h, submissionFormState, clients)
+        return renderClientDetailsPage(h, submissionFormState, clients, counties)
       }
     },
     {

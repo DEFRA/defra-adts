@@ -35,7 +35,7 @@ describe('GET /GetSpecies with local DynamoDB', () => {
     expect(response.statusCode).toBe(200)
     expect(response.result).toEqual([
       { speciesId: 'CHICKEN', name: 'Chicken' },
-      { speciesId: 'COW', name: 'Cow' },
+      { speciesId: 'CATTLE', name: 'Cattle' },
       { speciesId: 'SHEEP', name: 'Sheep' }
     ])
   })

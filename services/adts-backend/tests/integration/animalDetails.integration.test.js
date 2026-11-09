@@ -49,21 +49,21 @@ describe('GET /GetAnimalDetails with local DynamoDB', () => {
     expect(option).toEqual({ value, label })
   }
 
-  test('returns species-specific breeds and purposes for a non-avian species (COW)', async () => {
-    const response = await server.inject({ method: 'GET', url: '/GetAnimalDetails?speciesId=COW' })
+  test('returns species-specific breeds and purposes for a non-avian species (CATTLE)', async () => {
+    const response = await server.inject({ method: 'GET', url: '/GetAnimalDetails?speciesId=CATTLE' })
 
     expect(response.statusCode).toBe(200)
-    expect(response.result.speciesId).toBe('COW')
+    expect(response.result.speciesId).toBe('CATTLE')
 
-    // Species-specific partitions: only one breed and one purpose seeded for Cow
+    // Species-specific partitions: only one breed and one purpose seeded for Cattle
     expect(response.result.breeds).toHaveLength(1)
     expectOption(response.result.breeds[0], 'HOLSTEIN', 'Holstein')
     expect(response.result.purposes).toHaveLength(1)
     expectOption(response.result.purposes[0], 'DAIRY', 'Dairy')
   })
 
-  test('includes non-avian keeping types, sexes, ages and organic flag for COW', async () => {
-    const response = await server.inject({ method: 'GET', url: '/GetAnimalDetails?speciesId=COW' })
+  test('includes non-avian keeping types, sexes, ages and organic flag for CATTLE', async () => {
+    const response = await server.inject({ method: 'GET', url: '/GetAnimalDetails?speciesId=CATTLE' })
 
     expect(response.statusCode).toBe(200)
 
@@ -151,7 +151,7 @@ describe('GET /GetAnimalDetails with local DynamoDB', () => {
 
     let response
     try {
-      response = await server.inject({ method: 'GET', url: '/GetAnimalDetails?speciesId=COW' })
+      response = await server.inject({ method: 'GET', url: '/GetAnimalDetails?speciesId=CATTLE' })
     } finally {
       if (originalTable === undefined) {
         delete process.env.REFERENCE_DATA_TABLE

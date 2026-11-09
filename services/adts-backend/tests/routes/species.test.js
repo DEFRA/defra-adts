@@ -22,7 +22,7 @@ describe('GET /GetSpecies', () => {
     docClient.send.mockResolvedValue({
       Items: [
         { PK: 'REF#SPECIES', SK: 'ORDER#0001#CHICKEN', code: 'CHICKEN', description: 'Chicken', isAvian: true },
-        { PK: 'REF#SPECIES', SK: 'ORDER#0002#COW', code: 'COW', description: 'Cow', isAvian: false }
+        { PK: 'REF#SPECIES', SK: 'ORDER#0002#CATTLE', code: 'CATTLE', description: 'Cattle', isAvian: false }
       ]
     })
 
@@ -31,7 +31,7 @@ describe('GET /GetSpecies', () => {
     expect(response.statusCode).toBe(200)
     expect(response.result).toEqual([
       { speciesId: 'CHICKEN', name: 'Chicken' },
-      { speciesId: 'COW', name: 'Cow' }
+      { speciesId: 'CATTLE', name: 'Cattle' }
     ])
 
     const { input } = docClient.send.mock.calls[0][0]

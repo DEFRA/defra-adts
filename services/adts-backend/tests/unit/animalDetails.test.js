@@ -20,7 +20,7 @@ describe('getAnimalDetails', () => {
     const docClient = createDocClient({
       'REF#SPECIES': [
         {
-          Items: [{ code: 'COW', description: 'Cow', isAvian: false }],
+          Items: [{ code: 'CATTLE', description: 'Cattle', isAvian: false }],
           LastEvaluatedKey: { PK: 'REF#SPECIES', SK: 'next' }
         },
         { Items: [{ code: '123', description: 'Bird', isAvian: true }] }
@@ -133,7 +133,7 @@ describe('getAnimalDetails', () => {
 
   test('returns undefined when the species partition has no matching species', async () => {
     const docClient = createDocClient({
-      'REF#SPECIES': { Items: [{ code: 'COW', description: 'Cow' }] }
+      'REF#SPECIES': { Items: [{ code: 'CATTLE', description: 'Cattle' }] }
     })
 
     await expect(getAnimalDetails(docClient, 'UNKNOWN')).resolves.toBeUndefined()
@@ -142,11 +142,11 @@ describe('getAnimalDetails', () => {
 
   test('returns empty lists when the species has no configured reference options', async () => {
     const docClient = createDocClient({
-      'REF#SPECIES': { Items: [{ code: 'COW', description: 'Cow' }] }
+      'REF#SPECIES': { Items: [{ code: 'CATTLE', description: 'Cattle' }] }
     })
 
-    await expect(getAnimalDetails(docClient, 'COW')).resolves.toEqual({
-      speciesId: 'COW',
+    await expect(getAnimalDetails(docClient, 'CATTLE')).resolves.toEqual({
+      speciesId: 'CATTLE',
       ageCategories: [],
       purposes: [],
       keepingTypes: [],

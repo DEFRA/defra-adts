@@ -16,17 +16,17 @@
     } } },
     { "PutRequest": { "Item": {
       "PK": { "S": "REF#SPECIES" },
-      "SK": { "S": "ORDER#0002#COW" },
+      "SK": { "S": "ORDER#0002#CATTLE" },
       "type": { "S": "SPECIES" },
-      "code": { "S": "COW" },
-      "description": { "S": "Cow" },
+      "code": { "S": "CATTLE" },
+      "description": { "S": "Cattle" },
       "isAvian": { "BOOL": false },
       "mostCommon": { "S": "Yes" },
       "index": { "N": "1" },
       "GSI1PK": { "S": "CODE#SPECIES" },
-      "GSI1SK": { "S": "COW" },
+      "GSI1SK": { "S": "CATTLE" },
       "GSI3PK": { "S": "AVIAN#SPECIES#0" },
-      "GSI3SK": { "S": "ORDER#0002#COW" }
+      "GSI3SK": { "S": "ORDER#0002#CATTLE" }
     } } },
     { "PutRequest": { "Item": {
       "PK": { "S": "REF#SPECIES" },
@@ -43,26 +43,26 @@
       "GSI3SK": { "S": "ORDER#0003#SHEEP" }
     } } },
     { "PutRequest": { "Item": {
-      "PK": { "S": "REF#SPECIES_ANIMAL_BREEDS#SPECIES#COW" },
+      "PK": { "S": "REF#SPECIES_ANIMAL_BREEDS#SPECIES#CATTLE" },
       "SK": { "S": "ORDER#0001#HOLSTEIN" },
       "type": { "S": "SPECIES_ANIMAL_BREEDS" },
-      "speciesCode": { "S": "COW" },
+      "speciesCode": { "S": "CATTLE" },
       "code": { "S": "HOLSTEIN" },
       "description": { "S": "Holstein" },
       "index": { "N": "0" },
       "GSI1PK": { "S": "CODE#SPECIES_ANIMAL_BREEDS" },
-      "GSI1SK": { "S": "COW#HOLSTEIN" }
+      "GSI1SK": { "S": "CATTLE#HOLSTEIN" }
     } } },
     { "PutRequest": { "Item": {
-      "PK": { "S": "REF#SPECIES_ANIMAL_PURPOSES#SPECIES#COW" },
+      "PK": { "S": "REF#SPECIES_ANIMAL_PURPOSES#SPECIES#CATTLE" },
       "SK": { "S": "ORDER#0001#DAIRY" },
       "type": { "S": "SPECIES_ANIMAL_PURPOSES" },
-      "speciesCode": { "S": "COW" },
+      "speciesCode": { "S": "CATTLE" },
       "code": { "S": "DAIRY" },
       "description": { "S": "Dairy" },
       "index": { "N": "0" },
       "GSI1PK": { "S": "CODE#SPECIES_ANIMAL_PURPOSES" },
-      "GSI1SK": { "S": "COW#DAIRY" }
+      "GSI1SK": { "S": "CATTLE#DAIRY" }
     } } },
     { "PutRequest": { "Item": {
       "PK": { "S": "REF#AGE_CATEGORIES" },
@@ -159,30 +159,6 @@
       "index": { "N": "0" },
       "GSI1PK": { "S": "CODE#ORGANIC_ENVIRONMENT" },
       "GSI1SK": { "S": "ORGANIC" }
-    } } },
-    { "PutRequest": { "Item": {
-      "PK": { "S": "REF#COUNTY" },
-      "SK": { "S": "ORDER#0001#AB" },
-      "type": { "S": "COUNTY" },
-      "code": { "S": "AB" },
-      "name": { "S": "Argyll and Bute" },
-      "index": { "N": "0" },
-      "GSI1PK": { "S": "CODE#COUNTY" },
-      "GSI1SK": { "S": "AB" },
-      "GSI2PK": { "S": "NAME#COUNTY" },
-      "GSI2SK": { "S": "argyll and bute" }
-    } } },
-    { "PutRequest": { "Item": {
-      "PK": { "S": "REF#COUNTY" },
-      "SK": { "S": "ORDER#0002#DEV" },
-      "type": { "S": "COUNTY" },
-      "code": { "S": "DEV" },
-      "name": { "S": "Devon" },
-      "index": { "N": "1" },
-      "GSI1PK": { "S": "CODE#COUNTY" },
-      "GSI1SK": { "S": "DEV" },
-      "GSI2PK": { "S": "NAME#COUNTY" },
-      "GSI2SK": { "S": "devon" }
     } } },
     { "PutRequest": { "Item": {
       "PK": { "S": "REF#PVS_PRACTICE" },

@@ -23,17 +23,17 @@ describe('GET /GetAnimalDetails', () => {
       const partition = command.input.ExpressionAttributeValues[':pk']
       const items = {
         'REF#SPECIES': [
-          { code: 'COW', description: 'Cow', isAvian: false }
+          { code: 'CATTLE', description: 'Cattle', isAvian: false }
         ],
-        'REF#SPECIES_ANIMAL_BREEDS#SPECIES#COW': [],
+        'REF#SPECIES_ANIMAL_BREEDS#SPECIES#CATTLE': [],
         'REF#SPECIES_ANIMAL_BREEDS': [{ code: 'HOLSTEIN', description: 'Holstein' }],
-        'REF#SPECIES_ANIMAL_PURPOSES#SPECIES#COW': [],
+        'REF#SPECIES_ANIMAL_PURPOSES#SPECIES#CATTLE': [],
         'REF#SPECIES_ANIMAL_PURPOSES#AVIAN#0': [],
         'REF#SPECIES_ANIMAL_PURPOSES': [{ code: 'DAIRY', description: 'Dairy' }],
         'REF#SPECIES_HOUSINGS': [
           { code: 'OUTDOOR', description: 'Outdoor' },
           { code: 'AVIARY', description: 'Aviary', forAvianSpecies: true },
-          { code: 'NOT-COW', description: 'Not for cows', excludeSpeciesLimsCodes: ['COW'] }
+          { code: 'NOT-CATTLE', description: 'Not for cattle', excludeSpeciesLimsCodes: ['CATTLE'] }
         ],
         'REF#SEX_GROUPS': [{ code: 'FEMALE', description: 'Female' }],
         'REF#AGE_CATEGORIES': [{ code: 'ADULT', description: 'Adult' }],
@@ -43,11 +43,11 @@ describe('GET /GetAnimalDetails', () => {
       return { Items: items ?? [] }
     })
 
-    const response = await server.inject({ method: 'GET', url: '/GetAnimalDetails?speciesId=COW' })
+    const response = await server.inject({ method: 'GET', url: '/GetAnimalDetails?speciesId=CATTLE' })
 
     expect(response.statusCode).toBe(200)
     expect(response.result).toEqual({
-      speciesId: 'COW',
+      speciesId: 'CATTLE',
       ageCategories: [{ value: 'ADULT', label: 'Adult' }],
       purposes: [{ value: 'DAIRY', label: 'Dairy' }],
       keepingTypes: [{ value: 'OUTDOOR', label: 'Outdoor' }],
@@ -80,7 +80,7 @@ describe('GET /GetAnimalDetails', () => {
     docClient.send.mockRejectedValue(new Error('connect ECONNREFUSED'))
     jest.spyOn(console, 'error').mockImplementation(() => {})
 
-    const response = await server.inject({ method: 'GET', url: '/GetAnimalDetails?speciesId=COW' })
+    const response = await server.inject({ method: 'GET', url: '/GetAnimalDetails?speciesId=CATTLE' })
 
     expect(response.statusCode).toBe(502)
     expect(response.result).toEqual({ error: 'Unable to retrieve animal details' })

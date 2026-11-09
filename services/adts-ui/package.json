@@ -5,36 +5,37 @@
   "type": "module",
   "main": "src/index.js",
   "scripts": {
-  "build": "npm run build:css && npm run build:js",
-  "build:css": "sass src/assets/scss/application.scss src/public/css/application.css --load-path=node_modules --style=compressed",
-  "build:js": "esbuild src/client/all.js --bundle --minify --outfile=src/public/js/all.js",
-  "start": "node src/index.js",
-  "test": "npm run test:unit && npm run test:component && npm run test:integration && npm run test:routes",
-  "test:unit": "node --experimental-vm-modules node_modules/jest/bin/jest.js tests/unit",
-  "test:component": "node --experimental-vm-modules node_modules/jest/bin/jest.js tests/component",
-  "test:integration": "node --experimental-vm-modules node_modules/jest/bin/jest.js tests/integration",
-  "test:routes": "node --experimental-vm-modules node_modules/jest/bin/jest.js tests/routes",
-  "test:coverage": "node --experimental-vm-modules node_modules/jest/bin/jest.js tests/unit tests/component tests/integration tests/routes --coverage",
-  "start:watch": "nodemon --watch src/views --ignore src/public --ext njk --signal SIGTERM src/index.js",
-  "kill": "sh -c 'pids=$(lsof -tiTCP:9181 -sTCP:LISTEN); [ -z \"$pids\" ] || kill $pids'",
-  "lint": "eslint ." 
-},
+    "build": "npm run build:css && npm run build:js",
+    "build:css": "sass src/assets/scss/application.scss src/public/css/application.css --load-path=node_modules --style=compressed",
+    "build:js": "esbuild src/client/all.js --bundle --minify --outfile=src/public/js/all.js",
+    "start": "node src/index.js",
+    "test": "npm run test:unit && npm run test:component && npm run test:integration && npm run test:routes",
+    "test:unit": "node --experimental-vm-modules node_modules/jest/bin/jest.js tests/unit",
+    "test:component": "node --experimental-vm-modules node_modules/jest/bin/jest.js tests/component",
+    "test:integration": "node --experimental-vm-modules node_modules/jest/bin/jest.js tests/integration",
+    "test:routes": "node --experimental-vm-modules node_modules/jest/bin/jest.js tests/routes",
+    "test:coverage": "node --experimental-vm-modules node_modules/jest/bin/jest.js tests/unit tests/component tests/integration tests/routes --coverage",
+    "start:watch": "nodemon --watch src/views --ignore src/public --ext njk --signal SIGTERM src/index.js",
+    "kill": "sh -c 'pids=$(lsof -tiTCP:9181 -sTCP:LISTEN); [ -z \"$pids\" ] || kill $pids'",
+    "lint": "eslint ."
+  },
   "dependencies": {
     "@hapi/hapi": "21.4.12",
     "@hapi/inert": "7.1.2",
     "@hapi/vision": "7.0.3",
     "@hapi/yar": "^11.0.3",
     "accessible-autocomplete": "^3.0.2",
+    "date-and-time": "^4.7.1",
     "govuk-frontend": "5.14.0",
     "joi": "^18.3.1",
     "nunjucks": "3.2.4"
   },
   "devDependencies": {
-  "esbuild": "0.28.1",
-  "eslint": "9.39.5",
-  "jest": "^30.5.2",
-  "neostandard": "0.13.0",
-  "nodemon": "3.1.14",
-  "sass": "1.105.0"
-}
+    "esbuild": "0.28.1",
+    "eslint": "9.39.5",
+    "jest": "^30.5.2",
+    "neostandard": "0.13.0",
+    "nodemon": "3.1.14",
+    "sass": "1.105.0"
+  }
 }

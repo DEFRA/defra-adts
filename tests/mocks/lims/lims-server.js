@@ -10,7 +10,7 @@ export const clients = [
     name: 'Example Farm',
     farm: 'North Field',
     address: '1 Test Lane, Teston',
-    county: 'DEV',
+    county: 'DORS',
     postcode: 'ZZ1 1ZZ',
     cphh: '12/345/6789'
   },

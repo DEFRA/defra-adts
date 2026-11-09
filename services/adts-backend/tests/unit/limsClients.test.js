@@ -2,7 +2,7 @@ import { describe, expect, test } from '@jest/globals'
 import { mapLimsClient } from '../../src/data/limsClients.js'
 
 describe('mapLimsClient', () => {
-  const countyNames = new Map([['DEV', 'Devon']])
+  const countyNames = new Map([['DORS', 'Dorset']])
 
   test('splits the comma-separated address into address lines and keeps only the first three', () => {
     const client = mapLimsClient({
@@ -10,7 +10,7 @@ describe('mapLimsClient', () => {
       name: 'Example Farm',
       farm: '  North Field ',
       address: '1 Test Lane, Teston, Upper Road, Extra Line',
-      county: 'DEV',
+      county: 'DORS',
       postcode: 'ZZ1 1ZZ',
       cphh: '12/345/6789'
     }, countyNames)
@@ -22,7 +22,7 @@ describe('mapLimsClient', () => {
       addressLine1: '1 Test Lane',
       addressLine2: 'Teston',
       addressLine3: 'Upper Road',
-      county: 'Devon',
+      county: 'Dorset',
       postcode: 'ZZ1 1ZZ',
       cph: '12/345/6789'
     })

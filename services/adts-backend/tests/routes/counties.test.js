@@ -22,7 +22,7 @@ describe('GET /GetCounties', () => {
     docClient.send.mockResolvedValue({
       Items: [
         { PK: 'REF#COUNTY', SK: 'ORDER#0001#AB', code: 'AB', name: 'Argyll and Bute' },
-        { PK: 'REF#COUNTY', SK: 'ORDER#0002#DEV', code: 'DEV', name: 'Devon' }
+        { PK: 'REF#COUNTY', SK: 'ORDER#0003#DORS', code: 'DORS', name: 'Dorset' }
       ]
     })
 
@@ -31,7 +31,7 @@ describe('GET /GetCounties', () => {
     expect(response.statusCode).toBe(200)
     expect(response.result).toEqual([
       { countyCode: 'AB', name: 'Argyll and Bute' },
-      { countyCode: 'DEV', name: 'Devon' }
+      { countyCode: 'DORS', name: 'Dorset' }
     ])
 
     const { input } = docClient.send.mock.calls[0][0]
@@ -43,13 +43,13 @@ describe('GET /GetCounties', () => {
   test('follows pagination until all counties are read', async () => {
     docClient.send
       .mockResolvedValueOnce({ Items: [{ code: 'AB', name: 'Argyll and Bute' }], LastEvaluatedKey: { PK: 'k' } })
-      .mockResolvedValueOnce({ Items: [{ code: 'DEV', name: 'Devon' }] })
+      .mockResolvedValueOnce({ Items: [{ code: 'DORS', name: 'Dorset' }] })
 
     const response = await server.inject({ method: 'GET', url: '/GetCounties' })
 
     expect(response.result).toEqual([
       { countyCode: 'AB', name: 'Argyll and Bute' },
-      { countyCode: 'DEV', name: 'Devon' }
+      { countyCode: 'DORS', name: 'Dorset' }
     ])
     expect(docClient.send.mock.calls[1][0].input.ExclusiveStartKey).toEqual({ PK: 'k' })
   })

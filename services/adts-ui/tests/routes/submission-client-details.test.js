@@ -14,8 +14,8 @@ const DEFAULT_CLIENTS = [
 ]
 const DEFAULT_COUNTIES = [
   { countyCode: 'AB', name: 'Argyll and Bute' },
-  { countyCode: 'DEV', name: 'Devon' },
-  { countyCode: 'MER', name: 'Merseyside' }
+  { countyCode: 'DORS', name: 'Dorset' },
+  { countyCode: 'MERS', name: 'Merseyside' }
 ]
 
 const jsonResponse = (body) => new Response(JSON.stringify(body), {
@@ -319,12 +319,12 @@ describe('Submission client details page', () => {
 
     expect(clientResponse.statusCode).toBe(200)
     expect(clientResponse.payload).toMatch(/<select class="govuk-select[^"]*" id="county" name="county"/)
-    expect(clientResponse.payload).toContain('<option value="Devon">Devon</option>')
+    expect(clientResponse.payload).toContain('<option value="Dorset">Dorset</option>')
     expect(clientResponse.payload).toContain('<option value="Argyll and Bute">Argyll and Bute</option>')
     expect(clientResponse.request.response.source.context.countyOptions).toEqual([
       { value: '', text: 'Select a county', selected: true },
       { value: 'Argyll and Bute', text: 'Argyll and Bute', selected: false },
-      { value: 'Devon', text: 'Devon', selected: false },
+      { value: 'Dorset', text: 'Dorset', selected: false },
       { value: 'Merseyside', text: 'Merseyside', selected: false }
     ])
 
@@ -345,7 +345,7 @@ describe('Submission client details page', () => {
   test('keeps a saved county that is missing from the reference data as an option', async () => {
     globalThis.fetch.mockImplementation(routeBackend({
       clients: [{ clientId: 101, name: 'Acme Farm', county: 'Old County' }],
-      counties: [{ countyCode: 'DEV', name: 'Devon' }]
+      counties: [{ countyCode: 'DORS', name: 'Dorset' }]
     }))
 
     const response = await server.inject({

@@ -46,7 +46,7 @@ All values are synthetic. The seeded state is loaded by `test-db.sh reset` (defa
 
 | Table | Count | Entities |
 |-------|-------|----------|
-| `adts-reference-data` | 87 | Species `CHICKEN` (avian), `CATTLE`, `SHEEP`; breeds `HOLSTEIN` (for CATTLE); purposes `DAIRY` (for CATTLE); ages `ADULT`, `CALF`; housings `HOUSED`, `OUTDOOR` (non-avian), `AVIARY` (avian); sexes `FEMALE`, `MALE`, `MIXED`; organic accreditation applicability (non-avian); all 71 counties from the v1 `counties.csv` (loaded from `adts-reference-counties-*.json`, at most 25 items per file); practice `PRACTICE-123`; information message `WELCOME` |
+| `adts-reference-data` | 26 | Species `CHICKEN` (avian), `CATTLE`, `SHEEP`; breeds `HOLSTEIN` (for CATTLE); purposes `DAIRY` (for CATTLE); ages `ADULT`, `CALF`; housings `HOUSED`, `OUTDOOR` (non-avian), `AVIARY` (avian); sexes `FEMALE`, `MALE`, `MIXED`; organic accreditation applicability (non-avian); ten sample counties spread alphabetically from the v1 `counties.csv` (loaded from `adts-reference-counties.json`); practice `PRACTICE-123`; information message `WELCOME` |
 | `adts-submissions` | 4 | `submission-123` for `practice-123`, submitted by `user-456`; Drafts `draft-001` and `draft-002` for Acme Farm and `draft-003` for Beta Farm |
 | `adts-ci-lims-mapping` | 2 | `USER-123` to `LIMS-456789`; `USER-456` to `LIMS-987654` |
 

@@ -7,7 +7,7 @@ test.describe('Client lookup via LIMS', () => {
     await page.goto('/submission-01-client-details')
 
     await expect(page.locator('option[value="client-001"]')).toHaveText(
-      'Example Farm, North Field, 1 Test Lane, Teston, Devon, ZZ1 1ZZ, 12/345/6789'
+      'Example Farm, North Field, 1 Test Lane, Teston, Dorset, ZZ1 1ZZ, 12/345/6789'
     )
     await expect(page.locator('option[value="42"]')).toHaveText('Second Example Farm')
 

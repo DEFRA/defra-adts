@@ -7,7 +7,7 @@ const limsClients = [
     name: 'Example Farm',
     farm: 'North Field',
     address: '1 Test Lane, Teston, Upper Road',
-    county: 'DEV',
+    county: 'DORS',
     postcode: 'ZZ1 1ZZ',
     cphh: '12/345/6789'
   },
@@ -16,7 +16,7 @@ const limsClients = [
 
 const countyItems = [
   { PK: 'REF#COUNTY', SK: 'ORDER#0001#AB', code: 'AB', name: 'Argyll and Bute' },
-  { PK: 'REF#COUNTY', SK: 'ORDER#0002#DEV', code: 'DEV', name: 'Devon' }
+  { PK: 'REF#COUNTY', SK: 'ORDER#0003#DORS', code: 'DORS', name: 'Dorset' }
 ]
 
 describe('GET /GetClients', () => {
@@ -57,7 +57,7 @@ describe('GET /GetClients', () => {
         addressLine1: '1 Test Lane',
         addressLine2: 'Teston',
         addressLine3: 'Upper Road',
-        county: 'Devon',
+        county: 'Dorset',
         postcode: 'ZZ1 1ZZ',
         cph: '12/345/6789'
       },

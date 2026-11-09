@@ -1,6 +1,7 @@
 {% extends "govuk/template.njk" %}
 
 {% from "govuk/components/header/macro.njk" import govukHeader %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
 {% from "macros/submissionSearchForm.njk" import submissionSearchForm %}
 
 {% block pageTitle %}Home – ADTS{% endblock %}
@@ -34,10 +35,18 @@
       <p class="govuk-body">Signed in as Test User 2</p>
       <h2 class="govuk-heading-m">New submission</h2>
       <p class="govuk-body">Start a new sick animal submission or healthy animal submission.</p>
-      <ul class="govuk-list">
-        <li><a class="govuk-link" href="/submission-01-client-details">Sick animal submission</a></li>
-        <li><a class="govuk-link" href="/submission-01-client-details">Healthy animal submission</a></li>
-      </ul>
+      <div class="govuk-button-group">
+        {{ govukButton({
+          text: "Sick animal submission",
+          href: "/submission-01-client-details",
+          classes: "app-button--sick"
+        }) }}
+        {{ govukButton({
+          text: "Healthy animal submission",
+          href: "/submission-01-client-details",
+          classes: "app-button--healthy"
+        }) }}
+      </div>
 
       <hr class="govuk-section-break govuk-section-break--m govuk-section-break--visible">
 

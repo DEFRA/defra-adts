@@ -43,7 +43,18 @@ The page heading is “1. Client details”; its introduction says “Tell us ab
 
 Only values the user supplies are persisted; empty optional fields are omitted. A supplied value must be one of the options the backend returned for the species.
 
-Open questions: the maximum number of animals per submission and the animal ID format (assumed 10 and 50 characters); the `GetSpecies` and `GetAnimalDetails` backend endpoints do not yet exist; the UI is built to an assumed shape (see `contracts/backend-methods.md`); the single-species-per-submission rule is enforced by this step choosing one species for all animals; the Continue destination after this page (Clinical history) is not yet built, so the page redirects to itself.
+Open questions: the maximum number of animals per submission and the animal ID format (assumed 10 and 50 characters); whether the common species/age/purpose option labels come from the backend as assumed; the `GetSpecies` and `GetAnimalDetails` backend endpoints do not yet exist; the UI is built to an assumed shape (see `contracts/backend-methods.md`); the common-species list is fixed to the screenshot (matched to backend species by name); the single-species-per-submission rule is enforced by this step choosing one species for all animals.
+
+### Step 3: Clinical history
+
+**Evidence**
+
+- SUB-09 acceptance criteria AC1–AC3: accept and validate the sample date and persist a valid date when continuing. The user selected the standard GOV.UK Design System date input (day, month and year fields); no custom calendar control is used.
+- Screenshot supplied for Step 3: heading “3. Clinical history”, introduction “Tell us about the symptoms and clinical history.”, and field heading “Date the sample was taken.”
+
+| Field | User-facing label | Requiredness | Validation / notes | Evidence and status |
+|---|---|---|---|---|
+| `clinicalHistory.sampleTakenDate` | Date the sample was taken | Not specified by the ticket; blank is accepted | Use the GOV.UK date input (`govukDateInput`) with separate day, month and year fields. Blank is accepted; a partially completed date reports which parts are missing. Reject invalid or future dates server-side and store accepted values as `yyyy-mm-dd`. | SUB-09 AC1–AC3, supplied screenshot, and user decision to use the standard GOV.UK date input rather than a calendar control. Implemented. |
 
 ### Client details collection
 

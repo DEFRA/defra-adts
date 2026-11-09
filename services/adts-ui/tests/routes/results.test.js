@@ -61,6 +61,32 @@ describe('UI Results Card Rendering Integration Pipeline', () => {
     jest.restoreAllMocks()
   })
 
+  test('omits the status filter for Show all while retaining other filters and the selected option', async () => {
+    const fetchMock = jest.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify({
+      results: [],
+      totalCount: 0
+    }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' }
+    }))
+
+    const response = await server.inject({
+      method: 'GET',
+      url: '/results?client=Acme&status=show_all&submitted-date=6_months'
+    })
+
+    expect(response.statusCode).toBe(200)
+    const backendUrl = new URL(fetchMock.mock.calls[0][0])
+    expect(backendUrl.pathname).toBe('/submissions')
+    expect(Object.fromEntries(backendUrl.searchParams)).toEqual({
+      client: 'Acme',
+      clinician: '',
+      'submitted-date': '6_months'
+    })
+    expect(response.request.response.source.context.filteredValues.status).toBe('show_all')
+    expect(response.payload).toContain('<option value="show_all" selected>Show all</option>')
+  })
+
   test('should accurately bind LIMS adapter payloads into GOV.UK layout elements', async () => {
     const mockLimsData = {
       results: [
@@ -371,7 +397,7 @@ describe('UI Results Card Rendering Integration Pipeline', () => {
 
     expect(response.statusCode).toBe(200)
     expect(fetchMock).toHaveBeenCalledWith(
-      'http://localhost:3200/submissions?client=&clinician=&status=show_all&submitted-date=18_months'
+      'http://localhost:3200/submissions?client=&clinician=&submitted-date=18_months'
     )
     expect(response.payload).toContain('No records found matching your query criteria.')
     expect(console.error).toHaveBeenCalledWith(

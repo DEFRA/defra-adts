@@ -1,4 +1,4 @@
-import { constants } from 'http2'
+import { constants } from 'node:http2'
 import { getCountyNames } from '../data/counties.js'
 import { mapLimsClient } from '../data/limsClients.js'
 

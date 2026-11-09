@@ -1,4 +1,4 @@
-import { isValid as isValidDate } from 'date-and-time'
+import { format, isValid as isValidDate, parse } from 'date-and-time'
 import {
   BAD_REQUEST_STATUS,
   BAD_GATEWAY_STATUS,
@@ -8,42 +8,55 @@ import {
 const pageName = 'submission-03-clinical-history'
 const nextPageName = 'submission-04-tests'
 const text = (value) => (typeof value === 'string' ? value.trim() : '')
-const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/
-const isValidSampleTakenDate = (value) =>
-  DATE_PATTERN.test(value) && isValidDate(value, 'YYYY-MM-DD')
+const DATE_ERROR = 'Enter a real date for when the sample was taken'
+const FUTURE_DATE_ERROR = 'The sample date must be today or in the past'
 
 const today = () => new Date().toISOString().slice(0, 10)
 
-const savedValues = (submissionFormState) =>
-  submissionFormState.formData?.clinicalHistory?.sampleTakenDate || ''
+const savedValues = (submissionFormState) => {
+  const [year = '', month = '', day = ''] = (submissionFormState.formData?.clinicalHistory?.sampleTakenDate || '').split('-')
+  return { day, month, year }
+}
 
-const validate = (payload, maxDate) => {
-  const sampleTakenDate = text(payload.sampleTakenDate)
+const submittedValues = (payload) => ({
+  day: text(payload['sampleTakenDate-day']),
+  month: text(payload['sampleTakenDate-month']),
+  year: text(payload['sampleTakenDate-year'])
+})
+
+const validate = (values, maxDate) => {
+  const { day, month, year } = values
   const errors = {}
-  const isSampleTakenDateValid = !sampleTakenDate || isValidSampleTakenDate(sampleTakenDate)
 
-  if (!isSampleTakenDateValid) {
-    errors.sampleTakenDate = 'Enter a real date for when the sample was taken'
+  if (!day && !month && !year) {
+    return { values, sampleTakenDate: '', errors }
   }
 
-  if (isSampleTakenDateValid && sampleTakenDate > maxDate) {
-    errors.sampleTakenDate = 'The sample date must be today or in the past'
+  const dateString = `${year}-${month}-${day}`
+  if (!day || !month || !year || !isValidDate(dateString, 'YYYY-M-D')) {
+    errors.sampleTakenDate = DATE_ERROR
+    return { values, sampleTakenDate: '', errors }
   }
 
-  return { values: sampleTakenDate, sampleTakenDate, errors }
+  const sampleTakenDate = format(parse(dateString, 'YYYY-M-D'), 'YYYY-MM-DD')
+  if (sampleTakenDate > maxDate) {
+    errors.sampleTakenDate = FUTURE_DATE_ERROR
+    return { values, sampleTakenDate: '', errors }
+  }
+
+  return { values, sampleTakenDate, errors }
 }
 
 const renderPage = async (h, submissionFormState, values, errors = {}) => {
   const clientSummaryResult = await loadClientSummary(submissionFormState)
   const errorList = errors.sampleTakenDate
-    ? [{ text: errors.sampleTakenDate, href: '#sampleTakenDate' }]
+    ? [{ text: errors.sampleTakenDate, href: '#sampleTakenDate-day' }]
     : []
 
   const view = h.view('submission-clinical-history.njk', {
     submissionFormState,
     ...clientSummaryResult,
     values,
-    maxDate: today(),
     errors,
     errorList
   })
@@ -74,7 +87,7 @@ const submissionClinicalHistory = (server, submissionFormStateKey) => {
       path: `/${pageName}`,
       handler: async (request, h) => {
         const submissionFormState = request.yar.get(submissionFormStateKey) || { formData: {} }
-        const { values, sampleTakenDate, errors } = validate(request.payload || {}, today())
+        const { values, sampleTakenDate, errors } = validate(submittedValues(request.payload || {}), today())
 
         if (Object.keys(errors).length) {
           return renderPage(h, submissionFormState, values, errors)

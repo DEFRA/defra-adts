@@ -4,7 +4,7 @@
 {% from "govuk/components/back-link/macro.njk" import govukBackLink %}
 {% from "govuk/components/notification-banner/macro.njk" import govukNotificationBanner %}
 {% from "govuk/components/error-summary/macro.njk" import govukErrorSummary %}
-{% from "govuk/components/input/macro.njk" import govukInput %}
+{% from "govuk/components/date-input/macro.njk" import govukDateInput %}
 {% from "govuk/components/button/macro.njk" import govukButton %}
 {% from "macros/submissionProgress.njk" import submissionProgress %}
 {% from "macros/clientSummary.njk" import clientSummaryBar %}
@@ -59,14 +59,18 @@
   <hr class="govuk-section-break govuk-section-break--visible app-client-details-divider">
 
   <form method="post" action="/submission-03-clinical-history" novalidate>
-    {{ govukInput({
+    {{ govukDateInput({
       id: "sampleTakenDate",
-      name: "sampleTakenDate",
-      type: "date",
-      label: { text: "Date the sample was taken", classes: "govuk-label--m" },
-      hint: { text: "You can use the date picker or enter the date manually." },
-      attributes: { max: maxDate },
-      value: values,
+      namePrefix: "sampleTakenDate",
+      fieldset: {
+        legend: { text: "Date the sample was taken", classes: "govuk-fieldset__legend--m" }
+      },
+      hint: { text: "For example, 27 3 2007" },
+      items: [
+        { name: "day", value: values.day, classes: "govuk-input--width-2" },
+        { name: "month", value: values.month, classes: "govuk-input--width-2" },
+        { name: "year", value: values.year, classes: "govuk-input--width-4" }
+      ],
       errorMessage: { text: errors.sampleTakenDate } if errors.sampleTakenDate
     }) }}
 

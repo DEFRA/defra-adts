@@ -35,52 +35,79 @@ describe('Submission clinical history page', () => {
     headers: { cookie: getCookieHeader(response) }
   })
 
-  test('renders a native date input with its maximum set to today', async () => {
+  const dateFields = (day, month, year) => ({
+    'sampleTakenDate-day': day,
+    'sampleTakenDate-month': month,
+    'sampleTakenDate-year': year
+  })
+  const today = () => new Date().toISOString().slice(0, 10)
+
+  test('renders a GOV.UK date input for day, month and year', async () => {
     const response = await get()
 
     expect(response.statusCode).toBe(200)
     expect(response.payload).toContain('3. Clinical history')
     expect(response.payload).toContain('href="/submission-02-animal-details" class="govuk-back-link"')
+    expect(response.payload).toContain('class="govuk-date-input"')
     expect(response.payload).toContain('Date the sample was taken')
-    expect(response.payload).toContain('type="date"')
-    expect(response.payload).toContain('name="sampleTakenDate"')
-    expect(response.payload).toContain(`max="${new Date().toISOString().slice(0, 10)}"`)
+    expect(response.payload).toContain('For example, 27 3 2007')
+    expect(response.payload).toContain('name="sampleTakenDate-day"')
+    expect(response.payload).toContain('name="sampleTakenDate-month"')
+    expect(response.payload).toContain('name="sampleTakenDate-year"')
+    expect(response.payload).not.toContain('type="date"')
+    expect(response.payload).not.toContain('max=')
+    expect(response.payload).not.toContain('date picker')
   })
 
-  test('AC1/AC3: accepts and persists a valid date in ISO format', async () => {
-    const response = await post({ sampleTakenDate: '2024-02-29' })
+  test('AC1/AC3: combines the date parts and persists a valid date in ISO format', async () => {
+    const response = await post(dateFields('29', '02', '2024'))
 
     expect(response.statusCode).toBe(302)
     expect(response.headers.location).toBe('/submission-04-tests')
     const revisit = await getSaved(response)
     expect(revisit.request.response.source.context.submissionFormState.formData.clinicalHistory)
       .toEqual({ sampleTakenDate: '2024-02-29' })
-    expect(revisit.payload).toContain('type="date"')
-    expect(revisit.payload).toContain('value="2024-02-29"')
+    expect(revisit.payload).toContain('name="sampleTakenDate-day" type="text" value="29"')
+    expect(revisit.payload).toContain('name="sampleTakenDate-month" type="text" value="02"')
+    expect(revisit.payload).toContain('name="sampleTakenDate-year" type="text" value="2024"')
+  })
+
+  test('pads single-digit day and month when storing the ISO date', async () => {
+    const response = await post(dateFields('5', '3', '2024'))
+
+    expect(response.statusCode).toBe(302)
+    const revisit = await getSaved(response)
+    expect(revisit.request.response.source.context.submissionFormState.formData.clinicalHistory)
+      .toEqual({ sampleTakenDate: '2024-03-05' })
   })
 
   test.each([
-    ['2023-02-29', 'real date'],
-    ['2024-13-01', 'real date'],
-    ['2024-04-31', 'real date'],
-    ['2024-4-30', 'real date'],
-    ['2024/04/30', 'real date']
-  ])('rejects invalid input %j without saving it', async (payload, errorMessage) => {
-    const response = await post({ sampleTakenDate: payload })
+    ['29', '2', '2023'],
+    ['13', '13', '2024'],
+    ['31', '4', '2024'],
+    ['ab', '1', '2024'],
+    ['1', '2', '24'],
+    ['1', '2', '20245'],
+    ['', '3', '2024'],
+    ['5', '', '2024'],
+    ['', '', '2024'],
+    ['1', '1', '']
+  ])('rejects invalid or incomplete date %s/%s/%s without saving it', async (day, month, year) => {
+    const response = await post(dateFields(day, month, year))
 
     expect(response.statusCode).toBe(400)
     expect(response.payload).toContain('class="govuk-error-summary')
-    expect(response.payload).toContain('href="#sampleTakenDate"')
-    expect(response.payload).toContain(errorMessage)
+    expect(response.payload).toContain('href="#sampleTakenDate-day"')
+    expect(response.payload).toContain('Enter a real date for when the sample was taken')
     expect(response.payload).toContain('id="sampleTakenDate-error"')
-    expect(response.payload.match(new RegExp(errorMessage, 'g'))).toHaveLength(2)
+    expect(response.payload.match(/Enter a real date for when the sample was taken/g)).toHaveLength(2)
     expect(response.request.response.source.context.submissionFormState.formData?.clinicalHistory)
       .toBeUndefined()
   })
 
   test('allows an empty date and removes a previously saved date when cleared', async () => {
-    const first = await post({ sampleTakenDate: '2024-04-30' })
-    const cleared = await post({}, { cookie: getCookieHeader(first) })
+    const first = await post(dateFields('30', '4', '2024'))
+    const cleared = await post(dateFields('', '', ''), { cookie: getCookieHeader(first) })
 
     expect(cleared.statusCode).toBe(302)
     const revisit = await getSaved(cleared)
@@ -88,14 +115,22 @@ describe('Submission clinical history page', () => {
       .toBeUndefined()
   })
 
-  test('rejects a future date even when the browser max attribute is bypassed', async () => {
+  test('rejects a future date even when the form is submitted directly', async () => {
     const tomorrow = new Date()
     tomorrow.setUTCDate(tomorrow.getUTCDate() + 1)
-    const futureDate = tomorrow.toISOString().slice(0, 10)
-    const response = await post({ sampleTakenDate: futureDate })
+    const [year, month, day] = tomorrow.toISOString().slice(0, 10).split('-')
+    const response = await post(dateFields(day, month, year))
 
     expect(response.statusCode).toBe(400)
     expect(response.payload).toContain('The sample date must be today or in the past')
-    expect(response.payload).toContain(`max="${new Date().toISOString().slice(0, 10)}"`)
+    expect(response.request.response.source.context.submissionFormState.formData?.clinicalHistory)
+      .toBeUndefined()
+  })
+
+  test('accepts today as the sample date', async () => {
+    const [year, month, day] = today().split('-')
+    const response = await post(dateFields(day, month, year))
+
+    expect(response.statusCode).toBe(302)
   })
 })

@@ -8,8 +8,64 @@ const animalAddressSelect = document.querySelector('select#animalAddress')
 const createClientAddressLink = document.querySelector('[data-create-client-address-link]')
 const createAnimalAddressLink = document.querySelector('[data-create-animal-address-link]')
 const animalAddressSelection = document.querySelector('#animal-address-selection')
+const cphInputs = document.querySelectorAll('[data-cph-input]')
 
 const speciesSelect = document.querySelector('select#species')
+
+const getCphDigitsBeforePosition = (value, position) =>
+  value.slice(0, position).replace(/\D/g, '').length
+
+const formatCph = (value) => {
+  const digits = value.replace(/\D/g, '').slice(0, 9)
+
+  if (digits.length < 2) return digits
+  if (digits.length < 5) return `${digits.slice(0, 2)}/${digits.slice(2)}`
+
+  return `${digits.slice(0, 2)}/${digits.slice(2, 5)}/${digits.slice(5)}`
+}
+
+const getCphCaretPosition = (digitsBeforeCaret) =>
+  digitsBeforeCaret +
+  Number(digitsBeforeCaret >= 2) +
+  Number(digitsBeforeCaret >= 5)
+
+const updateCphInput = (input, digits, digitsBeforeCaret) => {
+  input.value = formatCph(digits)
+  const caretPosition = getCphCaretPosition(digitsBeforeCaret)
+  input.setSelectionRange(caretPosition, caretPosition)
+}
+
+cphInputs.forEach((input) => {
+  input.addEventListener('input', (event) => {
+    const { value, selectionStart } = event.target
+    const digitsBeforeCaret = getCphDigitsBeforePosition(value, selectionStart)
+    updateCphInput(event.target, value.replace(/\D/g, '').slice(0, 9), digitsBeforeCaret)
+  })
+
+  input.addEventListener('keydown', (event) => {
+    const { value, selectionStart, selectionEnd } = event.target
+    if (selectionStart !== selectionEnd) return
+
+    const isBackspaceBeforeSlash = event.key === 'Backspace' &&
+      value[selectionStart - 1] === '/'
+    const isDeleteBeforeSlash = event.key === 'Delete' &&
+      value[selectionStart] === '/'
+
+    if (!isBackspaceBeforeSlash && !isDeleteBeforeSlash) return
+
+    const digits = value.replace(/\D/g, '')
+    const digitsBeforeCaret = getCphDigitsBeforePosition(value, selectionStart)
+    const digitIndex = isBackspaceBeforeSlash ? digitsBeforeCaret - 1 : digitsBeforeCaret
+    if (digitIndex < 0 || digitIndex >= digits.length) return
+
+    event.preventDefault()
+    const updatedDigits = `${digits.slice(0, digitIndex)}${digits.slice(digitIndex + 1)}`
+    const updatedDigitsBeforeCaret = isBackspaceBeforeSlash
+      ? digitIndex
+      : digitsBeforeCaret
+    updateCphInput(event.target, updatedDigits, updatedDigitsBeforeCaret)
+  })
+})
 
 if (speciesSelect) {
   accessibleAutocomplete.enhanceSelectElement({

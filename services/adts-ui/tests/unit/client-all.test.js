@@ -113,6 +113,65 @@ describe('client initialization', () => {
     expect(enhanceSelectElement).not.toHaveBeenCalled()
   })
 
+  test('formats CPH input while typing and preserves deletion at separators', async () => {
+    const createCphInput = () => {
+      const listeners = {}
+      const input = {
+        value: '',
+        selectionStart: 0,
+        selectionEnd: 0,
+        addEventListener: jest.fn((type, listener) => {
+          listeners[type] = listener
+        }),
+        setSelectionRange: jest.fn(function (start, end) {
+          this.selectionStart = start
+          this.selectionEnd = end
+        }),
+        dispatch: (type, event) => listeners[type]({
+          target: event.target || input,
+          ...event
+        })
+      }
+      return input
+    }
+    const clientCphInput = createCphInput()
+    const animalAddressCphInput = createCphInput()
+    globalThis.document = {
+      querySelector: jest.fn().mockReturnValue(null),
+      querySelectorAll: jest.fn((selector) => selector === '[data-cph-input]'
+        ? [clientCphInput, animalAddressCphInput]
+        : [])
+    }
+
+    await import('../../src/client/all.js')
+
+    clientCphInput.value = '12'
+    clientCphInput.selectionStart = 2
+    clientCphInput.dispatch('input', {})
+    expect(clientCphInput.value).toBe('12/')
+    expect(clientCphInput.selectionStart).toBe(3)
+
+    clientCphInput.value = '12/345'
+    clientCphInput.selectionStart = 6
+    clientCphInput.dispatch('input', {})
+    expect(clientCphInput.value).toBe('12/345/')
+    expect(clientCphInput.selectionStart).toBe(7)
+
+    animalAddressCphInput.value = '12/345/6789'
+    animalAddressCphInput.selectionStart = 11
+    animalAddressCphInput.dispatch('input', {})
+    expect(animalAddressCphInput.value).toBe('12/345/6789')
+
+    clientCphInput.value = '12/345/'
+    clientCphInput.selectionStart = 7
+    clientCphInput.selectionEnd = 7
+    const backspaceEvent = { key: 'Backspace', preventDefault: jest.fn() }
+    clientCphInput.dispatch('keydown', backspaceEvent)
+    expect(backspaceEvent.preventDefault).toHaveBeenCalled()
+    expect(clientCphInput.value).toBe('12/34')
+    expect(clientCphInput.selectionStart).toBe(5)
+  })
+
   test('preserves the client selection before opening the new client address page', async () => {
     const form = {
       appendChild: jest.fn(),

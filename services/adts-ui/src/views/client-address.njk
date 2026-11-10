@@ -43,6 +43,7 @@
       value: clientDetails.cph,
       label: { text: "CPH number eg 48/234/2348" },
       errorMessage: { text: errors.cph } if errors.cph,
+      attributes: { "data-cph-input": "true" },
       classes: "govuk-!-width-one-half"
     }) }}
     {{ govukInput({

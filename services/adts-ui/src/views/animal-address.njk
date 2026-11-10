@@ -43,6 +43,7 @@
       value: animalAddressDetails.cph,
       label: { text: "CPH number eg 48/234/2348" },
       errorMessage: { text: errors.animalAddressCph } if errors.animalAddressCph,
+      attributes: { "data-cph-input": "true" },
       classes: "govuk-!-width-one-half"
     }) }}
     {{ govukInput({

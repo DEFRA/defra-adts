@@ -207,8 +207,8 @@ jobs:
         && needs.detect_changes.outputs.ui_service == 'true'
         && needs.validate_ui_service.result == 'success'
         && needs.e2e_testing.result == 'success'
+        && github.event_name != 'pull_request'
       }}
-#        && github.event_name != 'pull_request'
     permissions:
       contents: write
       id-token: write
@@ -240,8 +240,8 @@ jobs:
         && needs.detect_changes.outputs.backend_service == 'true'
         && needs.validate_backend_service.result == 'success'
         && needs.e2e_testing.result == 'success'
+        && github.event_name != 'pull_request'
       }}
-#        && github.event_name != 'pull_request'
 
     permissions:
       contents: write

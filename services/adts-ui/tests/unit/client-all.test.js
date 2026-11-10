@@ -2,6 +2,8 @@ import { afterAll, beforeEach, describe, expect, jest, test } from '@jest/global
 
 const initAll = jest.fn()
 const enhanceSelectElement = jest.fn()
+const observe = jest.fn()
+const mutationObserver = jest.fn(() => ({ observe }))
 
 jest.unstable_mockModule('govuk-frontend', () => ({ initAll }))
 jest.unstable_mockModule('accessible-autocomplete', () => ({
@@ -9,11 +11,13 @@ jest.unstable_mockModule('accessible-autocomplete', () => ({
 }))
 
 const documentDescriptor = Object.getOwnPropertyDescriptor(globalThis, 'document')
+const windowDescriptor = Object.getOwnPropertyDescriptor(globalThis, 'window')
 
 describe('client initialization', () => {
   beforeEach(() => {
     jest.resetModules()
     jest.clearAllMocks()
+    globalThis.window = { MutationObserver: mutationObserver }
   })
 
   afterAll(() => {
@@ -22,19 +26,28 @@ describe('client initialization', () => {
     } else {
       delete globalThis.document
     }
+
+    if (windowDescriptor) {
+      Object.defineProperty(globalThis, 'window', windowDescriptor)
+    } else {
+      delete globalThis.window
+    }
   })
 
   test('enhances client and species selects using their default values', async () => {
     const clientSelect = { dataset: { defaultValue: 'Acme Farm' } }
     const speciesSelect = { dataset: { defaultValue: 'Sheep' } }
     const editButton = { hidden: false }
+    const hint = { setAttribute: jest.fn() }
     globalThis.document = {
+      body: {},
       querySelector: jest.fn((selector) => {
         if (selector === 'select#client') return clientSelect
         if (selector === 'select#species') return speciesSelect
         if (selector === '[data-client-edit-button]') return editButton
         return null
-      })
+      }),
+      querySelectorAll: jest.fn((selector) => selector === '.autocomplete__hint' ? [hint] : [])
     }
     clientSelect.addEventListener = jest.fn()
 
@@ -52,6 +65,9 @@ describe('client initialization', () => {
     })
     expect(editButton.hidden).toBe(true)
     expect(clientSelect.addEventListener).toHaveBeenCalledWith('change', expect.any(Function))
+    expect(hint.setAttribute).toHaveBeenCalledWith('aria-hidden', 'true')
+    expect(mutationObserver).toHaveBeenCalledWith(expect.any(Function))
+    expect(observe).toHaveBeenCalledWith(globalThis.document.body, { childList: true, subtree: true })
 
     clientSelect.value = '101'
     clientSelect.addEventListener.mock.calls[0][1]()
@@ -60,7 +76,9 @@ describe('client initialization', () => {
 
   test('does not enhance a client select when it is not present', async () => {
     globalThis.document = {
-      querySelector: jest.fn().mockReturnValue(null)
+      body: {},
+      querySelector: jest.fn().mockReturnValue(null),
+      querySelectorAll: jest.fn().mockReturnValue([])
     }
 
     await import('../../src/client/all.js')
@@ -80,6 +98,7 @@ describe('client initialization', () => {
       hidden: false
     }))
     globalThis.document = {
+      body: {},
       querySelector: jest.fn((selector) => selector === '#numberOfAnimals' ? numberOfAnimals : null),
       querySelectorAll: jest.fn((selector) => selector === '.app-animal-id' ? animalIdInputs : [])
     }

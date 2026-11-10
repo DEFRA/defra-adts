@@ -6,10 +6,10 @@ test.describe('Client lookup via LIMS', () => {
   test('renders LIMS clients as options and queries LIMS server-side', async ({ page }) => {
     await page.goto('/submission-01-client-details')
 
-    await expect(page.locator('option[value="client-001"]')).toHaveText(
+    await expect(page.locator('#client option[value="client-001"]')).toHaveText(
       'Example Farm, North Field, 1 Test Lane, Teston, Dorset, ZZ1 1ZZ, 12/345/6789'
     )
-    await expect(page.locator('option[value="42"]')).toHaveText('Second Example Farm')
+    await expect(page.locator('#client option[value="42"]')).toHaveText('Second Example Farm')
 
     const limsRequests = await (await page.request.get(`${limsUrl}/__requests`)).json()
     expect(limsRequests).toContainEqual({ pvsId: 'E2E-PVS-001', filter: '' })

@@ -113,6 +113,41 @@ describe('client initialization', () => {
     expect(enhanceSelectElement).not.toHaveBeenCalled()
   })
 
+  test('preserves the client selection before opening the new client address page', async () => {
+    const form = {
+      appendChild: jest.fn(),
+      submit: jest.fn()
+    }
+    const createClientAddressLink = {
+      addEventListener: jest.fn(),
+      closest: jest.fn().mockReturnValue(form)
+    }
+    const createdInput = {}
+    globalThis.document = {
+      querySelector: jest.fn((selector) => selector === '[data-create-client-address-link]'
+        ? createClientAddressLink
+        : null),
+      querySelectorAll: jest.fn().mockReturnValue([]),
+      createElement: jest.fn().mockReturnValue(createdInput)
+    }
+
+    await import('../../src/client/all.js')
+
+    const clickHandler = createClientAddressLink.addEventListener.mock.calls[0][1]
+    const event = { preventDefault: jest.fn() }
+    clickHandler(event)
+
+    expect(event.preventDefault).toHaveBeenCalled()
+    expect(form.action).toBe('/submission-01-client-address/start')
+    expect(createdInput).toMatchObject({
+      type: 'hidden',
+      name: 'intent',
+      value: 'newClientAddress'
+    })
+    expect(form.appendChild).toHaveBeenCalledWith(createdInput)
+    expect(form.submit).toHaveBeenCalled()
+  })
+
   test('enhances each county select using its own default value', async () => {
     const countySelect = { dataset: { defaultValue: 'Dorset' } }
     const animalAddressCountySelect = { dataset: { defaultValue: 'Argyll and Bute' } }

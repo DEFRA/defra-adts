@@ -61,13 +61,15 @@ describe('Submission client details page', () => {
     expect(response.payload).toContain('<form method="post" action="/submission-01-client-details" novalidate>')
     expect(response.payload).toContain('<select class="govuk-select" id="client" name="clientId"')
     expect(response.payload).toContain('name="intent"')
-    expect(response.payload).toContain('href="/submission-01-client-details?intent=new">create a new client</a>')
+    expect(response.payload).toContain('href="/submission-01-client-address?intent=new"')
+    expect(response.payload).toContain('create a new client')
     expect(response.payload).toMatch(/>\s*Continue\s*</)
     expect(response.payload).toContain('href="/assets/css/accessible-autocomplete.min.css"')
     expect(response.payload).toContain('<option value="101">Acme Farm</option>')
     expect(response.payload).toContain('<option value="102">Green Acres</option>')
     expect(response.payload).toContain('<select class="govuk-select" id="animalAddress" name="animalAddressClientId"')
-    expect(response.payload).toContain('href="/submission-01-client-details?intent=newAnimalAddress">create a new animal\'s address</a>')
+    expect(response.payload).toContain('href="/submission-01-animal-address?intent=new"')
+    expect(response.payload).toContain('create a new animal\'s address')
     expect(response.payload).toMatch(/data-client-edit-button\s+hidden/)
     expect(response.payload).toMatch(/data-animal-address-edit-button hidden/)
     expect(globalThis.fetch).toHaveBeenCalledWith('http://localhost:3200/GetClients')
@@ -115,14 +117,12 @@ describe('Submission client details page', () => {
     expect(revisitResponse.payload).toMatch(/data-client-edit-button\s*>Edit<\/button>/)
   })
 
-  test('renders the animal location question with a conditional animal address section', async () => {
+  test('renders the animal location question with a separate create-address link', async () => {
     const response = await server.inject({ method: 'GET', url })
 
     expect(response.payload).toContain('Are the animals at the client’s address?')
     expect(response.payload).toMatch(/name="animalsAtClientAddress"[^>]*value="yes"/)
-    expect(response.payload).toMatch(/name="animalsAtClientAddress"[^>]*value="no"[^>]*data-aria-controls="conditional-animalsAtClientAddress-2"/)
-    expect(response.payload).toContain('govuk-radios__conditional govuk-radios__conditional--hidden')
-    expect(response.payload).toContain('Animal address or location')
+    expect(response.payload).toMatch(/id="animal-address-selection" hidden/)
     expect(response.payload).toContain('name="animalAddressClientId"')
     expect(response.payload).toContain('Select an animal address')
     expect(response.payload).toContain('create a new animal\'s address')
@@ -334,9 +334,8 @@ describe('Submission client details page', () => {
     ])
 
     const animalAddressResponse = await server.inject({
-      method: 'POST',
-      url,
-      payload: { clientId: '101', intent: 'newAnimalAddress', animalsAtClientAddress: 'no' }
+      method: 'GET',
+      url: '/submission-01-animal-address?intent=new'
     })
 
     expect(animalAddressResponse.statusCode).toBe(200)
@@ -387,19 +386,22 @@ describe('Submission client details page', () => {
   test('allows entering new client details manually without a client record', async () => {
     const newClientPage = await server.inject({
       method: 'GET',
-      url: `${url}?intent=new`
+      url: '/submission-01-client-address?intent=new'
     })
 
     expect(newClientPage.statusCode).toBe(200)
     expect(newClientPage.payload).toContain('name="name"')
     expect(newClientPage.payload).toContain('name="addressLine1"')
     expect(newClientPage.payload).toContain('name="cph"')
+    expect(newClientPage.payload).not.toContain('name="animalsAtClientAddress"')
+    expect(newClientPage.payload).toMatch(/>\s*Save\s*</)
+    expect(newClientPage.payload).toMatch(/govuk-button--secondary[^>]*name="intent"[^>]*value="cancel"[^>]*>Cancel</)
 
     const response = await server.inject({
       method: 'POST',
-      url,
+      url: '/submission-01-client-address',
+      headers: { cookie: getCookieHeader(newClientPage) },
       payload: {
-        clientId: '',
         name: 'Jane Smith',
         farmName: 'Green Farm',
         addressLine1: '1 Farm Lane',
@@ -412,7 +414,7 @@ describe('Submission client details page', () => {
     })
 
     expect(response.statusCode).toBe(302)
-    expect(response.headers.location).toBe('/submission-02-species')
+    expect(response.headers.location).toBe(url)
     const revisitResponse = await server.inject({
       method: 'GET',
       url,
@@ -428,16 +430,34 @@ describe('Submission client details page', () => {
       postcode: 'AB1 2CD',
       cph: '48/234/2348'
     })
-    expect(revisitResponse.payload).toContain('value="Jane Smith"')
+    expect(revisitResponse.payload).toContain('New client')
+    expect(revisitResponse.payload).toContain('Jane Smith')
+
+    const continueResponse = await server.inject({
+      method: 'POST',
+      url,
+      headers: { cookie: getCookieHeader(response) },
+      payload: { clientId: '' }
+    })
+    expect(continueResponse.statusCode).toBe(302)
+    expect(continueResponse.headers.location).toBe('/submission-02-species')
+    const continuedState = await server.inject({
+      method: 'GET',
+      url,
+      headers: { cookie: getCookieHeader(continueResponse) }
+    })
+    expect(continuedState.request.response.source.context.submissionFormState.formData.clientDetails).toMatchObject({
+      name: 'Jane Smith',
+      addressLine1: '1 Farm Lane',
+      cph: '48/234/2348'
+    })
   })
 
   test('shows a GOV.UK error when a manually entered client CPH has the wrong format', async () => {
     const response = await server.inject({
       method: 'POST',
-      url,
+      url: '/submission-01-client-address',
       payload: {
-        clientId: '',
-        manualClientEntry: 'yes',
         cph: '12/34/5678'
       }
     })
@@ -450,12 +470,51 @@ describe('Submission client details page', () => {
     expect(response.payload).toContain('value="12/34/5678"')
   })
 
+  test('canceling a new client address returns to the saved client selection', async () => {
+    const selectedClient = await server.inject({
+      method: 'POST',
+      url,
+      payload: { clientId: '101', animalsAtClientAddress: 'no' }
+    })
+    const startResponse = await server.inject({
+      method: 'POST',
+      url: '/submission-01-client-address/start',
+      headers: { cookie: getCookieHeader(selectedClient) },
+      payload: {
+        clientId: '101',
+        animalsAtClientAddress: 'no',
+        animalAddressClientId: '102',
+        intent: 'newClientAddress'
+      }
+    })
+    expect(startResponse.statusCode).toBe(302)
+
+    const cancelled = await server.inject({
+      method: 'POST',
+      url: '/submission-01-client-address',
+      headers: { cookie: getCookieHeader(startResponse) },
+      payload: { intent: 'cancel' }
+    })
+    expect(cancelled.statusCode).toBe(302)
+    expect(cancelled.headers.location).toBe(url)
+
+    const revisitResponse = await server.inject({
+      method: 'GET',
+      url,
+      headers: { cookie: getCookieHeader(cancelled) || getCookieHeader(startResponse) }
+    })
+    expect(revisitResponse.request.response.source.context.submissionFormState.formData.clientDetails).toMatchObject({
+      clientId: '101',
+      animalsAtClientAddress: 'no',
+      animalAddressClientId: '102'
+    })
+  })
+
   test('shows a GOV.UK error when a manually entered animal address CPH has the wrong format', async () => {
     const response = await server.inject({
       method: 'POST',
-      url,
+      url: '/submission-01-animal-address',
       payload: {
-        animalsAtClientAddress: 'no',
         animalAddressName: 'Second Site',
         animalAddressCph: '12-345-6789'
       }
@@ -475,9 +534,9 @@ describe('Submission client details page', () => {
       url,
       payload: { intent: 'new' }
     })
-    const animalAddressPage = await server.inject({
+    const animalAddressStart = await server.inject({
       method: 'POST',
-      url,
+      url: '/submission-01-animal-address/start',
       headers: { cookie: getCookieHeader(newClientPage) },
       payload: {
         intent: 'newAnimalAddress',
@@ -494,38 +553,30 @@ describe('Submission client details page', () => {
         animalsAtClientAddress: 'no'
       }
     })
+    expect(animalAddressStart.statusCode).toBe(302)
+
+    const animalAddressPage = await server.inject({
+      method: 'GET',
+      url: '/submission-01-animal-address?intent=new',
+      headers: { cookie: getCookieHeader(animalAddressStart) }
+    })
 
     expect(animalAddressPage.statusCode).toBe(200)
-    expect(animalAddressPage.payload).toContain('name="name"')
-    expect(animalAddressPage.payload).toContain('name="addressLine1"')
     expect(animalAddressPage.payload).toContain('name="animalAddressName"')
     expect(animalAddressPage.payload).toContain('name="animalAddressAddressLine1"')
-    expect(animalAddressPage.payload.indexOf('name="cph"')).toBeLessThan(
-      animalAddressPage.payload.indexOf('name="name"')
-    )
     expect(animalAddressPage.payload.indexOf('name="animalAddressCph"')).toBeLessThan(
       animalAddressPage.payload.indexOf('name="animalAddressName"')
     )
-    expect(animalAddressPage.payload).toContain('>Cancel</button>')
-    expect(animalAddressPage.payload).not.toContain('Cancel new animal address')
-    expect(animalAddressPage.payload).toContain('value="Jane Smith"')
+    expect(animalAddressPage.payload).toMatch(
+      /govuk-button--secondary[^>]*name="intent"[^>]*value="cancel"[^>]*>Cancel<\/button>/
+    )
+    expect(animalAddressPage.payload).not.toContain('name="cph"')
 
     const response = await server.inject({
       method: 'POST',
-      url,
-      headers: { cookie: getCookieHeader(animalAddressPage) },
+      url: '/submission-01-animal-address',
+      headers: { cookie: getCookieHeader(animalAddressPage) || getCookieHeader(animalAddressStart) },
       payload: {
-        manualClientEntry: 'yes',
-        clientId: '',
-        name: 'Jane Smith',
-        farmName: 'Client Farm',
-        addressLine1: '1 Client Lane',
-        addressLine2: '',
-        addressLine3: '',
-        county: 'Northshire',
-        postcode: 'AB1 2CD',
-        cph: '48/234/2348',
-        animalsAtClientAddress: 'no',
         animalAddressName: 'Second Site',
         animalAddressFarmName: 'Animal Farm',
         animalAddressAddressLine1: '2 Animal Road',
@@ -553,6 +604,8 @@ describe('Submission client details page', () => {
       postcode: 'AB1 2CD',
       cph: '48/234/2348',
       animalsAtClientAddress: 'no',
+      animalAddressClientId: '',
+      animalAddress: 'Second Site, Animal Farm, 2 Animal Road, Southshire, CD3 4EF, 49/345/3456',
       animalAddressDetails: {
         name: 'Second Site',
         farmName: 'Animal Farm',
@@ -564,8 +617,10 @@ describe('Submission client details page', () => {
         cph: '49/345/3456'
       }
     })
-    expect(revisitResponse.payload).toContain('value="Jane Smith"')
-    expect(revisitResponse.payload).toContain('value="Second Site"')
+    expect(revisitResponse.payload).toContain('Jane Smith')
+    expect(revisitResponse.payload).toContain(
+      'data-default-value="Second Site, Animal Farm, 2 Animal Road, Southshire, CD3 4EF, 49/345/3456"'
+    )
   })
 
   test('looks up and edits an existing animal address from the client records', async () => {
@@ -607,7 +662,7 @@ describe('Submission client details page', () => {
     expect(revisitResponse.payload).toContain('data-animal-address-edit-button')
     expect(revisitResponse.payload).toMatch(/data-animal-address-edit-button[^>]*>Edit<\/button>/)
 
-    const editResponse = await server.inject({
+    const editRedirect = await server.inject({
       method: 'POST',
       url,
       headers: { cookie: getCookieHeader(response) },
@@ -618,7 +673,14 @@ describe('Submission client details page', () => {
         intent: 'editAnimalAddress'
       }
     })
+    expect(editRedirect.statusCode).toBe(302)
+    const editResponse = await server.inject({
+      method: 'GET',
+      url: editRedirect.headers.location,
+      headers: { cookie: getCookieHeader(editRedirect) }
+    })
     expect(editResponse.statusCode).toBe(200)
+    expect(editResponse.payload).toContain('Edit animal address')
     expect(editResponse.payload).toContain('value="Green Acres"')
     expect(editResponse.payload).toContain('value="2 Green Lane"')
     expect(editResponse.payload).toContain('value="22/222/2222"')
@@ -627,13 +689,12 @@ describe('Submission client details page', () => {
   test('opens the manual animal-address form from its create link', async () => {
     const response = await server.inject({
       method: 'GET',
-      url: `${url}?intent=newAnimalAddress`
+      url: '/submission-01-animal-address?intent=new'
     })
 
     expect(response.statusCode).toBe(200)
     expect(response.payload).toContain('name="animalAddressName"')
     expect(response.payload).toContain('name="animalAddressAddressLine1"')
-    expect(response.payload).toMatch(/name="animalsAtClientAddress"[^>]*value="no"[^>]*checked/)
   })
 
   test('cancel returns to client selection without saving edits', async () => {

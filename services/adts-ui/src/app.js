@@ -34,6 +34,7 @@ const createServer = async () => {
     {
       plugin: Yar,
       options: {
+        maxCookieSize: 4096,
         cookieOptions: {
           password: sessionSecret,
           isSecure: process.env.NODE_ENV !== 'development',

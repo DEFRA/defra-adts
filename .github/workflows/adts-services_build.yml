@@ -207,8 +207,8 @@ jobs:
         && needs.detect_changes.outputs.ui_service == 'true'
         && needs.validate_ui_service.result == 'success'
         && needs.e2e_testing.result == 'success'
-        && github.event_name != 'pull_request'
       }}
+#        && github.event_name != 'pull_request'
     permissions:
       contents: write
       id-token: write
@@ -240,8 +240,8 @@ jobs:
         && needs.detect_changes.outputs.backend_service == 'true'
         && needs.validate_backend_service.result == 'success'
         && needs.e2e_testing.result == 'success'
-        && github.event_name != 'pull_request'
       }}
+#        && github.event_name != 'pull_request'
 
     permissions:
       contents: write
@@ -274,8 +274,8 @@ jobs:
         && needs.detect_changes.outputs.submissions_service == 'true'
         && needs.validate_submissions_service.result == 'success'
         && needs.e2e_testing.result == 'success'
-        && github.event_name != 'pull_request'
       }}
+#        && github.event_name != 'pull_request'
 
     permissions:
       contents: write
@@ -294,36 +294,36 @@ jobs:
       aws-role: ${{ vars.AWS_ECR_ROLE_NAME }}
       platforms: linux
 
-  update_versions:
-    name: Versions
-
-    needs:
-      - detect_changes
-      - e2e_testing
-      - build_ui_container
-      - build_backend_container
-      - build_submissions_container
-
-
-    permissions:
-      contents: write
-
-    if: |
-      ${{
-        !cancelled() &&
-        needs.detect_changes.outputs.any_service == 'true' &&
-        (
-          needs.detect_changes.outputs.ui_service != 'true' ||
-          needs.build_ui_container.result == 'success'
-        ) &&
-        (
-          needs.detect_changes.outputs.backend_service != 'true' ||
-          needs.build_backend_container.result == 'success'
-        ) &&
-        (
-          needs.detect_changes.outputs.submissions_service != 'true' ||
-          needs.build_submissions_container.result == 'success'
-        )
-      }}
-
-    uses: ./.github/workflows/_update_versions.yml
+#  update_versions:
+#    name: Versions
+#
+#    needs:
+#      - detect_changes
+#      - e2e_testing
+#      - build_ui_container
+#      - build_backend_container
+#      - build_submissions_container
+#
+#
+#    permissions:
+#      contents: write
+#
+#    if: |
+#      ${{
+#        !cancelled() &&
+#        needs.detect_changes.outputs.any_service == 'true' &&
+#        (
+#          needs.detect_changes.outputs.ui_service != 'true' ||
+#          needs.build_ui_container.result == 'success'
+#        ) &&
+#        (
+#          needs.detect_changes.outputs.backend_service != 'true' ||
+#          needs.build_backend_container.result == 'success'
+#        ) &&
+#        (
+#          needs.detect_changes.outputs.submissions_service != 'true' ||
+#          needs.build_submissions_container.result == 'success'
+#        )
+#      }}
+#
+#    uses: ./.github/workflows/_update_versions.yml

@@ -166,7 +166,7 @@ jobs:
           # this workflow updating the branch at the same time. Rebase once
           # before pushing in case another repository update arrived.
           git pull --rebase origin main
-          git push origin HEAD:main --force
+          git push origin HEAD:main
 
       - name: Version summary
         if: always()

@@ -1,7 +1,3 @@
 # ==========================
 # OS / Base Image Issues
 # ==========================
-
-# Accept brace expansion DoS in jest module (as of v30.5.2)
-##CVE-2026-102276
-##CVE-2026-102278

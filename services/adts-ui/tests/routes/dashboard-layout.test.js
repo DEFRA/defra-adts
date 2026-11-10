@@ -85,21 +85,23 @@ describe('Dashboard Layout', () => {
         expect(action).toContain('govuk-button__start-icon')
         expect(action).not.toContain('class="govuk-link"')
       }
-      expect(actions[0]).toContain('app-button--sick')
-      expect(actions[0]).toContain('Sick animal submission')
-      expect(actions[1]).toContain('app-button--healthy')
-      expect(actions[1]).toContain('Healthy animal submission')
+      for (const { text, className } of [
+        { text: 'Sick animal submission', className: 'app-button--sick' },
+        { text: 'Healthy animal submission', className: 'app-button--healthy' }
+      ]) {
+        const action = actions.find((link) => link.includes(text))
+        expect(action).toContain(className)
+      }
       expect(html).toMatch(/<div class="app-button-stack">\s*<a[^>]*app-button--sick/)
     })
 
-    test('styles healthy as the brand colour and sick as yellow tint 25%', () => {
+    test('styles both submission actions with the brand colour', () => {
       const { css } = sass.compile(
         path.join(process.cwd(), 'src/assets/scss/application.scss'),
         { loadPaths: [path.join(process.cwd(), 'node_modules')], style: 'compressed', quietDeps: true, silenceDeprecations: ['import', 'global-builtin', 'color-functions'] }
       )
 
-      expect(css).toMatch(/\.app-button--healthy\{background-color:#1d70b8;color:#fff/)
-      expect(css).toMatch(/\.app-button--sick\{background-color:#ffe640;color:#0b0c0c/)
+      expect(css).toMatch(/\.app-button--healthy,.app-button--sick\{background-color:#1d70b8;color:#fff/)
     })
 
     test('stacks the submission buttons vertically', () => {

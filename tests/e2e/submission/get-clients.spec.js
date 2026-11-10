@@ -4,12 +4,14 @@ const limsUrl = 'http://localhost:3300'
 
 test.describe('Client lookup via LIMS', () => {
   test('renders LIMS clients as options and queries LIMS server-side', async ({ page }) => {
-    await page.goto('/submission-01-client-details')
+    const response = await page.goto('/submission-01-client-details')
+    const html = await response.text()
 
-    await expect(page.locator('#client option[value="client-001"]')).toHaveText(
-      'Example Farm, North Field, 1 Test Lane, Teston, Dorset, ZZ1 1ZZ, 12/345/6789'
+    await expect(page.getByRole('combobox', { name: 'Client' })).toBeVisible()
+    expect(html).toContain(
+      '<option value="client-001">Example Farm, North Field, 1 Test Lane, Teston, Dorset, ZZ1 1ZZ, 12/345/6789</option>'
     )
-    await expect(page.locator('#client option[value="42"]')).toHaveText('Second Example Farm')
+    expect(html).toContain('<option value="42">Second Example Farm</option>')
 
     const limsRequests = await (await page.request.get(`${limsUrl}/__requests`)).json()
     expect(limsRequests).toContainEqual({ pvsId: 'E2E-PVS-001', filter: '' })

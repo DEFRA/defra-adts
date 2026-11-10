@@ -24,20 +24,39 @@ describe('client initialization', () => {
     }
   })
 
-  test('enhances client and species selects using their default values', async () => {
-    const clientSelect = { dataset: { defaultValue: 'Acme Farm' } }
+  test('enhances client and animal address lookups with selection-specific edit controls', async () => {
+    const clientOption = { textContent: 'Acme Farm', selected: false }
+    const animalAddressOption = { textContent: 'Green Acres', selected: false }
+    const clientSelect = {
+      dataset: { defaultValue: 'Acme Farm' },
+      options: [clientOption]
+    }
+    const animalAddressSelect = {
+      dataset: { defaultValue: 'Green Acres' },
+      options: [animalAddressOption]
+    }
+    Object.defineProperty(clientSelect, 'value', {
+      get: () => clientOption.selected ? '101' : ''
+    })
+    Object.defineProperty(animalAddressSelect, 'value', {
+      get: () => animalAddressOption.selected ? '102' : ''
+    })
     const speciesSelect = { dataset: { defaultValue: 'Sheep' } }
-    const editButton = { hidden: false }
+    const editButton = { hidden: true }
+    const animalAddressEditButton = { hidden: true }
     globalThis.document = {
       querySelector: jest.fn((selector) => {
         if (selector === 'select#client') return clientSelect
+        if (selector === 'select#animalAddress') return animalAddressSelect
         if (selector === 'select#species') return speciesSelect
         if (selector === '[data-client-edit-button]') return editButton
+        if (selector === '[data-animal-address-edit-button]') return animalAddressEditButton
         return null
       }),
       querySelectorAll: jest.fn().mockReturnValue([])
     }
     clientSelect.addEventListener = jest.fn()
+    animalAddressSelect.addEventListener = jest.fn()
 
     await import('../../src/client/all.js')
 
@@ -45,18 +64,40 @@ describe('client initialization', () => {
     expect(globalThis.document.querySelector).toHaveBeenCalledWith('select#client')
     expect(enhanceSelectElement).toHaveBeenCalledWith({
       defaultValue: 'Acme Farm',
-      selectElement: clientSelect
+      selectElement: clientSelect,
+      onConfirm: expect.any(Function)
+    })
+    expect(enhanceSelectElement).toHaveBeenCalledWith({
+      defaultValue: 'Green Acres',
+      selectElement: animalAddressSelect,
+      onConfirm: expect.any(Function)
     })
     expect(enhanceSelectElement).toHaveBeenCalledWith({
       defaultValue: 'Sheep',
       selectElement: speciesSelect
     })
     expect(editButton.hidden).toBe(true)
+    expect(animalAddressEditButton.hidden).toBe(true)
     expect(clientSelect.addEventListener).toHaveBeenCalledWith('change', expect.any(Function))
+    expect(animalAddressSelect.addEventListener).toHaveBeenCalledWith('change', expect.any(Function))
 
-    clientSelect.value = '101'
-    clientSelect.addEventListener.mock.calls[0][1]()
+    const clientLookupConfig = enhanceSelectElement.mock.calls.find(([config]) =>
+      config.selectElement === clientSelect
+    )[0]
+    clientLookupConfig.onConfirm('Acme Farm')
+    expect(clientOption.selected).toBe(true)
     expect(editButton.hidden).toBe(false)
+
+    const animalAddressLookupConfig = enhanceSelectElement.mock.calls.find(([config]) =>
+      config.selectElement === animalAddressSelect
+    )[0]
+    animalAddressLookupConfig.onConfirm('Green Acres')
+    expect(animalAddressOption.selected).toBe(true)
+    expect(animalAddressEditButton.hidden).toBe(false)
+
+    clientOption.selected = false
+    clientSelect.addEventListener.mock.calls[0][1]()
+    expect(editButton.hidden).toBe(true)
   })
 
   test('does not enhance a client select when it is not present', async () => {
@@ -88,10 +129,12 @@ describe('client initialization', () => {
     expect(enhanceSelectElement).toHaveBeenCalledTimes(2)
     expect(enhanceSelectElement).toHaveBeenCalledWith({
       defaultValue: 'Dorset',
+      inputClasses: 'govuk-!-width-one-half',
       selectElement: countySelect
     })
     expect(enhanceSelectElement).toHaveBeenCalledWith({
       defaultValue: 'Argyll and Bute',
+      inputClasses: 'govuk-!-width-one-half',
       selectElement: animalAddressCountySelect
     })
   })

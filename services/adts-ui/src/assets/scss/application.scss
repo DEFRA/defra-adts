@@ -120,6 +120,15 @@
   padding-left: 0;
 }
 
+.app-create-address-link {
+  margin-top: govuk-spacing(3);
+}
+
+[data-client-edit-button][hidden],
+[data-animal-address-edit-button][hidden] {
+  display: none;
+}
+
 // ==========================================================================
 // ADTS Custom Search Results Styles
 // ==========================================================================

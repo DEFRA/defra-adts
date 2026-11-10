@@ -8,7 +8,7 @@
 {% from "govuk/components/error-summary/macro.njk" import govukErrorSummary %}
 {% from "macros/submissionProgress.njk" import submissionProgress %}
 
-{% block pageTitle %}{% if selectionError %}Error: {% endif %}Client details – ADTS{% endblock %}
+{% block pageTitle %}{% if selectionError or errorList.length %}Error: {% endif %}Client details – ADTS{% endblock %}
 
 {% block head %}
   <link rel="stylesheet" href="/assets/css/application.css">
@@ -36,7 +36,12 @@
 
   {{ submissionProgress(1) }}
 
-  {% if selectionError %}
+  {% if errorList.length %}
+    {{ govukErrorSummary({
+      titleText: "There is a problem",
+      errorList: errorList
+    }) }}
+  {% elif selectionError %}
     {{ govukErrorSummary({
       titleText: "There is a problem",
       errorList: [{ text: selectionError, href: "#client" }]
@@ -55,6 +60,14 @@
       <input type="hidden" name="clientId" value="{{ clientDetails.clientId or '' }}">
       <input type="hidden" name="manualClientEntry" value="yes">
 
+      {{ govukInput({
+        id: "cph",
+        name: "cph",
+        value: clientDetails.cph,
+        label: { text: "CPH number eg 48/234/2348" },
+        errorMessage: { text: errors.cph } if errors.cph,
+        classes: "govuk-!-width-one-half"
+      }) }}
       {{ govukInput({
         id: "name",
         name: "name",
@@ -112,13 +125,6 @@
         autocomplete: "postal-code",
         classes: "govuk-!-width-one-half"
       }) }}
-      {{ govukInput({
-        id: "cph",
-        name: "cph",
-        value: clientDetails.cph,
-        label: { text: "CPH number eg 48/234/2348" },
-        classes: "govuk-!-width-one-half"
-      }) }}
       <button class="govuk-button govuk-button--secondary" type="submit" name="intent" value="cancel">Cancel</button>
     {% else %}
       <p class="govuk-body-l">Enter the name of your client, their address, or the County Parish Holding (CPH) eg 48/234/2348:</p>
@@ -134,6 +140,7 @@
         },
         items: clientOptions
       }) }}
+      <p class="govuk-body app-create-address-link">Or you can <a class="govuk-link" href="/submission-01-client-details?intent=new">create a new client</a>.</p>
       {% if selectedClient %}
         <div class="govuk-inset-text">
           <h2 class="govuk-heading-m">Selected client</h2>
@@ -158,8 +165,8 @@
         name="intent"
         value="edit"
         data-client-edit-button
-      >Edit client details</button>
-      <button class="govuk-button govuk-button--secondary" type="submit" name="intent" value="new">Enter client details manually</button>
+        {% if not selectedClient %}hidden{% endif %}
+      >Edit</button>
     {% endif %}
 
     <hr class="govuk-section-break govuk-section-break--l govuk-section-break--visible">
@@ -167,7 +174,15 @@
       <h2 class="govuk-heading-l">Animal address or location</h2>
       {% if animalAddressEditMode %}
         <p class="govuk-body-l">Enter the details of the animal address.</p>
-        <input type="hidden" name="animalAddress" value="{{ animalAddress }}">
+        <input type="hidden" name="animalAddressClientId" value="{{ animalAddressClientId }}">
+        {{ govukInput({
+          id: "animalAddressCph",
+          name: "animalAddressCph",
+          value: animalAddressDetails.cph,
+          label: { text: "CPH number eg 48/234/2348" },
+          errorMessage: { text: errors.animalAddressCph } if errors.animalAddressCph,
+          classes: "govuk-!-width-one-half"
+        }) }}
         {{ govukInput({
           id: "animalAddressName",
           name: "animalAddressName",
@@ -225,23 +240,41 @@
           autocomplete: "postal-code",
           classes: "govuk-!-width-one-half"
         }) }}
-        {{ govukInput({
-          id: "animalAddressCph",
-          name: "animalAddressCph",
-          value: animalAddressDetails.cph,
-          label: { text: "CPH number eg 48/234/2348" },
-          classes: "govuk-!-width-one-half"
-        }) }}
         <button class="govuk-button govuk-button--secondary" type="submit" name="intent" value="cancelAnimalAddress">Cancel</button>
       {% else %}
-        {{ govukInput({
+        {{ govukSelect({
           id: "animalAddress",
-          name: "animalAddress",
-          value: animalAddress,
-          label: { text: "Enter animal's address or the County Parish Holding (CPH) eg 48/234/2348:" },
-          attributes: { placeholder: "start typing" }
+          name: "animalAddressClientId",
+          label: {
+            text: "Animal address",
+            classes: "govuk-visually-hidden"
+          },
+          attributes: {
+            "data-default-value": selectedAnimalAddressName
+          },
+          items: animalAddressOptions
         }) }}
-        <button class="govuk-button govuk-button--secondary" type="submit" name="intent" value="newAnimalAddress">Enter animal address manually</button>
+        <input type="hidden" name="animalAddress" value="{{ animalAddress }}">
+        <p class="govuk-body app-create-address-link">Or you can <a class="govuk-link" href="/submission-01-client-details?intent=newAnimalAddress">create a new animal's address</a>.</p>
+        {% if selectedAnimalAddress %}
+          <div class="govuk-inset-text">
+            <h3 class="govuk-heading-m">Selected animal address</h3>
+            <p class="govuk-body">{{ selectedAnimalAddress.name }}</p>
+            {% if selectedAnimalAddress.farmName %}
+              <p class="govuk-body">{{ selectedAnimalAddress.farmName }}</p>
+            {% endif %}
+            {% if selectedAnimalAddress.address %}
+              <p class="govuk-body">{{ selectedAnimalAddress.address }}</p>
+            {% endif %}
+            {% if selectedAnimalAddress.county or selectedAnimalAddress.postcode %}
+              <p class="govuk-body">{{ selectedAnimalAddress.county }}{% if selectedAnimalAddress.county and selectedAnimalAddress.postcode %}, {% endif %}{{ selectedAnimalAddress.postcode }}</p>
+            {% endif %}
+            {% if selectedAnimalAddress.cph %}
+              <p class="govuk-body">{{ selectedAnimalAddress.cph }}</p>
+            {% endif %}
+          </div>
+        {% endif %}
+        <button class="govuk-button govuk-button--secondary" type="submit" name="intent" value="editAnimalAddress" data-animal-address-edit-button {% if not selectedAnimalAddress %}hidden{% endif %}>Edit</button>
       {% endif %}
     {% endset %}
     <div class="app-animal-address">

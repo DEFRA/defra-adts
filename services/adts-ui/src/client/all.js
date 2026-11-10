@@ -4,6 +4,7 @@ import accessibleAutocomplete from 'accessible-autocomplete'
 initAll()
 
 const clientSelect = document.querySelector('select#client')
+const animalAddressSelect = document.querySelector('select#animalAddress')
 
 const speciesSelect = document.querySelector('select#species')
 
@@ -14,22 +15,42 @@ if (speciesSelect) {
   })
 }
 
-if (clientSelect) {
+const enhanceAddressLookup = (selectElement, editButton) => {
+  const syncEditButton = () => {
+    if (editButton) {
+      editButton.hidden = !selectElement.value
+    }
+  }
+
   accessibleAutocomplete.enhanceSelectElement({
-    defaultValue: clientSelect.dataset.defaultValue,
-    selectElement: clientSelect
+    defaultValue: selectElement.dataset.defaultValue,
+    selectElement,
+    onConfirm: (query) => {
+      const selectedOption = Array.from(selectElement.options)
+        .find((option) => (option.textContent || option.innerText) === query)
+
+      if (selectedOption) {
+        selectedOption.selected = true
+        syncEditButton()
+      }
+    }
   })
 
-  const editClientButton = document.querySelector('[data-client-edit-button]')
-
-  if (editClientButton) {
-    const syncEditButton = () => {
-      editClientButton.hidden = !clientSelect.value
-    }
-
-    clientSelect.addEventListener('change', syncEditButton)
+  if (editButton) {
+    selectElement.addEventListener('change', syncEditButton)
     syncEditButton()
   }
+}
+
+if (clientSelect) {
+  enhanceAddressLookup(clientSelect, document.querySelector('[data-client-edit-button]'))
+}
+
+if (animalAddressSelect) {
+  enhanceAddressLookup(
+    animalAddressSelect,
+    document.querySelector('[data-animal-address-edit-button]')
+  )
 }
 
 const countySelects = document.querySelectorAll('select#county, select#animalAddressCounty')
@@ -37,6 +58,7 @@ const countySelects = document.querySelectorAll('select#county, select#animalAdd
 countySelects.forEach((countySelect) => {
   accessibleAutocomplete.enhanceSelectElement({
     defaultValue: countySelect.dataset.defaultValue,
+    inputClasses: 'govuk-!-width-one-half',
     selectElement: countySelect
   })
 })

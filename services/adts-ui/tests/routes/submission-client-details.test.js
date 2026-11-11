@@ -354,8 +354,8 @@ describe('Submission client details page', () => {
       const response = await server.inject({ method: 'GET', url: addressUrl })
 
       expect(response.statusCode).toBe(200)
-      expect(response.payload).toContain('>My Account</a>')
-      expect(response.payload).toContain('>Sign out</a>')
+      expect(response.payload).toMatch(/>\s*My Account\s*<\/a>/)
+      expect(response.payload).toMatch(/>\s*Sign out\s*<\/a>/)
     }
   })
 

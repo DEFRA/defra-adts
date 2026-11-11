@@ -20,7 +20,7 @@ const createDocClient = (partitions) => {
 describe('getAnimalDetails', () => {
   test('maps species-specific options, filters applicability, and follows pagination', async () => {
     const docClient = createDocClient({
-      '123': { Items: [{ code: '123', description: 'Bird', isAvian: true }] },
+      123: { Items: [{ code: '123', description: 'Bird', isAvian: true }] },
       'REF#SPECIES_ANIMAL_BREEDS#SPECIES#123': [
         {
           Items: [{ code: 'BREED-1', description: 'First breed' }],

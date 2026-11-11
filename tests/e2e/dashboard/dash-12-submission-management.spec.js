@@ -8,7 +8,6 @@
 
 import { test, expect } from '@playwright/test'
 import { DashboardPage } from '../pages/dashboard.page.js'
-import { checkAccessibility } from '../utils/axe.js'
 
 test.describe('DASH-12 — Dashboard submission management', () => {
   /** @type {DashboardPage} */
@@ -36,16 +35,12 @@ test.describe('DASH-12 — Dashboard submission management', () => {
     await expect(page).toHaveURL(/client=OLD\+MCDONALD/)
   })
 
-    test('AC4: submission count is displayed above the list after search', async ({ page }) => {
+  test('AC4: submission count is displayed above the list after search', async ({ page }) => {
     // The count appears on the /results page after submitting a search.
     // Empty-state behaviour is covered here; populated behaviour (singular/plural,
     // actual numbers) will be added once LIMS mock data is available.
     await dashboard.fillClientFilter('OLD MCDONALD')
     await dashboard.submitSearch()
     await expect(page.locator('text=/\\d+ submissions? matching criteria/i')).toBeVisible()
-  })
-
-  test('A11y: dashboard page has no critical or serious accessibility violations', async ({ page }) => {
-    await checkAccessibility(page)
   })
 })

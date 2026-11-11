@@ -2,6 +2,8 @@ import { afterAll, beforeEach, describe, expect, jest, test } from '@jest/global
 
 const initAll = jest.fn()
 const enhanceSelectElement = jest.fn()
+const observe = jest.fn()
+const mutationObserver = jest.fn(() => ({ observe }))
 
 jest.unstable_mockModule('govuk-frontend', () => ({ initAll }))
 jest.unstable_mockModule('accessible-autocomplete', () => ({
@@ -9,11 +11,13 @@ jest.unstable_mockModule('accessible-autocomplete', () => ({
 }))
 
 const documentDescriptor = Object.getOwnPropertyDescriptor(globalThis, 'document')
+const windowDescriptor = Object.getOwnPropertyDescriptor(globalThis, 'window')
 
 describe('client initialization', () => {
   beforeEach(() => {
     jest.resetModules()
     jest.clearAllMocks()
+    globalThis.window = { MutationObserver: mutationObserver }
   })
 
   afterAll(() => {
@@ -21,6 +25,12 @@ describe('client initialization', () => {
       Object.defineProperty(globalThis, 'document', documentDescriptor)
     } else {
       delete globalThis.document
+    }
+
+    if (windowDescriptor) {
+      Object.defineProperty(globalThis, 'window', windowDescriptor)
+    } else {
+      delete globalThis.window
     }
   })
 
@@ -42,9 +52,10 @@ describe('client initialization', () => {
       get: () => animalAddressOption.selected ? '102' : ''
     })
     const speciesSelect = { dataset: { defaultValue: 'Sheep' } }
-    const editButton = { hidden: true }
-    const animalAddressEditButton = { hidden: true }
+    const editButton = { hidden: false }
+    const hint = { setAttribute: jest.fn() }
     globalThis.document = {
+      body: {},
       querySelector: jest.fn((selector) => {
         if (selector === 'select#client') return clientSelect
         if (selector === 'select#animalAddress') return animalAddressSelect
@@ -53,7 +64,7 @@ describe('client initialization', () => {
         if (selector === '[data-animal-address-edit-button]') return animalAddressEditButton
         return null
       }),
-      querySelectorAll: jest.fn().mockReturnValue([])
+      querySelectorAll: jest.fn((selector) => selector === '.autocomplete__hint' ? [hint] : [])
     }
     clientSelect.addEventListener = jest.fn()
     animalAddressSelect.addEventListener = jest.fn()
@@ -79,7 +90,9 @@ describe('client initialization', () => {
     expect(editButton.hidden).toBe(true)
     expect(animalAddressEditButton.hidden).toBe(true)
     expect(clientSelect.addEventListener).toHaveBeenCalledWith('change', expect.any(Function))
-    expect(animalAddressSelect.addEventListener).toHaveBeenCalledWith('change', expect.any(Function))
+    expect(hint.setAttribute).toHaveBeenCalledWith('aria-hidden', 'true')
+    expect(mutationObserver).toHaveBeenCalledWith(expect.any(Function))
+    expect(observe).toHaveBeenCalledWith(globalThis.document.body, { childList: true, subtree: true })
 
     const clientLookupConfig = enhanceSelectElement.mock.calls.find(([config]) =>
       config.selectElement === clientSelect
@@ -102,6 +115,7 @@ describe('client initialization', () => {
 
   test('does not enhance a client select when it is not present', async () => {
     globalThis.document = {
+      body: {},
       querySelector: jest.fn().mockReturnValue(null),
       querySelectorAll: jest.fn().mockReturnValue([])
     }
@@ -258,6 +272,7 @@ describe('client initialization', () => {
       hidden: false
     }))
     globalThis.document = {
+      body: {},
       querySelector: jest.fn((selector) => selector === '#numberOfAnimals' ? numberOfAnimals : null),
       querySelectorAll: jest.fn((selector) => selector === '.app-animal-id' ? animalIdInputs : [])
     }

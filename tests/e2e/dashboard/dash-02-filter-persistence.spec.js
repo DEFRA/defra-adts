@@ -22,7 +22,6 @@
  */
 
 import { test, expect } from '@playwright/test'
-import { checkAccessibility } from '../utils/axe.js'
 
 test.describe('DASH-02 — Dashboard filter persistence', () => {
   test.beforeEach(async ({ page }) => {
@@ -86,10 +85,6 @@ test.describe('DASH-02 — Dashboard filter persistence', () => {
   })
 
   test.describe('AC9: accessibility of filter controls', () => {
-    test('passes WCAG 2.2 AA checks via axe-core', async ({ page }) => {
-      await checkAccessibility(page)
-    })
-
     test('all filter controls are reachable by keyboard', async ({ page }) => {
       for (const label of ['Client', 'Clinician', 'Status', 'Submitted date']) {
         const field = page.getByLabel(label)

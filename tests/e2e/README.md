@@ -4,7 +4,7 @@ Cross-service Playwright tests that drive the ADTS application through a real br
 
 E2E is the top of the testing pyramid — slower and more expensive than unit, component or route tests. We keep this suite deliberately small and stable, focused on the user journeys that must work for ADTS to be useful. Everything else belongs in the per-service test folders inside `services/<service>/tests/`.
 
-See [ADTS Test Strategy v1.3](../../docs/test-strategy.md) for how this layer fits into the overall approach.
+See [ADTS Test Strategy v1.3](../../docs/test-strategy/README.md) for how this layer fits into the overall approach.
 
 ## Folder structure
 
@@ -104,20 +104,15 @@ If you hit `ERR_CONNECTION_REFUSED` on `http://localhost:3000`, a service hasn�
 
 ## Accessibility checks
 
-Each page tested should be run through axe via the helper in `utils/axe.js`:
+The dedicated `accessibility.spec.js` suite runs one axe check for each current user-facing page,
+plus scans for interactive autocomplete, conditional-field, dynamic-field, and form-validation
+states. Add new pages and important states there rather than duplicating axe scans in behaviour
+tests.
 
-```javascript
-import { checkAccessibility } from '../utils/axe.js'
+The shared helper in `utils/axe.js` runs WCAG 2.0 A, 2.0 AA, 2.1 A, 2.1 AA, and 2.2 AA rulesets,
+fails on any `critical` or `serious` violation, and reports findings by axe rule ID.
 
-test('page is accessible to WCAG 2.2 AA', async ({ page }) => {
-  await page.goto('/')
-  await checkAccessibility(page)
-})
-```
-
-The helper runs an axe scan with WCAG 2.0 A, 2.0 AA, 2.1 A, 2.1 AA, and 2.2 AA rulesets, fails the test on any `critical` or `serious` violation, and reports them with their axe rule ID.
-
-**Known exclusion:** `.govuk-header` is scoped out of axe runs because GOV.UK Frontend 5.14.0 header links fail WCAG 2.5.8 Target Size (17px actual vs 24px required). This is upstream — tracked in the backlog for review when GOV.UK Frontend bumps the header link target size.
+**Known exceptions:** the known GOV.UK Frontend 5.14.0 header-link WCAG 2.5.8 target-size finding is ignored only for targets inside `.govuk-header`. Its conditional-radios module also adds `aria-expanded` to the animal-address radio, which axe flags; only that exact attribute finding on that radio is ignored. Other rules and findings on these components remain checked.
 
 ## Mocks and test data
 
@@ -157,15 +152,17 @@ If a test can be written at a lower layer, prefer that — faster, cheaper, less
 
 ## When this suite runs in CI
 
-Workflow: `.github/workflows/e2e-tests.yml`
+Workflow: `.github/workflows/adts-services_build.yml` calls `.github/workflows/_e2e-tests.yml`.
 
-Triggers on push/PR to `main` when any of these change:
+Runs on push/PR to `main` when any of these E2E harness inputs change:
 - `tests/e2e/**`
+- `tests/mocks/**`
+- `local/dynamodb/**`
 - `playwright.config.js`
 - Root `package.json` / `package-lock.json`
-- `services/adts-ui/**`
-- `services/adts-submissions-service/**`
-- The workflow file itself
+- `.github/workflows/adts-services_build.yml` and `.github/workflows/_e2e-tests.yml`
+
+Changes limited to service source files do not run E2E automatically.
 
 Also triggerable manually from Actions → E2E tests (Playwright) → Run workflow.
 
@@ -176,6 +173,6 @@ A quick checklist:
 2. Pick the right folder — `smoke/`, `journeys/`, or `dashboard/`.
 3. Use a Page Object from `pages/` if you're interacting with the dashboard; add one if you're exercising a new page.
 4. Prefer `getByLabel`, `getByRole`, `getByText` over CSS/XPath selectors — accessible selectors are more stable and test accessibility by default.
-5. Add `await checkAccessibility(page)` to any new journey.
+5. Add each new user-facing page to `accessibility.spec.js`; keep axe scans out of individual behaviour tests.
 6. Keep assertions user-visible: `getByLabel('Status').toHaveValue('draft')` not `.app-status-dropdown[value="draft"]`.
 7. Tag the test file with `@story <TICKET>` and `@acs <AC list>` in a JSDoc at the top so traceability back to tickets is clear.

@@ -346,6 +346,19 @@ describe('Submission client details page', () => {
     expect(globalThis.fetch).toHaveBeenCalledWith('http://localhost:3200/GetCounties')
   })
 
+  test('renders account navigation on the client and animal address forms', async () => {
+    for (const addressUrl of [
+      '/submission-01-client-address?intent=new',
+      '/submission-01-animal-address?intent=new'
+    ]) {
+      const response = await server.inject({ method: 'GET', url: addressUrl })
+
+      expect(response.statusCode).toBe(200)
+      expect(response.payload).toContain('>My Account</a>')
+      expect(response.payload).toContain('>Sign out</a>')
+    }
+  })
+
   test('keeps a saved county that is missing from the reference data as an option', async () => {
     globalThis.fetch.mockImplementation(routeBackend({
       clients: [{ clientId: 101, name: 'Acme Farm', county: 'Old County' }],

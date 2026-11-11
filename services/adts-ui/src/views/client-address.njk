@@ -18,7 +18,11 @@
 {% block header %}
   {{ govukHeader({
     serviceName: "Animal Disease Testing Service",
-    serviceUrl: "/"
+    serviceUrl: "/",
+    navigation: [
+      { text: "My Account", href: "#" },
+      { text: "Sign out", href: "#" }
+    ]
   }) }}
 {% endblock %}
 

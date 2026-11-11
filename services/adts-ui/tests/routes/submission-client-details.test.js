@@ -483,6 +483,26 @@ describe('Submission client details page', () => {
     expect(response.payload).toContain('value="12/34/5678"')
   })
 
+  test('shows client and animal-address CPH errors on the client details page', async () => {
+    const response = await server.inject({
+      method: 'POST',
+      url,
+      payload: {
+        clientId: '102',
+        name: 'Green Acres',
+        cph: '12/34/5678',
+        animalAddressName: 'Second Site',
+        animalAddressCph: '12-345-6789'
+      }
+    })
+
+    expect(response.statusCode).toBe(400)
+    expect(response.payload).toContain('href="#cph"')
+    expect(response.payload).toContain('href="#animalAddressCph"')
+    expect(response.request.response.source.context.clientDetails.cph).toBe('12/34/5678')
+    expect(response.request.response.source.context.animalAddressDetails.cph).toBe('12-345-6789')
+  })
+
   test('canceling a new client address returns to the saved client selection', async () => {
     const selectedClient = await server.inject({
       method: 'POST',
@@ -539,6 +559,17 @@ describe('Submission client details page', () => {
     expect(response.payload).toContain('href="#animalAddressCph"')
     expect(response.payload).toContain('id="animalAddressCph-error"')
     expect(response.payload).toContain('value="12-345-6789"')
+  })
+
+  test('canceling an animal address returns to client details without saving it', async () => {
+    const response = await server.inject({
+      method: 'POST',
+      url: '/submission-01-animal-address',
+      payload: { intent: 'cancel' }
+    })
+
+    expect(response.statusCode).toBe(302)
+    expect(response.headers.location).toBe(url)
   })
 
   test('shows and saves separate manual client and animal address forms', async () => {
@@ -728,6 +759,39 @@ describe('Submission client details page', () => {
     expect(cancelled.statusCode).toBe(200)
     expect(cancelled.payload).toContain('Selected client')
     expect(cancelled.payload).not.toContain('value="Unsaved change"')
+  })
+
+  test('GET client details redirects new-address intents to their address forms', async () => {
+    const newAnimalAddress = await server.inject({
+      method: 'GET',
+      url: `${url}?intent=newAnimalAddress`
+    })
+    expect(newAnimalAddress.statusCode).toBe(302)
+    expect(newAnimalAddress.headers.location).toBe('/submission-01-animal-address?intent=new')
+
+    const newClientAddress = await server.inject({
+      method: 'GET',
+      url: `${url}?intent=new`
+    })
+    expect(newClientAddress.statusCode).toBe(302)
+    expect(newClientAddress.headers.location).toBe('/submission-01-client-address?intent=new')
+  })
+
+  test('canceling animal-address entry returns to the client edit form', async () => {
+    const response = await server.inject({
+      method: 'POST',
+      url,
+      payload: {
+        clientId: '102',
+        intent: 'cancelAnimalAddress',
+        manualClientEntry: 'yes',
+        name: 'Green Acres'
+      }
+    })
+
+    expect(response.statusCode).toBe(200)
+    expect(response.request.response.source.context.editMode).toBe(true)
+    expect(response.request.response.source.context.clientDetails.name).toBe('Green Acres')
   })
 
   test('does not select a client that is not in the backend list', async () => {

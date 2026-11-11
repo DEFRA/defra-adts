@@ -101,7 +101,7 @@ const getAnimalAddressDetailsForSubmission = (payload, animalAddressClient, save
   return savedClientDetails.animalAddressDetails || getClientFieldValues()
 }
 
-const getAnimalAddressDetailsToSave = (payload, animalAddressClient, savedClientDetails, animalAddressDetails) => {
+const getAnimalAddressDetailsToSave = (payload, animalAddressClient, savedClientDetails) => {
   if (payload.animalsAtClientAddress !== 'no') {
     return {}
   }
@@ -153,7 +153,7 @@ const buildClientDetails = (payload, client, animalAddressClient, savedClientDet
       clientFieldNames.map((fieldName) => [fieldName, String(details[fieldName] || '').trim()])
     ),
     ...(payload.animalsAtClientAddress && { animalsAtClientAddress: payload.animalsAtClientAddress }),
-    ...getAnimalAddressDetailsToSave(payload, animalAddressClient, savedClientDetails, animalAddressDetails),
+    ...getAnimalAddressDetailsToSave(payload, animalAddressClient, savedClientDetails),
     ...getSavedAnimalAddressDetails(payload, animalAddressDetails)
   }
 }

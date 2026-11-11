@@ -160,6 +160,12 @@ describe('client initialization', () => {
 
     await import('../../src/client/all.js')
 
+    clientCphInput.value = '1'
+    clientCphInput.selectionStart = 1
+    clientCphInput.dispatch('input', {})
+    expect(clientCphInput.value).toBe('1')
+    expect(clientCphInput.selectionStart).toBe(1)
+
     clientCphInput.value = '12'
     clientCphInput.selectionStart = 2
     clientCphInput.dispatch('input', {})
@@ -185,6 +191,33 @@ describe('client initialization', () => {
     expect(backspaceEvent.preventDefault).toHaveBeenCalled()
     expect(clientCphInput.value).toBe('12/34')
     expect(clientCphInput.selectionStart).toBe(5)
+
+    clientCphInput.value = '12/345'
+    clientCphInput.selectionStart = 2
+    clientCphInput.selectionEnd = 2
+    const deleteEvent = { key: 'Delete', preventDefault: jest.fn() }
+    clientCphInput.dispatch('keydown', deleteEvent)
+    expect(deleteEvent.preventDefault).toHaveBeenCalled()
+    expect(clientCphInput.value).toBe('12/45')
+
+    clientCphInput.value = '/12'
+    clientCphInput.selectionStart = 1
+    clientCphInput.selectionEnd = 1
+    const invalidBackspaceEvent = { key: 'Backspace', preventDefault: jest.fn() }
+    clientCphInput.dispatch('keydown', invalidBackspaceEvent)
+    expect(invalidBackspaceEvent.preventDefault).not.toHaveBeenCalled()
+    expect(clientCphInput.value).toBe('/12')
+
+    clientCphInput.value = '12/345'
+    clientCphInput.selectionStart = 3
+    clientCphInput.selectionEnd = 4
+    const selectionEvent = { key: 'Backspace', preventDefault: jest.fn() }
+    clientCphInput.dispatch('keydown', selectionEvent)
+    expect(selectionEvent.preventDefault).not.toHaveBeenCalled()
+
+    const regularKeyEvent = { key: 'a', preventDefault: jest.fn() }
+    clientCphInput.dispatch('keydown', regularKeyEvent)
+    expect(regularKeyEvent.preventDefault).not.toHaveBeenCalled()
   })
 
   test('preserves the client selection before opening the new client address page', async () => {
@@ -220,6 +253,103 @@ describe('client initialization', () => {
     })
     expect(form.appendChild).toHaveBeenCalledWith(createdInput)
     expect(form.submit).toHaveBeenCalled()
+  })
+
+  test('does not intercept create-address clicks when there is no containing form', async () => {
+    const createClientAddressLink = {
+      addEventListener: jest.fn(),
+      closest: jest.fn().mockReturnValue(null)
+    }
+    const createAnimalAddressLink = {
+      addEventListener: jest.fn(),
+      closest: jest.fn().mockReturnValue(null)
+    }
+    globalThis.document = {
+      querySelector: jest.fn((selector) => {
+        if (selector === '[data-create-client-address-link]') return createClientAddressLink
+        if (selector === '[data-create-animal-address-link]') return createAnimalAddressLink
+        return null
+      }),
+      querySelectorAll: jest.fn().mockReturnValue([])
+    }
+
+    await import('../../src/client/all.js')
+
+    const clientEvent = { preventDefault: jest.fn() }
+    createClientAddressLink.addEventListener.mock.calls[0][1](clientEvent)
+    expect(clientEvent.preventDefault).not.toHaveBeenCalled()
+
+    const animalAddressEvent = { preventDefault: jest.fn() }
+    createAnimalAddressLink.addEventListener.mock.calls[0][1](animalAddressEvent)
+    expect(animalAddressEvent.preventDefault).not.toHaveBeenCalled()
+  })
+
+  test('opens the manual animal-address form from its create link', async () => {
+    const form = {
+      appendChild: jest.fn(),
+      submit: jest.fn()
+    }
+    const createAnimalAddressLink = {
+      addEventListener: jest.fn(),
+      closest: jest.fn().mockReturnValue(form)
+    }
+    const createdInput = {}
+    globalThis.document = {
+      querySelector: jest.fn((selector) => selector === '[data-create-animal-address-link]'
+        ? createAnimalAddressLink
+        : null),
+      querySelectorAll: jest.fn().mockReturnValue([]),
+      createElement: jest.fn().mockReturnValue(createdInput)
+    }
+
+    await import('../../src/client/all.js')
+
+    const clickHandler = createAnimalAddressLink.addEventListener.mock.calls[0][1]
+    const event = { preventDefault: jest.fn() }
+    clickHandler(event)
+
+    expect(event.preventDefault).toHaveBeenCalled()
+    expect(form.action).toBe('/submission-01-animal-address/start')
+    expect(createdInput).toMatchObject({
+      type: 'hidden',
+      name: 'intent',
+      value: 'newAnimalAddress'
+    })
+    expect(form.appendChild).toHaveBeenCalledWith(createdInput)
+    expect(form.submit).toHaveBeenCalled()
+  })
+
+  test('shows the animal-address selection only when animals are at another address', async () => {
+    const yesRadio = {
+      checked: false,
+      value: 'yes',
+      addEventListener: jest.fn()
+    }
+    const noRadio = {
+      checked: false,
+      value: 'no',
+      addEventListener: jest.fn()
+    }
+    const selection = { hidden: false }
+    globalThis.document = {
+      querySelector: jest.fn((selector) => selector === '#animal-address-selection' ? selection : null),
+      querySelectorAll: jest.fn((selector) => selector === 'input[name="animalsAtClientAddress"]'
+        ? [yesRadio, noRadio]
+        : [])
+    }
+
+    await import('../../src/client/all.js')
+
+    expect(selection.hidden).toBe(true)
+    const syncVisibility = noRadio.addEventListener.mock.calls[0][1]
+    noRadio.checked = true
+    syncVisibility()
+    expect(selection.hidden).toBe(false)
+
+    noRadio.checked = false
+    yesRadio.checked = true
+    yesRadio.addEventListener.mock.calls[0][1]()
+    expect(selection.hidden).toBe(true)
   })
 
   test('enhances each county select using its own default value', async () => {

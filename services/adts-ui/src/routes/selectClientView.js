@@ -85,14 +85,6 @@ export const getClientIntentViewOptions = ({
     }
   }
 
-  if (intent === 'new') {
-    return {
-      clientDetails: getClientFieldValues(),
-      editMode: true,
-      ...animalLocation
-    }
-  }
-
   if (intent === 'cancelAnimalAddress') {
     return {
       clientDetails: submittedClientDetails,

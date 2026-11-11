@@ -41,6 +41,17 @@ if (breedSelect) {
   })
 }
 
+const hideAutocompleteHints = () => {
+  document.querySelectorAll('.autocomplete__hint').forEach((hint) => {
+    hint.setAttribute('aria-hidden', 'true')
+  })
+}
+
+hideAutocompleteHints()
+
+const autocompleteHintObserver = new window.MutationObserver(hideAutocompleteHints)
+autocompleteHintObserver.observe(document.body, { childList: true, subtree: true })
+
 // Without JavaScript every ID input is shown; extras beyond the chosen number are ignored on submit.
 const numberOfAnimals = document.querySelector('#numberOfAnimals')
 

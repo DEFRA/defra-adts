@@ -50,7 +50,11 @@ jobs:
             backend_service:
               - 'services/adts-backend/**'
               - 'tests/api/**'
+              - 'tests/e2e/**'
               - 'local/dynamodb/**'
+              - 'playwright.config.js'
+              - 'package.json'
+              - 'package-lock.json'
               - ".github/workflows/adts-services_build.yml"
               - ".github/workflows/_validation.yml"
               - ".github/workflows/_container_build.yml"

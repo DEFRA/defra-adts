@@ -20,11 +20,17 @@ describe('GET /GetAnimalDetails', () => {
 
   test('returns species animal options in the UI contract shape with generic fallbacks', async () => {
     docClient.send.mockImplementation(async (command) => {
+      if (command.input.IndexName === 'ByCode') {
+        return {
+          Items: command.input.ExpressionAttributeValues[':gsi1pk'] === 'CODE#SPECIES' &&
+            command.input.ExpressionAttributeValues[':gsi1sk'] === 'CATTLE'
+            ? [{ code: 'CATTLE', description: 'Cattle', isAvian: false }]
+            : []
+        }
+      }
+
       const partition = command.input.ExpressionAttributeValues[':pk']
       const items = {
-        'REF#SPECIES': [
-          { code: 'CATTLE', description: 'Cattle', isAvian: false }
-        ],
         'REF#SPECIES_ANIMAL_BREEDS#SPECIES#CATTLE': [],
         'REF#SPECIES_ANIMAL_BREEDS': [{ code: 'HOLSTEIN', description: 'Holstein' }],
         'REF#SPECIES_ANIMAL_PURPOSES#SPECIES#CATTLE': [],
@@ -55,6 +61,11 @@ describe('GET /GetAnimalDetails', () => {
       sexes: [{ value: 'FEMALE', label: 'Female' }],
       organicAccreditationApplicable: true
     })
+    expect(docClient.send.mock.calls.some(([command]) =>
+      command.input.IndexName === 'ByCode' &&
+      command.input.ExpressionAttributeValues[':gsi1pk'] === 'CODE#SPECIES' &&
+      command.input.ExpressionAttributeValues[':gsi1sk'] === 'CATTLE'
+    )).toBe(true)
     expect(docClient.send.mock.calls.map(([command]) =>
       command.input.ExpressionAttributeValues[':pk']
     )).toContain('REF#SPECIES_ANIMAL_BREEDS')

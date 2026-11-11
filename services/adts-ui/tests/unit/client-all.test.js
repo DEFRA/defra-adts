@@ -53,6 +53,7 @@ describe('client initialization', () => {
     })
     const speciesSelect = { dataset: { defaultValue: 'Sheep' } }
     const editButton = { hidden: false }
+    const animalAddressEditButton = { hidden: false }
     const hint = { setAttribute: jest.fn() }
     globalThis.document = {
       body: {},

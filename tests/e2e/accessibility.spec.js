@@ -25,8 +25,8 @@ test.describe('Page-level accessibility', () => {
 
   test('Animal details page has no critical or serious axe violations', async ({ page }) => {
     await page.goto('/submission-02-species')
-    await page.getByLabel('Species').fill('Cow')
-    await page.getByRole('option', { name: 'Cow', exact: true }).click()
+    await page.getByLabel('Species').fill('Cattle')
+    await page.getByRole('option', { name: 'Cattle', exact: true }).click()
     await page.getByRole('button', { name: 'Continue' }).click()
     await expect(page).toHaveURL(/\/submission-02-animal-details$/)
     await expect(page.getByLabel('Number of animals')).toBeVisible()
@@ -63,8 +63,8 @@ test.describe('Interactive accessibility states', () => {
 
   test('Species autocomplete suggestions have no critical or serious axe violations', async ({ page }) => {
     await page.goto('/submission-02-species')
-    await page.getByLabel('Species').fill('Cow')
-    await expect(page.getByRole('option', { name: 'Cow', exact: true })).toBeVisible()
+    await page.getByLabel('Species').fill('Cattle')
+    await expect(page.getByRole('option', { name: 'Cattle', exact: true })).toBeVisible()
     await expect(page.locator('.autocomplete__hint')).toHaveAttribute('aria-hidden', 'true')
 
     await checkAccessibility(page)
@@ -72,8 +72,8 @@ test.describe('Interactive accessibility states', () => {
 
   test('Breed autocomplete suggestions have no critical or serious axe violations', async ({ page }) => {
     await page.goto('/submission-02-species')
-    await page.getByLabel('Species').fill('Cow')
-    await page.getByRole('option', { name: 'Cow', exact: true }).click()
+    await page.getByLabel('Species').fill('Cattle')
+    await page.getByRole('option', { name: 'Cattle', exact: true }).click()
     await page.getByRole('button', { name: 'Continue' }).click()
     await expect(page).toHaveURL(/\/submission-02-animal-details$/)
 
@@ -94,8 +94,8 @@ test.describe('Interactive accessibility states', () => {
 
   test('Animal ID fields for the selected animal count have no critical or serious axe violations', async ({ page }) => {
     await page.goto('/submission-02-species')
-    await page.getByLabel('Species').fill('Cow')
-    await page.getByRole('option', { name: 'Cow', exact: true }).click()
+    await page.getByLabel('Species').fill('Cattle')
+    await page.getByRole('option', { name: 'Cattle', exact: true }).click()
     await page.getByRole('button', { name: 'Continue' }).click()
     await expect(page).toHaveURL(/\/submission-02-animal-details$/)
 
@@ -124,8 +124,8 @@ test.describe('Interactive accessibility states', () => {
 
   test('Animal details validation errors have no critical or serious axe violations', async ({ page }) => {
     await page.goto('/submission-02-species')
-    await page.getByLabel('Species').fill('Cow')
-    await page.getByRole('option', { name: 'Cow', exact: true }).click()
+    await page.getByLabel('Species').fill('Cattle')
+    await page.getByRole('option', { name: 'Cattle', exact: true }).click()
     await page.getByRole('button', { name: 'Continue' }).click()
     await expect(page).toHaveURL(/\/submission-02-animal-details$/)
 

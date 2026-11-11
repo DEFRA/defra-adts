@@ -583,6 +583,15 @@ const selectClient = (server, submissionFormStateKey) => {
   server.route([
     {
       method: 'GET',
+      path: `/${pageName}/start`,
+      handler: (request, h) => {
+        request.yar.set(submissionFormStateKey, {})
+        request.yar.touch()
+        return h.redirect(`/${pageName}`)
+      }
+    },
+    {
+      method: 'GET',
       path: `/${clientAddressPageName}`,
       handler: async (request, h) => {
         const submissionFormState = request.yar.get(submissionFormStateKey) || {}

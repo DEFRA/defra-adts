@@ -19,6 +19,11 @@ import path from 'node:path'
 import * as sass from 'sass'
 import createServer from '../../src/app.js'
 
+const getCookieHeader = (response) => {
+  const setCookieHeader = response.headers['set-cookie']
+  return setCookieHeader?.[0]?.split(';')[0] || ''
+}
+
 describe('Dashboard Layout', () => {
   let server
   let html
@@ -72,7 +77,7 @@ describe('Dashboard Layout', () => {
     })
 
     test('renders the submission actions as GOV.UK styled link buttons', () => {
-      const actions = [...html.matchAll(/<a\b[^>]*href="\/submission-01-client-details"[^>]*>[\s\S]*?<\/a>/g)]
+      const actions = [...html.matchAll(/<a\b[^>]*href="\/submission-01-client-details\/start"[^>]*>[\s\S]*?<\/a>/g)]
         .map(([link]) => link)
 
       expect(actions).toHaveLength(2)
@@ -119,16 +124,42 @@ describe('Dashboard Layout', () => {
           .find(([, , content]) => content.includes(linkText))
 
         expect(link).toBeDefined()
-        expect(link[1]).toContain('href="/submission-01-client-details"')
+        expect(link[1]).toContain('href="/submission-01-client-details/start"')
       }
 
       const destinationResponse = await server.inject({
         method: 'GET',
-        url: '/submission-01-client-details'
+        url: '/submission-01-client-details/start'
       })
 
-      expect(destinationResponse.statusCode).toBe(200)
-      expect(destinationResponse.payload).toContain('1. Client details')
+      expect(destinationResponse.statusCode).toBe(302)
+      expect(destinationResponse.headers.location).toBe('/submission-01-client-details')
+    })
+
+    test('starting a submission clears previously entered form details', async () => {
+      const partialSubmission = await server.inject({
+        method: 'POST',
+        url: '/submission-01-client-details',
+        payload: {
+          name: 'Previous client',
+          addressLine1: '1 Previous Road'
+        }
+      })
+      const startResponse = await server.inject({
+        method: 'GET',
+        url: '/submission-01-client-details/start',
+        headers: { cookie: getCookieHeader(partialSubmission) }
+      })
+      const clientDetailsResponse = await server.inject({
+        method: 'GET',
+        url: startResponse.headers.location,
+        headers: { cookie: getCookieHeader(startResponse) || getCookieHeader(partialSubmission) }
+      })
+
+      expect(clientDetailsResponse.statusCode).toBe(200)
+      expect(clientDetailsResponse.request.response.source.context.submissionFormState).toEqual({})
+      expect(clientDetailsResponse.payload).not.toContain('Previous client')
+      expect(clientDetailsResponse.payload).not.toContain('1 Previous Road')
     })
 
     test('renders the completed and draft submissions subheading', () => {

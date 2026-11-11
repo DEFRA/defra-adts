@@ -11,23 +11,30 @@ const animalAddressSelection = document.querySelector('#animal-address-selection
 const cphInputs = document.querySelectorAll('[data-cph-input]')
 
 const speciesSelect = document.querySelector('select#species')
+const MAX_CPH_DIGITS = 9
+const CPH_AREA_DIGITS = 2
+const CPH_DISTRICT_DIGITS = 3
 
 const getCphDigitsBeforePosition = (value, position) =>
   value.slice(0, position).replace(/\D/g, '').length
 
 const formatCph = (value) => {
-  const digits = value.replace(/\D/g, '').slice(0, 9)
+  const digits = value.replace(/\D/g, '').slice(0, MAX_CPH_DIGITS)
 
-  if (digits.length < 2) return digits
-  if (digits.length < 5) return `${digits.slice(0, 2)}/${digits.slice(2)}`
+  if (digits.length < CPH_AREA_DIGITS) {
+    return digits
+  }
+  if (digits.length < CPH_AREA_DIGITS + CPH_DISTRICT_DIGITS) {
+    return `${digits.slice(0, CPH_AREA_DIGITS)}/${digits.slice(CPH_AREA_DIGITS)}`
+  }
 
-  return `${digits.slice(0, 2)}/${digits.slice(2, 5)}/${digits.slice(5)}`
+  return `${digits.slice(0, CPH_AREA_DIGITS)}/${digits.slice(CPH_AREA_DIGITS, CPH_AREA_DIGITS + CPH_DISTRICT_DIGITS)}/${digits.slice(CPH_AREA_DIGITS + CPH_DISTRICT_DIGITS)}`
 }
 
 const getCphCaretPosition = (digitsBeforeCaret) =>
   digitsBeforeCaret +
-  Number(digitsBeforeCaret >= 2) +
-  Number(digitsBeforeCaret >= 5)
+  Number(digitsBeforeCaret >= CPH_AREA_DIGITS) +
+  Number(digitsBeforeCaret >= CPH_AREA_DIGITS + CPH_DISTRICT_DIGITS)
 
 const updateCphInput = (input, digits, digitsBeforeCaret) => {
   input.value = formatCph(digits)
@@ -39,24 +46,30 @@ cphInputs.forEach((input) => {
   input.addEventListener('input', (event) => {
     const { value, selectionStart } = event.target
     const digitsBeforeCaret = getCphDigitsBeforePosition(value, selectionStart)
-    updateCphInput(event.target, value.replace(/\D/g, '').slice(0, 9), digitsBeforeCaret)
+    updateCphInput(event.target, value.replace(/\D/g, '').slice(0, MAX_CPH_DIGITS), digitsBeforeCaret)
   })
 
   input.addEventListener('keydown', (event) => {
     const { value, selectionStart, selectionEnd } = event.target
-    if (selectionStart !== selectionEnd) return
+    if (selectionStart !== selectionEnd) {
+      return
+    }
 
     const isBackspaceBeforeSlash = event.key === 'Backspace' &&
       value[selectionStart - 1] === '/'
     const isDeleteBeforeSlash = event.key === 'Delete' &&
       value[selectionStart] === '/'
 
-    if (!isBackspaceBeforeSlash && !isDeleteBeforeSlash) return
+    if (!isBackspaceBeforeSlash && !isDeleteBeforeSlash) {
+      return
+    }
 
     const digits = value.replace(/\D/g, '')
     const digitsBeforeCaret = getCphDigitsBeforePosition(value, selectionStart)
     const digitIndex = isBackspaceBeforeSlash ? digitsBeforeCaret - 1 : digitsBeforeCaret
-    if (digitIndex < 0 || digitIndex >= digits.length) return
+    if (digitIndex < 0 || digitIndex >= digits.length) {
+      return
+    }
 
     event.preventDefault()
     const updatedDigits = `${digits.slice(0, digitIndex)}${digits.slice(digitIndex + 1)}`
@@ -115,7 +128,9 @@ if (animalAddressSelect) {
 if (createClientAddressLink) {
   createClientAddressLink.addEventListener('click', (event) => {
     const form = createClientAddressLink.closest('form')
-    if (!form) return
+    if (!form) {
+      return
+    }
 
     event.preventDefault()
     form.action = '/submission-01-client-address/start'
@@ -131,7 +146,9 @@ if (createClientAddressLink) {
 if (createAnimalAddressLink) {
   createAnimalAddressLink.addEventListener('click', (event) => {
     const form = createAnimalAddressLink.closest('form')
-    if (!form) return
+    if (!form) {
+      return
+    }
 
     event.preventDefault()
     form.action = '/submission-01-animal-address/start'

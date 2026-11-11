@@ -15,7 +15,7 @@ All tables use on-demand billing (`PAY_PER_REQUEST`), which is the local equival
 |-------|------|-----------|----------|
 | `ByCode` | `GSI1PK` / `GSI1SK` | ALL | Look up an item by type and code (`CODE#<TYPE>` / `<code>`) |
 | `ByName` | `GSI2PK` / `GSI2SK` | ALL | Look up by name (`NAME#<TYPE>` / lowercase name) |
-| `ByAvian` | `GSI3PK` / `GSI3SK` | ALL | Species by avian flag (`AVIAN#SPECIES#1` or `#0`) |
+| `ByAvian` | `GSI3PK` / `GSI3SK` | ALL | Species by avian flag (`AVIAN#SPECIES#1` or `#0`); the species `GSI3SK` matches `SK` |
 
 **Access pattern used by the backend**: `GET /GetSpecies` queries `PK = REF#SPECIES` on the base table and pages through results using `ExclusiveStartKey`. See [species.js](../../services/adts-backend/src/data/species.js).
 

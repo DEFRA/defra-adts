@@ -4,7 +4,9 @@ import { getAnimalDetails } from '../../src/data/animalDetails.js'
 const createDocClient = (partitions) => {
   const pages = new Map()
   const send = jest.fn(async (command) => {
-    const partition = command.input.ExpressionAttributeValues[':pk']
+    const partition = command.input.IndexName === 'ByCode'
+      ? command.input.ExpressionAttributeValues[':gsi1sk']
+      : command.input.ExpressionAttributeValues[':pk']
     const pageIndex = pages.get(partition) ?? 0
     pages.set(partition, pageIndex + 1)
 
@@ -18,13 +20,7 @@ const createDocClient = (partitions) => {
 describe('getAnimalDetails', () => {
   test('maps species-specific options, filters applicability, and follows pagination', async () => {
     const docClient = createDocClient({
-      'REF#SPECIES': [
-        {
-          Items: [{ code: 'CATTLE', description: 'Cattle', isAvian: false }],
-          LastEvaluatedKey: { PK: 'REF#SPECIES', SK: 'next' }
-        },
-        { Items: [{ code: '123', description: 'Bird', isAvian: true }] }
-      ],
+      '123': { Items: [{ code: '123', description: 'Bird', isAvian: true }] },
       'REF#SPECIES_ANIMAL_BREEDS#SPECIES#123': [
         {
           Items: [{ code: 'BREED-1', description: 'First breed' }],
@@ -77,13 +73,15 @@ describe('getAnimalDetails', () => {
       sexes: [{ value: 'FEMALE', label: 'Female' }],
       organicAccreditationApplicable: false
     })
-    const speciesPageCall = docClient.send.mock.calls.find(([command]) =>
-      command.input.ExpressionAttributeValues[':pk'] === 'REF#SPECIES' &&
-      command.input.ExclusiveStartKey
+    const speciesLookupCall = docClient.send.mock.calls.find(([command]) =>
+      command.input.IndexName === 'ByCode'
     )
-    expect(speciesPageCall[0].input.ExclusiveStartKey).toEqual({
-      PK: 'REF#SPECIES',
-      SK: 'next'
+    expect(speciesLookupCall[0].input.KeyConditionExpression).toBe(
+      'GSI1PK = :gsi1pk AND GSI1SK = :gsi1sk'
+    )
+    expect(speciesLookupCall[0].input.ExpressionAttributeValues).toEqual({
+      ':gsi1pk': 'CODE#SPECIES',
+      ':gsi1sk': '123'
     })
     const breedPageCall = docClient.send.mock.calls.find(([command]) =>
       command.input.ExpressionAttributeValues[':pk'] === 'REF#SPECIES_ANIMAL_BREEDS#SPECIES#123' &&
@@ -99,7 +97,7 @@ describe('getAnimalDetails', () => {
 
   test('uses avian and generic fallback partitions when species options are absent', async () => {
     const docClient = createDocClient({
-      'REF#SPECIES': { Items: [{ code: 'CHICKEN', description: 'Chicken', isAvian: true }] },
+      CHICKEN: { Items: [{ code: 'CHICKEN', description: 'Chicken', isAvian: true }] },
       'REF#SPECIES_ANIMAL_BREEDS#SPECIES#CHICKEN': { Items: [] },
       'REF#SPECIES_ANIMAL_BREEDS': { Items: [{ code: 'BIRD-BREED', description: 'Bird breed' }] },
       'REF#SPECIES_ANIMAL_PURPOSES#SPECIES#CHICKEN': { Items: [] },
@@ -131,9 +129,9 @@ describe('getAnimalDetails', () => {
     expect(docClient.pages.has('REF#SPECIES_ANIMAL_PURPOSES')).toBe(true)
   })
 
-  test('returns undefined when the species partition has no matching species', async () => {
+  test('returns undefined when the species code is not found', async () => {
     const docClient = createDocClient({
-      'REF#SPECIES': { Items: [{ code: 'CATTLE', description: 'Cattle' }] }
+      CATTLE: { Items: [{ code: 'CATTLE', description: 'Cattle' }] }
     })
 
     await expect(getAnimalDetails(docClient, 'UNKNOWN')).resolves.toBeUndefined()
@@ -142,7 +140,7 @@ describe('getAnimalDetails', () => {
 
   test('returns empty lists when the species has no configured reference options', async () => {
     const docClient = createDocClient({
-      'REF#SPECIES': { Items: [{ code: 'CATTLE', description: 'Cattle' }] }
+      CATTLE: { Items: [{ code: 'CATTLE', description: 'Cattle' }] }
     })
 
     await expect(getAnimalDetails(docClient, 'CATTLE')).resolves.toEqual({

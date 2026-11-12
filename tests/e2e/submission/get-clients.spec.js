@@ -31,7 +31,10 @@ test.describe('Client lookup via LIMS', () => {
   test('does not render selected client or animal address summaries', async ({ page }) => {
     await page.goto('/submission-01-client-details')
     await page.getByRole('combobox', { name: 'Client' }).fill('Example Farm')
-    await page.getByRole('option', { name: /Example Farm/ }).click()
+    await page.getByRole('option', {
+      name: 'Example Farm, North Field, 1 Test Lane, Teston, Dorset, ZZ1 1ZZ, 12/345/6789',
+      exact: true
+    }).click()
     await page.getByRole('radio', { name: 'No', exact: true }).check()
     await page.getByRole('combobox', { name: 'Animal address' }).fill('Second Example Farm')
     await page.getByRole('option', { name: 'Second Example Farm', exact: true }).click()
@@ -50,7 +53,10 @@ test.describe('Client lookup via LIMS', () => {
   test('keeps the edit button visible for a manually entered animal address', async ({ page }) => {
     await page.goto('/submission-01-client-details')
     await page.getByRole('combobox', { name: 'Client' }).fill('Example Farm')
-    await page.getByRole('option', { name: /Example Farm/ }).click()
+    await page.getByRole('option', {
+      name: 'Example Farm, North Field, 1 Test Lane, Teston, Dorset, ZZ1 1ZZ, 12/345/6789',
+      exact: true
+    }).click()
     await page.getByRole('radio', { name: 'No', exact: true }).check()
     await page.getByRole('link', { name: "create a new animal's address" }).click()
     await expect(page).toHaveURL(/\/submission-01-animal-address/)

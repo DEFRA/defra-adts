@@ -62,6 +62,8 @@ test.describe('Client lookup via LIMS', () => {
     await expect(page).toHaveURL(/\/submission-01-animal-address/)
 
     await page.getByRole('textbox', { name: 'Name', exact: true }).fill('Manual animal address')
+    await page.getByRole('textbox', { name: 'Address line 1', exact: true }).fill('1 Animal Lane')
+    await page.getByRole('textbox', { name: 'Postcode', exact: true }).fill('AB1 2CD')
     await page.getByRole('button', { name: 'Save' }).click()
     await expect(page).toHaveURL(/\/submission-01-client-details$/)
     await expect(page.locator('[data-animal-address-edit-button]')).toBeVisible()

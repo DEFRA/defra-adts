@@ -18,36 +18,39 @@ describe('GET /GetAnimalDetails', () => {
     jest.resetAllMocks()
   })
 
-  test('returns species animal options in the UI contract shape with generic fallbacks', async () => {
+  test('returns species animal options in the UI contract shape from the seed schema', async () => {
     docClient.send.mockImplementation(async (command) => {
       const partition = command.input.ExpressionAttributeValues[':pk']
       const items = {
         'REF#SPECIES': [
-          { code: 'COW', description: 'Cow', isAvian: false }
+          { code: 'CATTLE', description: 'Cattle', isAvian: false }
         ],
-        'REF#SPECIES_ANIMAL_BREEDS#SPECIES#COW': [],
-        'REF#SPECIES_ANIMAL_BREEDS': [{ code: 'HOLSTEIN', description: 'Holstein' }],
-        'REF#SPECIES_ANIMAL_PURPOSES#SPECIES#COW': [],
-        'REF#SPECIES_ANIMAL_PURPOSES#AVIAN#0': [],
-        'REF#SPECIES_ANIMAL_PURPOSES': [{ code: 'DAIRY', description: 'Dairy' }],
-        'REF#SPECIES_HOUSINGS': [
-          { code: 'OUTDOOR', description: 'Outdoor' },
-          { code: 'AVIARY', description: 'Aviary', forAvianSpecies: true },
-          { code: 'NOT-COW', description: 'Not for cows', excludeSpeciesLimsCodes: ['COW'] }
+        'REF#SPECIES_ANIMAL_BREED': [
+          { speciesCode: 'CATTLE', code: 'HOLSTEIN', description: 'Holstein' }
         ],
-        'REF#SEX_GROUPS': [{ code: 'FEMALE', description: 'Female' }],
-        'REF#AGE_CATEGORIES': [{ code: 'ADULT', description: 'Adult' }],
-        'REF#ORGANIC_ENVIRONMENT': [{ code: 'ORGANIC', description: 'Organic' }]
+        'REF#SPECIES_ANIMAL_PURPOSE': [
+          { speciesCode: 'CATTLE', code: 'DAIRY', description: 'Dairy' }
+        ],
+        'REF#SPECIES_HOUSING': [
+          { code: 'OUTDOOR', description: 'Outdoor', isAvian: false },
+          { code: 'AVIARY', description: 'Aviary', isAvian: true },
+          { code: 'NOT-CATTLE', description: 'Not for cattle', excludeSpeciesLimsCodes: ['CATTLE'] }
+        ],
+        'REF#SEX_GROUP': [{ code: 'FEMALE', description: 'Female', excludeAvian: true }],
+        'REF#AGE_CATEGORY': [{ code: 'ADULT', description: 'Adult', isAvian: false }],
+        'REF#ORGANIC_ENVIRONMENT': [
+          { code: 'ORGANIC', description: 'Organic', forAvianSpecies: false }
+        ]
       }[partition]
 
       return { Items: items ?? [] }
     })
 
-    const response = await server.inject({ method: 'GET', url: '/GetAnimalDetails?speciesId=COW' })
+    const response = await server.inject({ method: 'GET', url: '/GetAnimalDetails?speciesId=CATTLE' })
 
     expect(response.statusCode).toBe(200)
     expect(response.result).toEqual({
-      speciesId: 'COW',
+      speciesId: 'CATTLE',
       ageCategories: [{ value: 'ADULT', label: 'Adult' }],
       purposes: [{ value: 'DAIRY', label: 'Dairy' }],
       keepingTypes: [{ value: 'OUTDOOR', label: 'Outdoor' }],
@@ -57,7 +60,7 @@ describe('GET /GetAnimalDetails', () => {
     })
     expect(docClient.send.mock.calls.map(([command]) =>
       command.input.ExpressionAttributeValues[':pk']
-    )).toContain('REF#SPECIES_ANIMAL_BREEDS')
+    )).toContain('REF#SPECIES_ANIMAL_BREED')
   })
 
   test('rejects a request without speciesId', async () => {
@@ -80,7 +83,7 @@ describe('GET /GetAnimalDetails', () => {
     docClient.send.mockRejectedValue(new Error('connect ECONNREFUSED'))
     jest.spyOn(console, 'error').mockImplementation(() => {})
 
-    const response = await server.inject({ method: 'GET', url: '/GetAnimalDetails?speciesId=COW' })
+    const response = await server.inject({ method: 'GET', url: '/GetAnimalDetails?speciesId=CATTLE' })
 
     expect(response.statusCode).toBe(502)
     expect(response.result).toEqual({ error: 'Unable to retrieve animal details' })

@@ -20,13 +20,7 @@ const createDocClient = (partitions) => {
 describe('getAnimalDetails', () => {
   test('maps species-specific options, filters applicability, and follows pagination', async () => {
     const docClient = createDocClient({
-      'REF#SPECIES': [
-        {
-          Items: [{ code: 'COW', description: 'Cow', isAvian: false }],
-          LastEvaluatedKey: { PK: 'REF#SPECIES', SK: 'next' }
-        },
-        { Items: [{ code: '123', description: 'Bird', isAvian: true }] }
-      ],
+      '123': { Items: [{ code: '123', description: 'Bird', isAvian: true }] },
       'REF#SPECIES_ANIMAL_BREED': [
         {
           Items: [
@@ -105,14 +99,10 @@ describe('getAnimalDetails', () => {
     })
   })
 
-  test('filters shared seed partitions by species and avian applicability', async () => {
+  test('filters option partitions by species and avian applicability', async () => {
     const docClient = createDocClient({
       CHICKEN: { Items: [{ code: 'CHICKEN', description: 'Chicken', isAvian: true }] },
-      'REF#SPECIES_ANIMAL_BREEDS#SPECIES#CHICKEN': { Items: [] },
-      'REF#SPECIES_ANIMAL_BREEDS': { Items: [{ code: 'BIRD-BREED', description: 'Bird breed' }] },
-      'REF#SPECIES_ANIMAL_PURPOSES#SPECIES#CHICKEN': { Items: [] },
-      'REF#SPECIES_ANIMAL_PURPOSES#AVIAN#1': { Items: [] },
-      'REF#SPECIES_ANIMAL_PURPOSES': {
+      'REF#SPECIES_ANIMAL_BREED': {
         Items: [
           { speciesCode: 'CHICKEN', code: 'BIRD-BREED', description: 'Bird breed' },
           { speciesCode: 'SHEEP', code: 'SHEEP-BREED', description: 'Sheep breed' }

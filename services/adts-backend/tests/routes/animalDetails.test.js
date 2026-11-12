@@ -31,15 +31,8 @@ describe('GET /GetAnimalDetails', () => {
 
       const partition = command.input.ExpressionAttributeValues[':pk']
       const items = {
-        'REF#SPECIES_ANIMAL_BREEDS#SPECIES#CATTLE': [],
-        'REF#SPECIES_ANIMAL_BREEDS': [{ code: 'HOLSTEIN', description: 'Holstein' }],
-        'REF#SPECIES_ANIMAL_PURPOSES#SPECIES#CATTLE': [],
-        'REF#SPECIES_ANIMAL_PURPOSES#AVIAN#0': [],
-        'REF#SPECIES_ANIMAL_PURPOSES': [{ code: 'DAIRY', description: 'Dairy' }],
-        'REF#SPECIES_HOUSINGS': [
-          { code: 'OUTDOOR', description: 'Outdoor' },
-          { code: 'AVIARY', description: 'Aviary', forAvianSpecies: true },
-          { code: 'NOT-CATTLE', description: 'Not for cattle', excludeSpeciesLimsCodes: ['CATTLE'] }
+        'REF#SPECIES_ANIMAL_BREED': [
+          { speciesCode: 'CATTLE', code: 'HOLSTEIN', description: 'Holstein' }
         ],
         'REF#SPECIES_ANIMAL_PURPOSE': [
           { speciesCode: 'CATTLE', code: 'DAIRY', description: 'Dairy' }

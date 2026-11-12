@@ -61,7 +61,7 @@ test.describe('Client lookup via LIMS', () => {
     await page.getByRole('link', { name: "create a new animal's address" }).click()
     await expect(page).toHaveURL(/\/submission-01-animal-address/)
 
-    await page.getByLabel('Name').fill('Manual animal address')
+    await page.getByRole('textbox', { name: 'Name', exact: true }).fill('Manual animal address')
     await page.getByRole('button', { name: 'Save' }).click()
     await expect(page).toHaveURL(/\/submission-01-client-details$/)
     await expect(page.locator('[data-animal-address-edit-button]')).toBeVisible()

@@ -470,8 +470,10 @@ describe('Submission client details page', () => {
       cph: '48/234/2348'
     })
     expect(revisitResponse.payload).not.toContain('New client')
-    expect(revisitResponse.payload).not.toContain('Jane Smith')
     expect(revisitResponse.payload).not.toContain('govuk-inset-text')
+    expect(revisitResponse.payload).toContain(
+      'data-default-value="Jane Smith, Green Farm, 1 Farm Lane, Village, Northshire, AB1 2CD, 48/234/2348"'
+    )
     expect(revisitResponse.payload).toContain('href="/submission-01-client-address?intent=edit"')
 
     const continueResponse = await server.inject({

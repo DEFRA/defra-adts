@@ -124,7 +124,7 @@ const getSelectedClientContext = (savedDetails, selectedClient) => {
     clientFieldNames.some((fieldName) => Boolean(savedDetails[fieldName]))
 
   return {
-    selectedClientName: getClientLabel(selectedClient || {}),
+    selectedClientName: getClientLabel(selectedClient || (hasManualClient ? savedDetails : {})),
     hasSelectedClient: Boolean(selectedClient),
     hasManualClient,
     clientDetails: selectedClientDetails,

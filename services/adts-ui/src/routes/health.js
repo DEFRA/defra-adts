@@ -23,7 +23,7 @@ const health = (server) => {
         }
       },
       handler: async (request, h) => {
-        const { protocol, host, port } = request.query
+        const { protocol, host, path, port } = request.query
         const connectionUrl = `${encodeURIComponent(protocol)}://${encodeURIComponent(host)}:${encodeURIComponent(port)}/${encodeURIComponent(path)}`
 
         try {

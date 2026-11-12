@@ -50,11 +50,7 @@ jobs:
             backend_service:
               - 'services/adts-backend/**'
               - 'tests/api/**'
-              - 'tests/e2e/**'
               - 'local/dynamodb/**'
-              - 'playwright.config.js'
-              - 'package.json'
-              - 'package-lock.json'
               - ".github/workflows/adts-services_build.yml"
               - ".github/workflows/_validation.yml"
               - ".github/workflows/_container_build.yml"
@@ -68,11 +64,18 @@ jobs:
             any_service:
               - 'services/adts-ui/**'
               - 'services/adts-backend/**'
-              - 'tests/api/**'
-              - 'local/dynamodb/**'
+              - 'services/adts-submissions-service/**'
               - ".github/workflows/adts-services_build.yml"
               - ".github/workflows/_validation.yml"
               - ".github/workflows/_container_build.yml"
+            
+            e2e_tests:
+              - 'tests/api/**'
+              - 'tests/e2e/**'
+              - 'local/dynamodb/**'
+              - 'playwright.config.js'
+              - 'package.json'
+              - 'package-lock.json'
               - '.github/workflows/_e2e-tests.yml'
 
       - name: Display change detection results
@@ -180,18 +183,21 @@ jobs:
     if: |
       ${{
         !cancelled() &&
-        needs.detect_changes.outputs.any_service == 'true' &&
+        needs.detect_changes.outputs.e2e_tests == 'true' ||
         (
-          needs.detect_changes.outputs.ui_service != 'true' ||
-          needs.validate_ui_service.result == 'success'
-        ) &&
-        (
-          needs.detect_changes.outputs.backend_service != 'true' ||
-          needs.validate_backend_service.result == 'success'
-        ) &&
-        (
-          needs.detect_changes.outputs.submissions_service != 'true' ||
-          needs.validate_submissions_service.result == 'success'
+          needs.detect_changes.outputs.any_service == 'true' &&
+          (
+            needs.detect_changes.outputs.ui_service != 'true' ||
+            needs.validate_ui_service.result == 'success'
+          ) &&
+          (
+            needs.detect_changes.outputs.backend_service != 'true' ||
+            needs.validate_backend_service.result == 'success'
+          ) &&
+          (
+            needs.detect_changes.outputs.submissions_service != 'true' ||
+            needs.validate_submissions_service.result == 'success'
+          )
         )
       }}
 
@@ -207,11 +213,14 @@ jobs:
 
     if: |
       ${{
-        !cancelled()
-        && needs.detect_changes.outputs.ui_service == 'true'
-        && needs.validate_ui_service.result == 'success'
-        && needs.e2e_testing.result == 'success'
-        && github.event_name != 'pull_request'
+        !cancelled() &&
+        needs.detect_changes.outputs.e2e_tests == 'true' ||
+        (
+          needs.detect_changes.outputs.ui_service == 'true' &&
+          needs.validate_ui_service.result == 'success' &&
+          needs.e2e_testing.result == 'success' &&
+          github.event_name != 'pull_request'
+        )
       }}
     permissions:
       contents: write
@@ -240,11 +249,14 @@ jobs:
 
     if: |
       ${{
-        !cancelled()
-        && needs.detect_changes.outputs.backend_service == 'true'
-        && needs.validate_backend_service.result == 'success'
-        && needs.e2e_testing.result == 'success'
-        && github.event_name != 'pull_request'
+        !cancelled() &&
+        needs.detect_changes.outputs.e2e_tests == 'true' ||
+        (
+          needs.detect_changes.outputs.backend_service == 'true' &&
+          needs.validate_backend_service.result == 'success' &&
+          needs.e2e_testing.result == 'success' &&
+          github.event_name != 'pull_request'
+        )
       }}
 
     permissions:
@@ -274,11 +286,14 @@ jobs:
 
     if: |
       ${{
-        !cancelled()
-        && needs.detect_changes.outputs.submissions_service == 'true'
-        && needs.validate_submissions_service.result == 'success'
-        && needs.e2e_testing.result == 'success'
-        && github.event_name != 'pull_request'
+        !cancelled() &&
+        needs.detect_changes.outputs.e2e_tests == 'true' ||
+        (
+          needs.detect_changes.outputs.submissions_service == 'true' &&
+          needs.validate_submissions_service.result == 'success' &&
+          needs.e2e_testing.result == 'success' &&
+          github.event_name != 'pull_request'
+        )
       }}
 
     permissions:
@@ -315,18 +330,21 @@ jobs:
     if: |
       ${{
         !cancelled() &&
-        needs.detect_changes.outputs.any_service == 'true' &&
+        needs.detect_changes.outputs.e2e_tests == 'true' ||
         (
-          needs.detect_changes.outputs.ui_service != 'true' ||
-          needs.build_ui_container.result == 'success'
-        ) &&
-        (
-          needs.detect_changes.outputs.backend_service != 'true' ||
-          needs.build_backend_container.result == 'success'
-        ) &&
-        (
-          needs.detect_changes.outputs.submissions_service != 'true' ||
-          needs.build_submissions_container.result == 'success'
+          needs.detect_changes.outputs.any_service == 'true' &&
+          (
+            needs.detect_changes.outputs.ui_service != 'true' ||
+            needs.build_ui_container.result == 'success'
+          ) &&
+          (
+            needs.detect_changes.outputs.backend_service != 'true' ||
+            needs.build_backend_container.result == 'success'
+          ) &&
+          (
+            needs.detect_changes.outputs.submissions_service != 'true' ||
+            needs.build_submissions_container.result == 'success'
+          )
         )
       }}
 

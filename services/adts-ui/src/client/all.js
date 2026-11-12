@@ -10,6 +10,20 @@ const createAnimalAddressLink = document.querySelector('[data-create-animal-addr
 const animalAddressSelection = document.querySelector('#animal-address-selection')
 const cphInputs = document.querySelectorAll('[data-cph-input]')
 
+const submitAddressStart = (form, action, intentValue) => {
+  form.action = action
+  let intent = form.querySelector('input[data-address-start-intent]')
+  if (!intent) {
+    intent = document.createElement('input')
+    intent.type = 'hidden'
+    intent.name = 'intent'
+    intent.dataset.addressStartIntent = 'true'
+    form.appendChild(intent)
+  }
+  intent.value = intentValue
+  form.submit()
+}
+
 const speciesSelect = document.querySelector('select#species')
 const MAX_CPH_DIGITS = 9
 const CPH_AREA_DIGITS = 2
@@ -133,13 +147,7 @@ if (createClientAddressLink) {
     }
 
     event.preventDefault()
-    form.action = '/submission-01-client-address/start'
-    const intent = document.createElement('input')
-    intent.type = 'hidden'
-    intent.name = 'intent'
-    intent.value = 'newClientAddress'
-    form.appendChild(intent)
-    form.submit()
+    submitAddressStart(form, '/submission-01-client-address/start', 'newClientAddress')
   })
 }
 
@@ -151,13 +159,7 @@ if (createAnimalAddressLink) {
     }
 
     event.preventDefault()
-    form.action = '/submission-01-animal-address/start'
-    const intent = document.createElement('input')
-    intent.type = 'hidden'
-    intent.name = 'intent'
-    intent.value = 'newAnimalAddress'
-    form.appendChild(intent)
-    form.submit()
+    submitAddressStart(form, '/submission-01-animal-address/start', 'newAnimalAddress')
   })
 }
 

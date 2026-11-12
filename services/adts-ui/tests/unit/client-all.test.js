@@ -221,15 +221,17 @@ describe('client initialization', () => {
   })
 
   test('preserves the client selection before opening the new client address page', async () => {
+    let attachedInput
+    const createdInput = { dataset: {} }
     const form = {
-      appendChild: jest.fn(),
+      querySelector: jest.fn(() => attachedInput),
+      appendChild: jest.fn((input) => { attachedInput = input }),
       submit: jest.fn()
     }
     const createClientAddressLink = {
       addEventListener: jest.fn(),
       closest: jest.fn().mockReturnValue(form)
     }
-    const createdInput = {}
     globalThis.document = {
       querySelector: jest.fn((selector) => selector === '[data-create-client-address-link]'
         ? createClientAddressLink
@@ -243,16 +245,18 @@ describe('client initialization', () => {
     const clickHandler = createClientAddressLink.addEventListener.mock.calls[0][1]
     const event = { preventDefault: jest.fn() }
     clickHandler(event)
+    clickHandler(event)
 
     expect(event.preventDefault).toHaveBeenCalled()
     expect(form.action).toBe('/submission-01-client-address/start')
     expect(createdInput).toMatchObject({
       type: 'hidden',
       name: 'intent',
-      value: 'newClientAddress'
+      value: 'newClientAddress',
+      dataset: { addressStartIntent: 'true' }
     })
-    expect(form.appendChild).toHaveBeenCalledWith(createdInput)
-    expect(form.submit).toHaveBeenCalled()
+    expect(form.appendChild).toHaveBeenCalledTimes(1)
+    expect(form.submit).toHaveBeenCalledTimes(2)
   })
 
   test('does not intercept create-address clicks when there is no containing form', async () => {
@@ -285,15 +289,17 @@ describe('client initialization', () => {
   })
 
   test('opens the manual animal-address form from its create link', async () => {
+    let attachedInput
+    const createdInput = { dataset: {} }
     const form = {
-      appendChild: jest.fn(),
+      querySelector: jest.fn(() => attachedInput),
+      appendChild: jest.fn((input) => { attachedInput = input }),
       submit: jest.fn()
     }
     const createAnimalAddressLink = {
       addEventListener: jest.fn(),
       closest: jest.fn().mockReturnValue(form)
     }
-    const createdInput = {}
     globalThis.document = {
       querySelector: jest.fn((selector) => selector === '[data-create-animal-address-link]'
         ? createAnimalAddressLink
@@ -307,16 +313,18 @@ describe('client initialization', () => {
     const clickHandler = createAnimalAddressLink.addEventListener.mock.calls[0][1]
     const event = { preventDefault: jest.fn() }
     clickHandler(event)
+    clickHandler(event)
 
     expect(event.preventDefault).toHaveBeenCalled()
     expect(form.action).toBe('/submission-01-animal-address/start')
     expect(createdInput).toMatchObject({
       type: 'hidden',
       name: 'intent',
-      value: 'newAnimalAddress'
+      value: 'newAnimalAddress',
+      dataset: { addressStartIntent: 'true' }
     })
-    expect(form.appendChild).toHaveBeenCalledWith(createdInput)
-    expect(form.submit).toHaveBeenCalled()
+    expect(form.appendChild).toHaveBeenCalledTimes(1)
+    expect(form.submit).toHaveBeenCalledTimes(2)
   })
 
   test('shows the animal-address selection only when animals are at another address', async () => {

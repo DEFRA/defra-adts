@@ -52,7 +52,7 @@ describe('client initialization', () => {
       get: () => animalAddressOption.selected ? '102' : ''
     })
     const speciesSelect = { dataset: { defaultValue: 'Sheep' } }
-    const editButton = { hidden: false }
+    const editButton = { dataset: {}, hidden: false }
     const animalAddressEditButton = { dataset: { manualAddress: 'true' }, hidden: false }
     const hint = { setAttribute: jest.fn() }
     globalThis.document = {

@@ -38,7 +38,7 @@ describe('Healthcheck endpoint', () => {
     expect(response.result).toEqual({ status: 'UP' })
   })
 
-  test('should return the health status of host - statusCode 200', async () => {
+  test('should return the connectivity status of host - statusCode 200', async () => {
     const mockHealthResponse = { status: 'UP' }
 
     jest.spyOn(globalThis, 'fetch').mockImplementation(async (url) => {
@@ -51,7 +51,7 @@ describe('Healthcheck endpoint', () => {
 
     const response = await server.inject({
       method: 'GET',
-      url: '/connection_health?protocol=http&host=my-target-host.internal&port=9000'
+      url: '/connection_health?protocol=http&host=my-target-host.internal&port=9000&path=health'
     })
     expect(fetch).toHaveBeenCalled()
     expect(response.statusCode).toBe(constants.HTTP_STATUS_OK)
@@ -67,7 +67,7 @@ describe('Healthcheck endpoint', () => {
     })
     const response = await server.inject({
       method: 'GET',
-      url: '/connection_health?protocol=http&host=my-target-host.internal&port=9000'
+      url: '/connection_health?protocol=http&host=my-target-host.internal&port=9000&path=health'
     })
     expect(fetch).toHaveBeenCalled()
     expect(response.statusCode).toBe(constants.HTTP_STATUS_OK)
@@ -80,7 +80,7 @@ describe('Healthcheck endpoint', () => {
     })
     const response = await server.inject({
       method: 'GET',
-      url: '/connection_health?protocol=http&host=my-target-host.internal&port=9000'
+      url: '/connection_health?protocol=http&host=my-target-host.internal&port=9000&path=health'
     })
     expect(fetch).toHaveBeenCalled()
     expect(response.statusCode).toBe(constants.HTTP_STATUS_OK)

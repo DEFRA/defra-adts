@@ -47,14 +47,13 @@ const createServer = async () => {
         query: Joi.object({
           protocol: Joi.string().trim().required(),
           host: Joi.string().trim().required(),
-          path: Joi.string().trim().required(),
           port: Joi.string().trim().required()
         }).required()
       }
     },
     handler: async (request, h) => {
       const { protocol, host, port } = request.query
-      const connectionUrl = `${encodeURIComponent(protocol)}://${encodeURIComponent(host)}:${encodeURIComponent(port)}/${encodeURIComponent(path)}`
+      const connectionUrl = `${encodeURIComponent(protocol)}://${encodeURIComponent(host)}:${encodeURIComponent(port)}/health`
 
       try {
         const response = await fetch(connectionUrl)

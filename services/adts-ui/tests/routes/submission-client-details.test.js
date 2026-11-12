@@ -71,7 +71,7 @@ describe('Submission client details page', () => {
     expect(response.payload).toContain('href="/submission-01-animal-address?intent=new"')
     expect(response.payload).toContain('create a new animal\'s address')
     expect(response.payload).toMatch(/data-client-edit-button\s+hidden/)
-    expect(response.payload).toMatch(/data-animal-address-edit-button hidden/)
+    expect(response.payload).toMatch(/data-animal-address-edit-button[^>]*\shidden(?:\s|>)/)
     expect(globalThis.fetch).toHaveBeenCalledWith('http://localhost:3200/GetClients')
     expect(response.request.response.source.context.submissionFormState).toEqual({})
     expect(response.request.response.source.context.clientOptions).toEqual([

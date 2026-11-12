@@ -148,6 +148,12 @@ describe('GET /GetAnimalDetails', () => {
     expect(response.result).toEqual({
       speciesId: 'CATTLE',
       ageCategories: [{ value: 'ADULT', label: 'Adult' }],
+      ageUnits: [
+        { value: 'DAYS', label: 'Days' },
+        { value: 'WEEKS', label: 'Weeks' },
+        { value: 'MONTHS', label: 'Months' },
+        { value: 'YEARS', label: 'Years' }
+      ],
       purposes: [{ value: 'MILK', label: 'Dairy' }],
       keepingTypes: [{ value: 'OUTDOOR', label: 'Outdoor' }],
       breeds: [{ value: 'HOLSTEIN_FRIESIAN', label: 'Holstein Friesian' }],

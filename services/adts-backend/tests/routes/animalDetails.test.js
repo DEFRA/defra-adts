@@ -1,6 +1,33 @@
 import { afterAll, afterEach, beforeAll, describe, expect, jest, test } from '@jest/globals'
 import createServer from '../../src/app.js'
 
+const typesWithNameIndex = new Set([
+  'SPECIES',
+  'SPECIES_ANIMAL_BREED',
+  'SPECIES_ANIMAL_PURPOSE',
+  'SPECIES_HOUSING'
+])
+
+const referenceItem = ({ type, code, description, order, index, ...attributes }) => {
+  const speciesCode = attributes.speciesCode
+  const itemCode = speciesCode ? `${speciesCode}#${code}` : code
+
+  return {
+    PK: `REF#${type}`,
+    SK: `ORDER#${order}#${itemCode}`,
+    type,
+    code,
+    description,
+    index,
+    GSI1PK: `CODE#${type}`,
+    GSI1SK: code,
+    ...(typesWithNameIndex.has(type)
+      ? { GSI2PK: `NAME#${type}`, GSI2SK: description.toLowerCase() }
+      : {}),
+    ...attributes
+  }
+}
+
 describe('GET /GetAnimalDetails', () => {
   let server
   const docClient = { send: jest.fn() }
@@ -24,7 +51,17 @@ describe('GET /GetAnimalDetails', () => {
         return {
           Items: command.input.ExpressionAttributeValues[':gsi1pk'] === 'CODE#SPECIES' &&
             command.input.ExpressionAttributeValues[':gsi1sk'] === 'CATTLE'
-            ? [{ code: 'CATTLE', description: 'Cattle', isAvian: false }]
+            ? [referenceItem({
+                type: 'SPECIES',
+                code: 'CATTLE',
+                description: 'Cattle',
+                order: '0001',
+                index: 0,
+                isAvian: false,
+                isMammal: true,
+                isRuminant: true,
+                mostCommon: true
+              })]
             : []
         }
       }
@@ -32,20 +69,73 @@ describe('GET /GetAnimalDetails', () => {
       const partition = command.input.ExpressionAttributeValues[':pk']
       const items = {
         'REF#SPECIES_ANIMAL_BREED': [
-          { speciesCode: 'CATTLE', code: 'HOLSTEIN', description: 'Holstein' }
+          referenceItem({
+            type: 'SPECIES_ANIMAL_BREED',
+            speciesCode: 'CATTLE',
+            code: 'HOLSTEIN_FRIESIAN',
+            description: 'Holstein Friesian',
+            order: '0001',
+            index: 1
+          })
         ],
         'REF#SPECIES_ANIMAL_PURPOSE': [
-          { speciesCode: 'CATTLE', code: 'DAIRY', description: 'Dairy' }
+          referenceItem({
+            type: 'SPECIES_ANIMAL_PURPOSE',
+            speciesCode: 'CATTLE',
+            code: 'MILK',
+            description: 'Dairy',
+            order: '0001',
+            index: 1,
+            isAvian: false
+          })
         ],
         'REF#SPECIES_HOUSING': [
-          { code: 'OUTDOOR', description: 'Outdoor', isAvian: false },
-          { code: 'AVIARY', description: 'Aviary', isAvian: true },
-          { code: 'NOT-CATTLE', description: 'Not for cattle', excludeSpeciesLimsCodes: ['CATTLE'] }
+          referenceItem({
+            type: 'SPECIES_HOUSING',
+            code: 'OUTDOOR',
+            description: 'Outdoor',
+            order: '0015',
+            index: 15,
+            isAvian: false
+          }),
+          referenceItem({
+            type: 'SPECIES_HOUSING',
+            code: 'BARN',
+            description: 'Pen/Barns',
+            order: '0001',
+            index: 1,
+            isAvian: true
+          })
         ],
-        'REF#SEX_GROUP': [{ code: 'FEMALE', description: 'Female', excludeAvian: true }],
-        'REF#AGE_CATEGORY': [{ code: 'ADULT', description: 'Adult', isAvian: false }],
+        'REF#SEX_GROUP': [
+          referenceItem({
+            type: 'SEX_GROUP',
+            code: 'FEMALE',
+            description: 'Female',
+            order: '0002',
+            index: 1,
+            excludeAvian: true
+          })
+        ],
+        'REF#AGE_CATEGORY': [
+          referenceItem({
+            type: 'AGE_CATEGORY',
+            code: 'ADULT',
+            description: 'Adult',
+            order: '0012',
+            index: 12,
+            isAvian: false
+          })
+        ],
         'REF#ORGANIC_ENVIRONMENT': [
-          { code: 'ORGANIC', description: 'Organic', forAvianSpecies: false }
+          referenceItem({
+            type: 'ORGANIC_ENVIRONMENT',
+            code: 'ORGANIC',
+            description: 'Organic accreditation applies',
+            order: '0001',
+            index: 0,
+            forAvianSpecies: false
+          })
         ]
       }[partition]
 
@@ -58,9 +148,9 @@ describe('GET /GetAnimalDetails', () => {
     expect(response.result).toEqual({
       speciesId: 'CATTLE',
       ageCategories: [{ value: 'ADULT', label: 'Adult' }],
-      purposes: [{ value: 'DAIRY', label: 'Dairy' }],
+      purposes: [{ value: 'MILK', label: 'Dairy' }],
       keepingTypes: [{ value: 'OUTDOOR', label: 'Outdoor' }],
-      breeds: [{ value: 'HOLSTEIN', label: 'Holstein' }],
+      breeds: [{ value: 'HOLSTEIN_FRIESIAN', label: 'Holstein Friesian' }],
       sexes: [{ value: 'FEMALE', label: 'Female' }],
       organicAccreditationApplicable: true
     })

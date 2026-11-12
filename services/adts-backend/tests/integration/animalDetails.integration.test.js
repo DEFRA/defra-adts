@@ -45,23 +45,20 @@ describe('GET /GetAnimalDetails with local DynamoDB', () => {
     }
   })
 
-  const expectOption = (option, value, label) => {
-    expect(option).toEqual({ value, label })
-  }
-
   test('returns species-specific breeds and purposes for a non-avian species (CATTLE)', async () => {
     const response = await server.inject({ method: 'GET', url: '/GetAnimalDetails?speciesId=CATTLE' })
 
     expect(response.statusCode).toBe(200)
     expect(response.result.speciesId).toBe('CATTLE')
 
-    // Species-specific partitions: only one breed and one purpose seeded for Cattle
-    expect(response.result.breeds).toHaveLength(1)
-    expectOption(response.result.breeds[0], 'HOLSTEIN', 'Holstein')
-    expect(response.result.purposes).toHaveLength(1)
-    expectOption(response.result.purposes[0], 'DAIRY', 'Dairy')
-    expect(response.result.breeds).toContainEqual({ value: 'BEEFMASTER', label: 'Beefmaster' })
+    // The expanded reference seed includes multiple breeds and purposes for Cattle.
+    expect(response.result.breeds).toContainEqual({
+      value: 'HOLSTEIN_FRIESIAN',
+      label: 'Holstein Friesian'
+    })
     expect(response.result.purposes).toContainEqual({ value: 'MILK', label: 'Dairy' })
+    expect(response.result.breeds).toContainEqual({ value: 'BEEFMASTER', label: 'Beefmaster' })
+    expect(response.result.purposes).toContainEqual({ value: 'SUCKLER', label: 'Suckler' })
   })
 
   test('includes non-avian keeping types, sexes, ages and organic flag for CATTLE', async () => {
@@ -91,7 +88,7 @@ describe('GET /GetAnimalDetails with local DynamoDB', () => {
     expect(response.result.speciesId).toBe('CHICKEN')
 
     expect(response.result.breeds.length).toBeGreaterThan(0)
-    expect(response.result.breeds.map((option) => option.value)).not.toContain('BEEFMASTER')
+    expect(response.result.breeds.map((option) => option.value)).not.toContain('HOLSTEIN_FRIESIAN')
     expect(response.result.purposes.map((option) => option.value)).not.toContain('MILK')
 
     const housingValues = response.result.keepingTypes.map((option) => option.value)
@@ -116,7 +113,7 @@ describe('GET /GetAnimalDetails with local DynamoDB', () => {
     expect(response.result.speciesId).toBe('SHEEP')
 
     expect(response.result.breeds.length).toBeGreaterThan(0)
-    expect(response.result.breeds.map((option) => option.value)).not.toContain('BEEFMASTER')
+    expect(response.result.breeds.map((option) => option.value)).not.toContain('HOLSTEIN_FRIESIAN')
     expect(response.result.purposes).toContainEqual({ value: 'HILLSHEEP', label: 'Hill' })
 
     expect(response.result.keepingTypes.map((o) => o.value)).toEqual(expect.arrayContaining(['HOUSED', 'OUTDOOR']))

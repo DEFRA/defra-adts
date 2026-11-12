@@ -104,12 +104,6 @@ export const getClientIntentViewOptions = ({
   return null
 }
 
-const getClientAddress = (clientDetails) => [
-  clientDetails.addressLine1,
-  clientDetails.addressLine2,
-  clientDetails.addressLine3
-].filter(Boolean).join(', ')
-
 const getCountyOptions = (counties, selectedCounty) => {
   const names = counties.map((county) => county.name)
   const extraOption = selectedCounty && !names.includes(selectedCounty) ? [selectedCounty] : []
@@ -124,46 +118,17 @@ const getCountyOptions = (counties, selectedCounty) => {
   ]
 }
 
-const getSelectedAnimalAddress = (savedDetails, selectedAnimalAddressRecord) => {
-  const savedAddress = savedDetails.animalAddressDetails
-  const animalAddressDetails = savedAddress ||
-    (selectedAnimalAddressRecord ? getClientFieldValues(selectedAnimalAddressRecord) : getClientFieldValues())
-  const selectedAddress = savedAddress || selectedAnimalAddressRecord
-
-  return {
-    animalAddressDetails,
-    animalAddressEditMode: !savedDetails.animalAddressClientId && Boolean(savedAddress),
-    selectedAnimalAddressName: getClientLabel(selectedAddress || {}),
-    selectedAnimalAddress: selectedAddress
-      ? {
-          ...(savedAddress || getClientFieldValues(selectedAnimalAddressRecord)),
-          address: getClientAddress(savedAddress || getClientFieldValues(selectedAnimalAddressRecord))
-        }
-      : undefined
-  }
-}
-
 const getSelectedClientContext = (savedDetails, selectedClient) => {
   const selectedClientDetails = getSelectedClientDetails(savedDetails, selectedClient)
-  const isManualClient = !savedDetails.clientId &&
+  const hasManualClient = !savedDetails.clientId &&
     clientFieldNames.some((fieldName) => Boolean(savedDetails[fieldName]))
 
   return {
     selectedClientName: getClientLabel(selectedClient || {}),
-    selectedClient: selectedClient
-      ? {
-          ...selectedClientDetails,
-          address: getClientAddress(selectedClientDetails)
-        }
-      : undefined,
-    manualClient: isManualClient
-      ? {
-          ...selectedClientDetails,
-          address: getClientAddress(selectedClientDetails)
-        }
-      : undefined,
+    hasSelectedClient: Boolean(selectedClient),
+    hasManualClient,
     clientDetails: selectedClientDetails,
-    editMode: isManualClientEntry(savedDetails) && !isManualClient
+    editMode: isManualClientEntry(savedDetails) && !hasManualClient
   }
 }
 
@@ -175,6 +140,9 @@ const getClientDetailsViewContext = (submissionFormState, clients, counties, ove
   const selectedAnimalAddressRecord = clients.find((client) =>
     String(client.clientId) === String(animalAddressClientId)
   )
+  const savedAnimalAddress = savedDetails.animalAddressDetails
+  const animalAddressDetails = savedAnimalAddress ||
+    (selectedAnimalAddressRecord ? getClientFieldValues(selectedAnimalAddressRecord) : getClientFieldValues())
 
   const viewContext = {
     errors: {},
@@ -184,7 +152,10 @@ const getClientDetailsViewContext = (submissionFormState, clients, counties, ove
     animalAddressClientId,
     animalsAtClientAddress: savedDetails.animalsAtClientAddress,
     animalAddress: savedDetails.animalAddress || '',
-    ...getSelectedAnimalAddress(savedDetails, selectedAnimalAddressRecord),
+    animalAddressDetails,
+    animalAddressEditMode: !savedDetails.animalAddressClientId && Boolean(savedAnimalAddress),
+    selectedAnimalAddressName: getClientLabel(savedAnimalAddress || selectedAnimalAddressRecord || {}),
+    hasSelectedAnimalAddress: Boolean(savedAnimalAddress || selectedAnimalAddressRecord),
     ...getSelectedClientContext(savedDetails, selectedClient),
     ...overrides,
     submissionFormState

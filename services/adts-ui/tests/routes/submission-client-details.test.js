@@ -163,6 +163,30 @@ describe('Submission client details page', () => {
     expect(revisitResponse.payload).toContain('value="48/234/2348"')
   })
 
+  test('does not render selected client or animal address summaries', async () => {
+    const response = await server.inject({
+      method: 'POST',
+      url,
+      payload: {
+        clientId: '101',
+        animalsAtClientAddress: 'no',
+        animalAddressClientId: '102'
+      }
+    })
+    const revisitResponse = await server.inject({
+      method: 'GET',
+      url,
+      headers: { cookie: getCookieHeader(response) }
+    })
+
+    expect(revisitResponse.statusCode).toBe(200)
+    expect(revisitResponse.payload).not.toContain('Selected client')
+    expect(revisitResponse.payload).not.toContain('Selected animal address')
+    expect(revisitResponse.payload).not.toContain('govuk-inset-text')
+    expect(revisitResponse.payload).toMatch(/data-client-edit-button\s*>Edit<\/button>/)
+    expect(revisitResponse.payload).toMatch(/data-animal-address-edit-button[^>]*>Edit<\/button>/)
+  })
+
   test('discards the animal address when the animals are at the client address', async () => {
     const response = await server.inject({
       method: 'POST',
@@ -307,8 +331,10 @@ describe('Submission client details page', () => {
       postcode: 'L20 6EC',
       cph: '12/123/1234'
     })
-    expect(revisitResponse.payload).toContain('<p class="govuk-body">Edited Farm Name</p>')
-    expect(revisitResponse.payload).toContain('<p class="govuk-body">2 Farm Road, Farmsville</p>')
+    expect(revisitResponse.payload).not.toContain('<p class="govuk-body">Edited Farm Name</p>')
+    expect(revisitResponse.payload).not.toContain('<p class="govuk-body">2 Farm Road, Farmsville</p>')
+    expect(revisitResponse.payload).not.toContain('Selected client')
+    expect(revisitResponse.payload).not.toContain('govuk-inset-text')
     expect(revisitResponse.payload).toContain(
       '<option value="101" selected>Acme Farm, Acme Holdings, 1 Farm Road, Farmsville, Merseyside, L20 6EC, 12/123/1234</option>'
     )
@@ -443,8 +469,10 @@ describe('Submission client details page', () => {
       postcode: 'AB1 2CD',
       cph: '48/234/2348'
     })
-    expect(revisitResponse.payload).toContain('New client')
-    expect(revisitResponse.payload).toContain('Jane Smith')
+    expect(revisitResponse.payload).not.toContain('New client')
+    expect(revisitResponse.payload).not.toContain('Jane Smith')
+    expect(revisitResponse.payload).not.toContain('govuk-inset-text')
+    expect(revisitResponse.payload).toContain('href="/submission-01-client-address?intent=edit"')
 
     const continueResponse = await server.inject({
       method: 'POST',
@@ -757,7 +785,7 @@ describe('Submission client details page', () => {
     })
 
     expect(cancelled.statusCode).toBe(200)
-    expect(cancelled.payload).toContain('Selected client')
+    expect(cancelled.payload).not.toContain('Selected client')
     expect(cancelled.payload).not.toContain('value="Unsaved change"')
   })
 

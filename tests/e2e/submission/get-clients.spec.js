@@ -27,4 +27,23 @@ test.describe('Client lookup via LIMS', () => {
     expect(html).not.toContain('E2E-PVS-001')
     expect(browserUrls.filter((url) => url.includes('E2E-PVS-001') || url.includes('getClients'))).toEqual([])
   })
+
+  test('does not render selected client or animal address summaries', async ({ page }) => {
+    await page.goto('/submission-01-client-details')
+    await page.getByRole('combobox', { name: 'Client' }).fill('Example Farm')
+    await page.getByRole('option', { name: /Example Farm/ }).click()
+    await page.getByRole('radio', { name: 'No', exact: true }).check()
+    await page.getByRole('combobox', { name: 'Animal address' }).fill('Second Example Farm')
+    await page.getByRole('option', { name: 'Second Example Farm', exact: true }).click()
+    await page.getByRole('button', { name: 'Continue' }).click()
+    await expect(page).toHaveURL(/\/submission-02-species$/)
+
+    await page.goto('/submission-01-client-details')
+
+    await expect(page.getByText('Selected client', { exact: true })).toHaveCount(0)
+    await expect(page.getByText('Selected animal address', { exact: true })).toHaveCount(0)
+    await expect(page.locator('.govuk-inset-text')).toHaveCount(0)
+    await expect(page.locator('[data-client-edit-button]')).toBeVisible()
+    await expect(page.locator('[data-animal-address-edit-button]')).toBeVisible()
+  })
 })

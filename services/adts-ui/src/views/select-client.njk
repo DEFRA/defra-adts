@@ -142,40 +142,7 @@
         items: clientOptions
       }) }}
       <p class="govuk-body app-create-address-link">Or you can <a class="govuk-link" href="/submission-01-client-address?intent=new" data-create-client-address-link>create a new client</a>.</p>
-      {% if selectedClient %}
-        <div class="govuk-inset-text">
-          <h2 class="govuk-heading-m">Selected client</h2>
-          <p class="govuk-body">{{ selectedClient.name }}</p>
-          {% if selectedClient.farmName %}
-            <p class="govuk-body">{{ selectedClient.farmName }}</p>
-          {% endif %}
-          {% if selectedClient.address %}
-            <p class="govuk-body">{{ selectedClient.address }}</p>
-          {% endif %}
-          {% if selectedClient.county or selectedClient.postcode %}
-            <p class="govuk-body">{{ selectedClient.county }}{% if selectedClient.county and selectedClient.postcode %}, {% endif %}{{ selectedClient.postcode }}</p>
-          {% endif %}
-          {% if selectedClient.cph %}
-            <p class="govuk-body">{{ selectedClient.cph }}</p>
-          {% endif %}
-        </div>
-      {% elif manualClient %}
-        <div class="govuk-inset-text">
-          <h2 class="govuk-heading-m">New client</h2>
-          <p class="govuk-body">{{ manualClient.name }}</p>
-          {% if manualClient.farmName %}
-            <p class="govuk-body">{{ manualClient.farmName }}</p>
-          {% endif %}
-          {% if manualClient.address %}
-            <p class="govuk-body">{{ manualClient.address }}</p>
-          {% endif %}
-          {% if manualClient.county or manualClient.postcode %}
-            <p class="govuk-body">{{ manualClient.county }}{% if manualClient.county and manualClient.postcode %}, {% endif %}{{ manualClient.postcode }}</p>
-          {% endif %}
-          {% if manualClient.cph %}
-            <p class="govuk-body">{{ manualClient.cph }}</p>
-          {% endif %}
-        </div>
+      {% if hasManualClient %}
         <a class="govuk-button govuk-button--secondary" href="/submission-01-client-address?intent=edit">Edit</a>
       {% endif %}
       <button
@@ -184,7 +151,7 @@
         name="intent"
         value="edit"
         data-client-edit-button
-        {% if not selectedClient %}hidden{% endif %}
+        {% if not hasSelectedClient %}hidden{% endif %}
       >Edit</button>
     {% endif %}
 
@@ -208,14 +175,7 @@
         }) }}
         <input type="hidden" name="animalAddress" value="{{ animalAddress }}">
         <p class="govuk-body app-create-address-link">Or you can <a class="govuk-link" href="/submission-01-animal-address?intent=new" data-create-animal-address-link>create a new animal's address</a>.</p>
-        {% if selectedAnimalAddress %}
-          <div class="govuk-inset-text">
-            <h3 class="govuk-heading-m">Selected animal address</h3>
-            <p class="govuk-body">{{ selectedAnimalAddress.name }}</p>
-            {% if selectedAnimalAddress.address %}<p class="govuk-body">{{ selectedAnimalAddress.address }}</p>{% endif %}
-          </div>
-        {% endif %}
-        <button class="govuk-button govuk-button--secondary" type="submit" name="intent" value="editAnimalAddress" data-animal-address-edit-button {% if not selectedAnimalAddress %}hidden{% endif %}>Edit</button>
+        <button class="govuk-button govuk-button--secondary" type="submit" name="intent" value="editAnimalAddress" data-animal-address-edit-button {% if not hasSelectedAnimalAddress %}hidden{% endif %}>Edit</button>
       </div>
     </div>
     {{ govukButton({

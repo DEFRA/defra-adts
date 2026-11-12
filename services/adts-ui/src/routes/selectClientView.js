@@ -132,19 +132,45 @@ const getSelectedClientContext = (savedDetails, selectedClient) => {
   }
 }
 
-const getClientDetailsViewContext = (submissionFormState, clients, counties, overrides = {}) => {
-  const savedDetails = submissionFormState.formData?.clientDetails || {}
+const getSelectedAddressRecords = (savedDetails, clients, overrides) => {
   const selectedClientId = overrides.selectedClientId ?? savedDetails.clientId ?? ''
   const selectedClient = clients.find((client) => client.clientId === selectedClientId)
   const animalAddressClientId = overrides.animalAddressClientId ?? savedDetails.animalAddressClientId ?? ''
   const selectedAnimalAddressRecord = clients.find((client) =>
     String(client.clientId) === String(animalAddressClientId)
   )
+
+  return {
+    selectedClientId,
+    selectedClient,
+    animalAddressClientId,
+    selectedAnimalAddressRecord
+  }
+}
+
+const getAnimalAddressViewContext = (savedDetails, selectedAnimalAddressRecord) => {
   const savedAnimalAddress = savedDetails.animalAddressDetails
   const hasSavedManualAnimalAddress = !savedDetails.animalAddressClientId &&
     clientFieldNames.some((fieldName) => Boolean(savedAnimalAddress?.[fieldName]))
   const animalAddressDetails = savedAnimalAddress ||
     (selectedAnimalAddressRecord ? getClientFieldValues(selectedAnimalAddressRecord) : getClientFieldValues())
+
+  return {
+    animalAddressDetails,
+    selectedAnimalAddressName: getClientLabel(savedAnimalAddress || selectedAnimalAddressRecord || {}),
+    hasSelectedAnimalAddress: Boolean(selectedAnimalAddressRecord || hasSavedManualAnimalAddress),
+    hasSavedManualAnimalAddress
+  }
+}
+
+const getClientDetailsViewContext = (submissionFormState, clients, counties, overrides = {}) => {
+  const savedDetails = submissionFormState.formData?.clientDetails || {}
+  const {
+    selectedClientId,
+    selectedClient,
+    animalAddressClientId,
+    selectedAnimalAddressRecord
+  } = getSelectedAddressRecords(savedDetails, clients, overrides)
 
   const viewContext = {
     errors: {},
@@ -154,10 +180,7 @@ const getClientDetailsViewContext = (submissionFormState, clients, counties, ove
     animalAddressClientId,
     animalsAtClientAddress: savedDetails.animalsAtClientAddress,
     animalAddress: savedDetails.animalAddress || '',
-    animalAddressDetails,
-    selectedAnimalAddressName: getClientLabel(savedAnimalAddress || selectedAnimalAddressRecord || {}),
-    hasSelectedAnimalAddress: Boolean(selectedAnimalAddressRecord || hasSavedManualAnimalAddress),
-    hasSavedManualAnimalAddress,
+    ...getAnimalAddressViewContext(savedDetails, selectedAnimalAddressRecord),
     ...getSelectedClientContext(savedDetails, selectedClient),
     ...overrides,
     submissionFormState

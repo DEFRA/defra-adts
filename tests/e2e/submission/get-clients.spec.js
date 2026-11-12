@@ -46,4 +46,21 @@ test.describe('Client lookup via LIMS', () => {
     await expect(page.locator('[data-client-edit-button]')).toBeVisible()
     await expect(page.locator('[data-animal-address-edit-button]')).toBeVisible()
   })
+
+  test('keeps the edit button visible for a manually entered animal address', async ({ page }) => {
+    await page.goto('/submission-01-client-details')
+    await page.getByRole('combobox', { name: 'Client' }).fill('Example Farm')
+    await page.getByRole('option', { name: /Example Farm/ }).click()
+    await page.getByRole('radio', { name: 'No', exact: true }).check()
+    await page.getByRole('link', { name: "create a new animal's address" }).click()
+    await expect(page).toHaveURL(/\/submission-01-animal-address/)
+
+    await page.getByLabel('Name').fill('Manual animal address')
+    await page.getByRole('button', { name: 'Save' }).click()
+    await expect(page).toHaveURL(/\/submission-01-client-details$/)
+    await expect(page.locator('[data-animal-address-edit-button]')).toBeVisible()
+    await page.locator('[data-animal-address-edit-button]').click()
+    await expect(page).toHaveURL(/\/submission-01-animal-address\?intent=edit$/)
+    await expect(page.getByRole('heading', { name: 'Edit animal address' })).toBeVisible()
+  })
 })

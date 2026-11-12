@@ -73,7 +73,7 @@ const renderCphValidationErrors = (
 
   return renderClientDetailsPage(h, submissionFormState, clients, counties, {
     ...(clientDetails && { clientDetails, editMode: true }),
-    ...(animalAddressDetails && { animalAddressDetails, animalAddressEditMode: true }),
+    ...(animalAddressDetails && { animalAddressDetails }),
     selectedClientId: selectedClient?.clientId || '',
     animalAddressClientId: payload.animalAddressClientId || '',
     errors,
@@ -170,12 +170,7 @@ const getAnimalAddressDetailsForLocation = (payload, savedDetails, animalAddress
     (animalAddressClient ? getClientFieldValues(animalAddressClient) : getClientFieldValues())
 }
 
-const isAnimalAddressEditMode = (intent, savedDetails) =>
-  intent === 'newAnimalAddress' ||
-  intent === 'editAnimalAddress' ||
-  (intent !== 'cancelAnimalAddress' && Boolean(savedDetails.animalAddressDetails))
-
-const getAnimalLocation = (payload, formData, intent, animalAddressClient) => {
+const getAnimalLocation = (payload, formData, animalAddressClient) => {
   const savedDetails = formData.clientDetails || {}
 
   return {
@@ -185,8 +180,7 @@ const getAnimalLocation = (payload, formData, intent, animalAddressClient) => {
       savedDetails.animalAddressClientId ?? '',
     animalAddress: payload.animalAddress ??
       savedDetails.animalAddress ?? '',
-    animalAddressDetails: getAnimalAddressDetailsForLocation(payload, savedDetails, animalAddressClient),
-    animalAddressEditMode: isAnimalAddressEditMode(intent, savedDetails)
+    animalAddressDetails: getAnimalAddressDetailsForLocation(payload, savedDetails, animalAddressClient)
   }
 }
 
@@ -260,8 +254,7 @@ export const saveClientDraftForAddress = (
     ...getSubmittedClientDetails(payload, selectedClient, formData),
     ...(selectedClient && { clientId: selectedClient.clientId })
   }
-  const animalLocation = getAnimalLocation(payload, formData, payload.intent, selectedAnimalAddress)
-  delete animalLocation.animalAddressEditMode
+  const animalLocation = getAnimalLocation(payload, formData, selectedAnimalAddress)
 
   request.yar.set(submissionFormStateKey, {
     ...submissionFormState,
@@ -322,7 +315,11 @@ const handleClientPostIntent = ({
   selectedClient,
   selectedAnimalAddress
 }) => {
-  if (payload.intent === 'editAnimalAddress' && selectedAnimalAddress) {
+  const savedClientDetails = formData.clientDetails || {}
+  if (
+    payload.intent === 'editAnimalAddress' &&
+    (selectedAnimalAddress || savedClientDetails.animalAddressDetails)
+  ) {
     saveClientDraftForAnimalAddress({
       request,
       submissionFormStateKey,
@@ -332,10 +329,12 @@ const handleClientPostIntent = ({
       selectedClient,
       selectedAnimalAddress
     })
-    return h.redirect(`/${animalAddressPageName}?intent=edit&animalAddressClientId=${selectedAnimalAddress.clientId}`)
+    const animalAddressClientId = selectedAnimalAddress
+      ? `&animalAddressClientId=${selectedAnimalAddress.clientId}`
+      : ''
+    return h.redirect(`/${animalAddressPageName}?intent=edit${animalAddressClientId}`)
   }
 
-  const savedClientDetails = formData.clientDetails || {}
   const hasSubmittedFields = hasSubmittedClientFields(payload) || isManualClientEntry(savedClientDetails)
   const intentViewOptions = getClientIntentViewOptions({
     intent: payload.intent,
@@ -344,7 +343,7 @@ const handleClientPostIntent = ({
     submittedClientDetails: getSubmittedClientDetails(payload, selectedClient, formData),
     hasSubmittedFields,
     payload,
-    animalLocation: getAnimalLocation(payload, formData, payload.intent, selectedAnimalAddress)
+    animalLocation: getAnimalLocation(payload, formData, selectedAnimalAddress)
   })
 
   return intentViewOptions

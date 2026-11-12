@@ -531,6 +531,7 @@ describe('Submission client details page', () => {
     expect(response.payload).toContain('href="#animalAddressCph"')
     expect(response.request.response.source.context.clientDetails.cph).toBe('12/34/5678')
     expect(response.request.response.source.context.animalAddressDetails.cph).toBe('12-345-6789')
+    expect(response.payload).toMatch(/data-animal-address-edit-button[^>]*hidden/)
   })
 
   test('canceling a new client address returns to the saved client selection', async () => {
@@ -695,6 +696,8 @@ describe('Submission client details page', () => {
     expect(revisitResponse.payload).toContain(
       'data-default-value="Second Site, Animal Farm, 2 Animal Road, Southshire, CD3 4EF, 49/345/3456"'
     )
+    expect(revisitResponse.payload).toContain('data-manual-address="true"')
+    expect(revisitResponse.payload).toMatch(/data-animal-address-edit-button data-manual-address="true"[^>]*>Edit<\/button>/)
   })
 
   test('looks up and edits an existing animal address from the client records', async () => {
@@ -758,6 +761,63 @@ describe('Submission client details page', () => {
     expect(editResponse.payload).toContain('value="Green Acres"')
     expect(editResponse.payload).toContain('value="2 Green Lane"')
     expect(editResponse.payload).toContain('value="22/222/2222"')
+  })
+
+  test('opens the edit form for a manually entered animal address', async () => {
+    const saved = await server.inject({
+      method: 'POST',
+      url,
+      payload: {
+        clientId: '101',
+        animalsAtClientAddress: 'no',
+        animalAddress: '48/345/3456'
+      }
+    })
+    const savedCookie = getCookieHeader(saved)
+    const animalAddressSaved = await server.inject({
+      method: 'POST',
+      url: '/submission-01-animal-address',
+      headers: { cookie: savedCookie },
+      payload: {
+        animalAddressName: 'Manual animal address',
+        animalAddressFarmName: 'Animal Farm',
+        animalAddressAddressLine1: '12 Animal Road',
+        animalAddressCounty: 'Dorset',
+        animalAddressPostcode: 'AB1 2CD',
+        animalAddressCph: '48/345/3456'
+      }
+    })
+    const revisitResponse = await server.inject({
+      method: 'GET',
+      url,
+      headers: { cookie: getCookieHeader(animalAddressSaved) }
+    })
+    const editResponse = await server.inject({
+      method: 'POST',
+      url,
+      headers: { cookie: getCookieHeader(animalAddressSaved) },
+      payload: {
+        clientId: '101',
+        animalsAtClientAddress: 'no',
+        animalAddressClientId: '',
+        intent: 'editAnimalAddress'
+      }
+    })
+
+    expect(revisitResponse.statusCode).toBe(200)
+    expect(editResponse.statusCode).toBe(302)
+    expect(editResponse.headers.location).toBe('/submission-01-animal-address?intent=edit')
+
+    const editForm = await server.inject({
+      method: 'GET',
+      url: editResponse.headers.location,
+      headers: { cookie: getCookieHeader(editResponse) }
+    })
+    expect(editForm.statusCode).toBe(200)
+    expect(editForm.payload).toContain('Edit animal address')
+    expect(editForm.payload).toContain('value="Manual animal address"')
+    expect(editForm.payload).toContain('value="Animal Farm"')
+    expect(editForm.payload).toContain('value="12 Animal Road"')
   })
 
   test('opens the manual animal-address form from its create link', async () => {

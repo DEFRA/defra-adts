@@ -141,6 +141,8 @@ const getClientDetailsViewContext = (submissionFormState, clients, counties, ove
     String(client.clientId) === String(animalAddressClientId)
   )
   const savedAnimalAddress = savedDetails.animalAddressDetails
+  const hasSavedManualAnimalAddress = !savedDetails.animalAddressClientId &&
+    clientFieldNames.some((fieldName) => Boolean(savedAnimalAddress?.[fieldName]))
   const animalAddressDetails = savedAnimalAddress ||
     (selectedAnimalAddressRecord ? getClientFieldValues(selectedAnimalAddressRecord) : getClientFieldValues())
 
@@ -153,9 +155,9 @@ const getClientDetailsViewContext = (submissionFormState, clients, counties, ove
     animalsAtClientAddress: savedDetails.animalsAtClientAddress,
     animalAddress: savedDetails.animalAddress || '',
     animalAddressDetails,
-    animalAddressEditMode: !savedDetails.animalAddressClientId && Boolean(savedAnimalAddress),
     selectedAnimalAddressName: getClientLabel(savedAnimalAddress || selectedAnimalAddressRecord || {}),
-    hasSelectedAnimalAddress: Boolean(savedAnimalAddress || selectedAnimalAddressRecord),
+    hasSelectedAnimalAddress: Boolean(selectedAnimalAddressRecord || hasSavedManualAnimalAddress),
+    hasSavedManualAnimalAddress,
     ...getSelectedClientContext(savedDetails, selectedClient),
     ...overrides,
     submissionFormState

@@ -53,7 +53,7 @@ describe('client initialization', () => {
     })
     const speciesSelect = { dataset: { defaultValue: 'Sheep' } }
     const editButton = { hidden: false }
-    const animalAddressEditButton = { hidden: false }
+    const animalAddressEditButton = { dataset: { manualAddress: 'true' }, hidden: false }
     const hint = { setAttribute: jest.fn() }
     globalThis.document = {
       body: {},
@@ -89,7 +89,7 @@ describe('client initialization', () => {
       selectElement: speciesSelect
     })
     expect(editButton.hidden).toBe(true)
-    expect(animalAddressEditButton.hidden).toBe(true)
+    expect(animalAddressEditButton.hidden).toBe(false)
     expect(clientSelect.addEventListener).toHaveBeenCalledWith('change', expect.any(Function))
     expect(hint.setAttribute).toHaveBeenCalledWith('aria-hidden', 'true')
     expect(mutationObserver).toHaveBeenCalledWith(expect.any(Function))

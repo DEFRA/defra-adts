@@ -175,7 +175,7 @@
         }) }}
         <input type="hidden" name="animalAddress" value="{{ animalAddress }}">
         <p class="govuk-body app-create-address-link">Or you can <a class="govuk-link" href="/submission-01-animal-address?intent=new" data-create-animal-address-link>create a new animal's address</a>.</p>
-        <button class="govuk-button govuk-button--secondary" type="submit" name="intent" value="editAnimalAddress" data-animal-address-edit-button {% if not hasSelectedAnimalAddress %}hidden{% endif %}>Edit</button>
+        <button class="govuk-button govuk-button--secondary" type="submit" name="intent" value="editAnimalAddress" data-animal-address-edit-button data-manual-address="{% if hasSavedManualAnimalAddress %}true{% else %}false{% endif %}" {% if not hasSelectedAnimalAddress %}hidden{% endif %}>Edit</button>
       </div>
     </div>
     {{ govukButton({

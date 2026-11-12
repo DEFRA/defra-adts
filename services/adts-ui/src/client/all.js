@@ -90,7 +90,7 @@ if (speciesSelect) {
 const enhanceAddressLookup = (selectElement, editButton) => {
   const syncEditButton = () => {
     if (editButton) {
-      editButton.hidden = !selectElement.value
+      editButton.hidden = !selectElement.value && editButton.dataset.manualAddress !== 'true'
     }
   }
 

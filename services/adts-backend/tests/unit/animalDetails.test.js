@@ -25,39 +25,45 @@ describe('getAnimalDetails', () => {
         },
         { Items: [{ code: '123', description: 'Bird', isAvian: true }] }
       ],
-      'REF#SPECIES_ANIMAL_BREEDS#SPECIES#123': [
+      'REF#SPECIES_ANIMAL_BREED': [
         {
-          Items: [{ code: 'BREED-1', description: 'First breed' }],
-          LastEvaluatedKey: { PK: 'REF#SPECIES_ANIMAL_BREEDS#SPECIES#123', SK: 'next' }
+          Items: [
+            { speciesCode: '123', code: 'BREED-1', description: 'First breed' },
+            { speciesCode: '456', code: 'OTHER-BREED', description: 'Other breed' }
+          ],
+          LastEvaluatedKey: { PK: 'REF#SPECIES_ANIMAL_BREED', SK: 'next' }
         },
-        { Items: [{ code: 'BREED-2', description: 'Second breed' }] }
+        { Items: [{ speciesCode: '123', code: 'BREED-2', description: 'Second breed' }] }
       ],
-      'REF#SPECIES_ANIMAL_PURPOSES#SPECIES#123': {
-        Items: [{ code: 'PURPOSE', description: 'Purpose' }]
+      'REF#SPECIES_ANIMAL_PURPOSE': {
+        Items: [{ speciesCode: '123', code: 'PURPOSE', description: 'Purpose', isAvian: true }]
       },
-      'REF#SPECIES_HOUSINGS': {
+      'REF#SPECIES_HOUSING': {
         Items: [
-          { code: 'AVIARY', description: 'Aviary', forAvianSpecies: true },
-          { code: 'HOUSED', description: 'Housed', forAvianSpecies: false },
+          { code: 'AVIARY', description: 'Aviary', isAvian: true },
+          { code: 'HOUSED', description: 'Housed', isAvian: false },
           { code: 'EXCLUDED', description: 'Excluded', excludeSpeciesLimsCodes: ['123'] },
           { code: 'GENERAL', name: 'General' }
         ]
       },
-      'REF#SEX_GROUPS': {
+      'REF#SEX_GROUP': {
         Items: [
-          { code: 'FEMALE', description: 'Female' },
+          { code: 'FEMALE', description: 'Female', excludeAvian: true },
+          { code: 'CASTRATE', description: 'Castrate', excludeAvian: false },
           { code: 'NO-LABEL' },
           { description: 'No code' },
           { code: 'INVALID-LABEL', description: 12 }
         ]
       },
-      'REF#AGE_CATEGORIES': {
+      'REF#AGE_CATEGORY': {
         Items: [
-          { code: 'CHICK', description: 'Chick', forAvianSpecies: true },
-          { code: 'CALF', description: 'Calf', forAvianSpecies: false }
+          { code: 'CHICK', description: 'Chick', isAvian: true },
+          { code: 'CALF', description: 'Calf', isAvian: false }
         ]
       },
-      'REF#ORGANIC_ENVIRONMENT': {}
+      'REF#ORGANIC_ENVIRONMENT': {
+        Items: [{ code: 'ORGANIC', description: 'Organic', forAvianSpecies: false }]
+      }
     })
 
     const details = await getAnimalDetails(docClient, '123')
@@ -74,7 +80,7 @@ describe('getAnimalDetails', () => {
         { value: 'BREED-1', label: 'First breed' },
         { value: 'BREED-2', label: 'Second breed' }
       ],
-      sexes: [{ value: 'FEMALE', label: 'Female' }],
+      sexes: [{ value: 'CASTRATE', label: 'Castrate' }],
       organicAccreditationApplicable: false
     })
     const speciesPageCall = docClient.send.mock.calls.find(([command]) =>
@@ -86,33 +92,48 @@ describe('getAnimalDetails', () => {
       SK: 'next'
     })
     const breedPageCall = docClient.send.mock.calls.find(([command]) =>
-      command.input.ExpressionAttributeValues[':pk'] === 'REF#SPECIES_ANIMAL_BREEDS#SPECIES#123' &&
+      command.input.ExpressionAttributeValues[':pk'] === 'REF#SPECIES_ANIMAL_BREED' &&
       command.input.ExclusiveStartKey
     )
     expect(breedPageCall[0].input.ExclusiveStartKey).toEqual({
-      PK: 'REF#SPECIES_ANIMAL_BREEDS#SPECIES#123',
+      PK: 'REF#SPECIES_ANIMAL_BREED',
       SK: 'next'
     })
-    expect(docClient.pages.has('REF#SPECIES_ANIMAL_BREEDS')).toBe(false)
-    expect(docClient.pages.has('REF#SPECIES_ANIMAL_PURPOSES#AVIAN#1')).toBe(false)
   })
 
-  test('uses avian and generic fallback partitions when species options are absent', async () => {
+  test('filters shared seed partitions by species and avian applicability', async () => {
     const docClient = createDocClient({
       'REF#SPECIES': { Items: [{ code: 'CHICKEN', description: 'Chicken', isAvian: true }] },
-      'REF#SPECIES_ANIMAL_BREEDS#SPECIES#CHICKEN': { Items: [] },
-      'REF#SPECIES_ANIMAL_BREEDS': { Items: [{ code: 'BIRD-BREED', description: 'Bird breed' }] },
-      'REF#SPECIES_ANIMAL_PURPOSES#SPECIES#CHICKEN': { Items: [] },
-      'REF#SPECIES_ANIMAL_PURPOSES#AVIAN#1': { Items: [] },
-      'REF#SPECIES_ANIMAL_PURPOSES': {
+      'REF#SPECIES_ANIMAL_BREED': {
         Items: [
-          { code: 'AVIAN-PURPOSE', description: 'Avian purpose', forAvianSpecies: true },
-          { code: 'MAMMAL-PURPOSE', description: 'Mammal purpose', forAvianSpecies: false }
+          { speciesCode: 'CHICKEN', code: 'BIRD-BREED', description: 'Bird breed' },
+          { speciesCode: 'SHEEP', code: 'SHEEP-BREED', description: 'Sheep breed' }
         ]
       },
-      'REF#SPECIES_HOUSINGS': {},
-      'REF#SEX_GROUPS': {},
-      'REF#AGE_CATEGORIES': {},
+      'REF#SPECIES_ANIMAL_PURPOSE': {
+        Items: [
+          { speciesCode: 'CHICKEN', code: 'AVIAN-PURPOSE', description: 'Avian purpose', isAvian: true },
+          { speciesCode: 'CATTLE', code: 'MAMMAL-PURPOSE', description: 'Mammal purpose', isAvian: false }
+        ]
+      },
+      'REF#SPECIES_HOUSING': {
+        Items: [
+          { code: 'AVIARY', description: 'Aviary', isAvian: true },
+          { code: 'HOUSED', description: 'Housed', isAvian: false }
+        ]
+      },
+      'REF#SEX_GROUP': {
+        Items: [
+          { code: 'FEMALE', description: 'Female', excludeAvian: true },
+          { code: 'CASTRATE', description: 'Castrate', excludeAvian: false }
+        ]
+      },
+      'REF#AGE_CATEGORY': {
+        Items: [
+          { code: 'CHICK', description: 'Chick', isAvian: true },
+          { code: 'CALF', description: 'Calf', isAvian: false }
+        ]
+      },
       'REF#ORGANIC_ENVIRONMENT': {}
     })
 
@@ -120,15 +141,13 @@ describe('getAnimalDetails', () => {
 
     expect(details).toEqual({
       speciesId: 'CHICKEN',
-      ageCategories: [],
+      ageCategories: [{ value: 'CHICK', label: 'Chick' }],
       purposes: [{ value: 'AVIAN-PURPOSE', label: 'Avian purpose' }],
-      keepingTypes: [],
+      keepingTypes: [{ value: 'AVIARY', label: 'Aviary' }],
       breeds: [{ value: 'BIRD-BREED', label: 'Bird breed' }],
-      sexes: [],
+      sexes: [{ value: 'CASTRATE', label: 'Castrate' }],
       organicAccreditationApplicable: false
     })
-    expect(docClient.pages.has('REF#SPECIES_ANIMAL_BREEDS')).toBe(true)
-    expect(docClient.pages.has('REF#SPECIES_ANIMAL_PURPOSES')).toBe(true)
   })
 
   test('returns undefined when the species partition has no matching species', async () => {
@@ -154,8 +173,10 @@ describe('getAnimalDetails', () => {
       sexes: [],
       organicAccreditationApplicable: false
     })
-    expect(docClient.pages.get('REF#SPECIES_ANIMAL_BREEDS')).toBe(1)
-    expect(docClient.pages.get('REF#SPECIES_ANIMAL_PURPOSES#AVIAN#0')).toBe(1)
-    expect(docClient.pages.get('REF#SPECIES_ANIMAL_PURPOSES')).toBe(1)
+    expect(docClient.pages.get('REF#SPECIES_ANIMAL_BREED')).toBe(1)
+    expect(docClient.pages.get('REF#SPECIES_ANIMAL_PURPOSE')).toBe(1)
+    expect(docClient.pages.get('REF#SPECIES_HOUSING')).toBe(1)
+    expect(docClient.pages.get('REF#SEX_GROUP')).toBe(1)
+    expect(docClient.pages.get('REF#AGE_CATEGORY')).toBe(1)
   })
 })

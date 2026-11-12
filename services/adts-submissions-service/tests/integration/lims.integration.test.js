@@ -7,7 +7,7 @@ describe('Submissions-service LIMS integration', () => {
 
   beforeAll(async () => {
     process.env.PORT = '3100'
-    process.env.LIMS_BASE_URL = 'https://mock-lims.local'
+    process.env.LIMS_API_URL = 'https://mock-lims.local'
     server = await createServer()
   })
 
@@ -35,7 +35,7 @@ describe('Submissions-service LIMS integration', () => {
     })
 
     expect(fetchSpy).toHaveBeenCalledWith(
-      'https://mock-lims.local/submissions?client=Acme&status=submitted'
+      'https://mock-lims.local/submissions/getSubmissions?client=Acme&status=submitted'
     )
     expect(response.statusCode).toBe(200)
     expect(response.result).toEqual(limsPayload)

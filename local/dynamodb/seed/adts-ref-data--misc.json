@@ -1,0 +1,27 @@
+{
+  "adts-reference-data": [
+    { "PutRequest": { "Item": {
+      "PK": { "S": "REF#ORGANIC_ENVIRONMENT" },
+      "SK": { "S": "ORDER#0001#ORGANIC" },
+      "type": { "S": "ORGANIC_ENVIRONMENT" },
+      "code": { "S": "ORGANIC" },
+      "description": { "S": "Organic accreditation applies" },
+      "forAvianSpecies": { "BOOL": false },
+      "index": { "N": "0" },
+      "GSI1PK": { "S": "CODE#ORGANIC_ENVIRONMENT" },
+      "GSI1SK": { "S": "ORGANIC" }
+    } } },
+    { "PutRequest": { "Item": {
+      "PK": { "S": "REF#PVS_PRACTICE" },
+      "SK": { "S": "ORDER#0001#PRACTICE-123" },
+      "type": { "S": "PVS_PRACTICE" },
+      "code": { "S": "PRACTICE-123" },
+      "name": { "S": "Example Veterinary Practice" },
+      "index": { "N": "0" },
+      "GSI1PK": { "S": "CODE#PVS_PRACTICE" },
+      "GSI1SK": { "S": "PRACTICE-123" },
+      "GSI2PK": { "S": "NAME#PVS_PRACTICE" },
+      "GSI2SK": { "S": "example veterinary practice" }
+    } } }
+  ]
+}

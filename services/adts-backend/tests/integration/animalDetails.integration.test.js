@@ -1,7 +1,7 @@
 /**
  * Integration tests for GET /GetAnimalDetails against the local DynamoDB
  * instance (http://localhost:8000) with the seed data in
- * local/dynamodb/seed/adts-reference-data.json.
+ * local/dynamodb/seed/adts-ref-data-*.json.
  *
  * Verifies the handler's end-to-end behaviour against real Dynamo:
  *  - returns the expected lookup shape with the seeded options
@@ -60,6 +60,8 @@ describe('GET /GetAnimalDetails with local DynamoDB', () => {
     expectOption(response.result.breeds[0], 'HOLSTEIN', 'Holstein')
     expect(response.result.purposes).toHaveLength(1)
     expectOption(response.result.purposes[0], 'DAIRY', 'Dairy')
+    expect(response.result.breeds).toContainEqual({ value: 'BEEFMASTER', label: 'Beefmaster' })
+    expect(response.result.purposes).toContainEqual({ value: 'MILK', label: 'Dairy' })
   })
 
   test('includes non-avian keeping types, sexes, ages and organic flag for CATTLE', async () => {
@@ -67,61 +69,58 @@ describe('GET /GetAnimalDetails with local DynamoDB', () => {
 
     expect(response.statusCode).toBe(200)
 
-    // Housings: HOUSED + OUTDOOR are non-avian, AVIARY is avian and must be filtered out
+    // HOUSED and OUTDOOR are non-avian; avian housing is filtered out.
     const housingValues = response.result.keepingTypes.map((option) => option.value)
     expect(housingValues).toEqual(expect.arrayContaining(['HOUSED', 'OUTDOOR']))
-    expect(housingValues).not.toContain('AVIARY')
+    expect(housingValues).not.toContain('BARN')
 
-    // Sex groups: no forAvianSpecies filter, all three expected
     const sexValues = response.result.sexes.map((option) => option.value)
-    expect(sexValues).toEqual(expect.arrayContaining(['FEMALE', 'MALE', 'MIXED']))
+    expect(sexValues).toEqual(expect.arrayContaining(['FEMALE', 'MALE', 'CASTRATE']))
 
-    // Age categories: both seeded entries are non-avian
     const ageValues = response.result.ageCategories.map((option) => option.value)
-    expect(ageValues).toEqual(expect.arrayContaining(['ADULT', 'CALF']))
+    expect(ageValues).toContain('ADULT')
+    expect(ageValues).toContain('NEONATAL')
 
-    // Organic applies for non-avian species
     expect(response.result.organicAccreditationApplicable).toBe(true)
   })
 
-  test('applies avian filtering for CHICKEN — only avian options and no non-avian lookups', async () => {
+  test('applies avian filtering for CHICKEN', async () => {
     const response = await server.inject({ method: 'GET', url: '/GetAnimalDetails?speciesId=CHICKEN' })
 
     expect(response.statusCode).toBe(200)
     expect(response.result.speciesId).toBe('CHICKEN')
 
-    // No chicken-specific breed or purpose seeded, and generic fallback has none either
-    expect(response.result.breeds).toEqual([])
-    expect(response.result.purposes).toEqual([])
+    expect(response.result.breeds.length).toBeGreaterThan(0)
+    expect(response.result.breeds.map((option) => option.value)).not.toContain('BEEFMASTER')
+    expect(response.result.purposes.map((option) => option.value)).not.toContain('MILK')
 
-    // Housings: only AVIARY applies for avian; HOUSED and OUTDOOR are non-avian
     const housingValues = response.result.keepingTypes.map((option) => option.value)
-    expect(housingValues).toEqual(['AVIARY'])
+    expect(housingValues).toContain('BARN')
+    expect(housingValues).not.toContain('HOUSED')
 
-    // Age categories: both seeded entries are non-avian → chicken sees none
-    expect(response.result.ageCategories).toEqual([])
+    const ageValues = response.result.ageCategories.map((option) => option.value)
+    expect(ageValues).toContain('0-3')
+    expect(ageValues).not.toContain('NEONATAL')
 
-    // Organic entries are all non-avian → not applicable for chicken
     expect(response.result.organicAccreditationApplicable).toBe(false)
 
-    // Sex groups have no forAvianSpecies filter → still returned for chicken
     const sexValues = response.result.sexes.map((option) => option.value)
-    expect(sexValues).toEqual(expect.arrayContaining(['FEMALE', 'MALE', 'MIXED']))
+    expect(sexValues).toContain('CASTRATE')
+    expect(sexValues).not.toContain('FEMALE')
   })
 
-  test('returns empty species-specific lookups for a species with no seeded breeds (SHEEP)', async () => {
+  test('returns Sheep-specific lookups without leaking Cattle breeds', async () => {
     const response = await server.inject({ method: 'GET', url: '/GetAnimalDetails?speciesId=SHEEP' })
 
     expect(response.statusCode).toBe(200)
     expect(response.result.speciesId).toBe('SHEEP')
 
-    // No sheep-specific breed or purpose seeded; fallbacks also empty for sheep
-    expect(response.result.breeds).toEqual([])
-    expect(response.result.purposes).toEqual([])
+    expect(response.result.breeds.length).toBeGreaterThan(0)
+    expect(response.result.breeds.map((option) => option.value)).not.toContain('BEEFMASTER')
+    expect(response.result.purposes).toContainEqual({ value: 'HILLSHEEP', label: 'Hill' })
 
-    // Sheep is non-avian, so still gets the shared non-avian lookups
     expect(response.result.keepingTypes.map((o) => o.value)).toEqual(expect.arrayContaining(['HOUSED', 'OUTDOOR']))
-    expect(response.result.ageCategories.map((o) => o.value)).toEqual(expect.arrayContaining(['ADULT', 'CALF']))
+    expect(response.result.ageCategories.map((o) => o.value)).toContain('NEONATAL')
     expect(response.result.organicAccreditationApplicable).toBe(true)
   })
 

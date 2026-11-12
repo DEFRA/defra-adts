@@ -7,7 +7,7 @@ describe('LIMS Backend Proxy - Network Mock Tests', () => {
   const originalPvsId = process.env.LIMS_PVS_ID
 
   beforeAll(async () => {
-    process.env.LIMS_BASE_URL = 'https://mock-lims.local'
+    process.env.LIMS_API_URL = 'https://mock-lims.local'
     process.env.LIMS_PVS_ID = 'TEST-PVS-001'
     process.env.PORT = 3100
     server = await createServer()
@@ -61,7 +61,7 @@ describe('LIMS Backend Proxy - Network Mock Tests', () => {
     expect(response.result).toEqual({ error: 'LIMS integration error' })
   })
 
-  test.each(['LIMS_BASE_URL', 'LIMS_PVS_ID'])(
+  test.each(['LIMS_API_URL', 'LIMS_PVS_ID'])(
     'should reject the clients lookup when %s is not configured',
     async (environmentVariable) => {
       const original = process.env[environmentVariable]
@@ -76,7 +76,7 @@ describe('LIMS Backend Proxy - Network Mock Tests', () => {
         expect(response.result).toEqual({ error: 'LIMS client lookup is not configured' })
         expect(globalThis.fetch).not.toHaveBeenCalled()
         expect(console.error).toHaveBeenCalledWith(
-          'LIMS_BASE_URL and LIMS_PVS_ID must be configured to retrieve clients'
+          'LIMS_API_URL and LIMS_PVS_ID must be configured to retrieve clients'
         )
       } finally {
         if (original === undefined) {

@@ -42,7 +42,7 @@ webServer: [
     timeout: 60 * 1000,
     env: {
       PORT: '3100',
-      LIMS_BASE_URL: 'http://localhost:3300',
+      LIMS_API_URL: 'http://localhost:3300',
       LIMS_PVS_ID: 'E2E-PVS-001'
     }
   },

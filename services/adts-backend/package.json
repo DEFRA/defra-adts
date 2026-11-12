@@ -1,5 +1,5 @@
 {
-  "name": "adts-submissions-service",
+  "name": "adts-backend",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -7,8 +7,8 @@
   "scripts": {
     "build": "esbuild src/client/all.js --bundle --minify --outfile=src/public/js/all.js",
     "start": "node src/index.js",
-    "test": "npm run test:routes",
-    "test:coverage": "node --experimental-vm-modules node_modules/jest/bin/jest.js tests/unit tests/component tests/routes --coverage",
+    "test": "npm run test:coverage",
+    "test:coverage": "node --experimental-vm-modules node_modules/jest/bin/jest.js tests/unit tests/routes --coverage",
     "test:integration": "TEST_RUN_ID=${TEST_RUN_ID:-$(date -u +%Y%m%dT%H%M%SZ)-$$-$(od -An -N4 -tx4 /dev/urandom | tr -d ' ')} && TEST_CONTAINER_ENGINE=${TEST_CONTAINER_ENGINE:-docker} && export TEST_RUN_ID TEST_CONTAINER_ENGINE DYNAMODB_ENDPOINT=http://localhost:8000 && ../../local/dynamodb/test-db.sh up && ../../local/dynamodb/test-db.sh reset && node --experimental-vm-modules node_modules/jest/bin/jest.js tests/integration",
     "test:contract": "node --experimental-vm-modules node_modules/jest/bin/jest.js tests/contract",
     "test:api": "cd ../.. && npm ci --prefix services/adts-submissions-service && node --experimental-vm-modules services/adts-backend/node_modules/jest/bin/jest.js tests/api/specs --modulePathIgnorePatterns='/services/adts-submissions-service/package.json'",

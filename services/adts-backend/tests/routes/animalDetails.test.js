@@ -18,7 +18,7 @@ describe('GET /GetAnimalDetails', () => {
     jest.resetAllMocks()
   })
 
-  test('returns species animal options in the UI contract shape with generic fallbacks', async () => {
+  test('returns species animal options in the UI contract shape from the seed schema', async () => {
     docClient.send.mockImplementation(async (command) => {
       if (command.input.IndexName === 'ByCode') {
         return {
@@ -41,9 +41,19 @@ describe('GET /GetAnimalDetails', () => {
           { code: 'AVIARY', description: 'Aviary', forAvianSpecies: true },
           { code: 'NOT-CATTLE', description: 'Not for cattle', excludeSpeciesLimsCodes: ['CATTLE'] }
         ],
-        'REF#SEX_GROUPS': [{ code: 'FEMALE', description: 'Female' }],
-        'REF#AGE_CATEGORIES': [{ code: 'ADULT', description: 'Adult' }],
-        'REF#ORGANIC_ENVIRONMENT': [{ code: 'ORGANIC', description: 'Organic' }]
+        'REF#SPECIES_ANIMAL_PURPOSE': [
+          { speciesCode: 'CATTLE', code: 'DAIRY', description: 'Dairy' }
+        ],
+        'REF#SPECIES_HOUSING': [
+          { code: 'OUTDOOR', description: 'Outdoor', isAvian: false },
+          { code: 'AVIARY', description: 'Aviary', isAvian: true },
+          { code: 'NOT-CATTLE', description: 'Not for cattle', excludeSpeciesLimsCodes: ['CATTLE'] }
+        ],
+        'REF#SEX_GROUP': [{ code: 'FEMALE', description: 'Female', excludeAvian: true }],
+        'REF#AGE_CATEGORY': [{ code: 'ADULT', description: 'Adult', isAvian: false }],
+        'REF#ORGANIC_ENVIRONMENT': [
+          { code: 'ORGANIC', description: 'Organic', forAvianSpecies: false }
+        ]
       }[partition]
 
       return { Items: items ?? [] }
@@ -68,7 +78,7 @@ describe('GET /GetAnimalDetails', () => {
     )).toBe(true)
     expect(docClient.send.mock.calls.map(([command]) =>
       command.input.ExpressionAttributeValues[':pk']
-    )).toContain('REF#SPECIES_ANIMAL_BREEDS')
+    )).toContain('REF#SPECIES_ANIMAL_BREED')
   })
 
   test('rejects a request without speciesId', async () => {

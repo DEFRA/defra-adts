@@ -12,7 +12,7 @@ describe('Healthcheck endpoint', () => {
 
   beforeAll(async () => {
     process.env.PORT = '3000'
-    process.env.LIMS_BASE_URL = 'http://my-lims-api:8500'
+    process.env.LIMS_API_URL = 'http://my-lims-api:8500'
 
     server = await createServer()
   })

@@ -103,7 +103,7 @@ const createServer = async () => {
     handler: async (request, h) => {
       const queryParams = new URLSearchParams(request.query).toString()
       try {
-        const limsRequestUrl = `${process.env.LIMS_BASE_URL}/submissions?${queryParams}`
+        const limsRequestUrl = `${process.env.LIMS_BASE_URL}/submissions/getSubmissions?${queryParams}`
         const response = await fetch(limsRequestUrl)
         if (!response.ok) {
           console.error('LIMS integration error:', response.statusText, limsRequestUrl)

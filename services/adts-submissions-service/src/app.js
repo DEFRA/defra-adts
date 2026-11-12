@@ -103,15 +103,16 @@ const createServer = async () => {
     handler: async (request, h) => {
       const queryParams = new URLSearchParams(request.query).toString()
       try {
-        const response = await fetch(`${process.env.LIMS_BASE_URL}/submissions?${queryParams}`)
+        const limsRequestUrl = `${process.env.LIMS_BASE_URL}/submissions?${queryParams}`
+        const response = await fetch(limsRequestUrl)
         if (!response.ok) {
-          console.error('LIMS integration error:', response.statusText)
+          console.error('LIMS integration error:', response.statusText, limsRequestUrl)
           return h.response({ error: 'LIMS integration error' }).code(response.status)
         }
         const data = await response.json()
         return data
       } catch (error) {
-        console.error('LIMS connectivity failure:', error.message)
+        console.error('LIMS connectivity failure:', error.message, limsRequestUrl)
         return h.response({ error: 'LIMS connectivity failure' }).code(constants.HTTP_STATUS_BAD_GATEWAY)
       }
     }

@@ -513,6 +513,32 @@ describe('Submission client details page', () => {
     expect(response.payload).toContain('value="12/34/5678"')
   })
 
+  test('requires client name, farm name, first address line, and postcode', async () => {
+    const response = await server.inject({
+      method: 'POST',
+      url: '/submission-01-client-address',
+      payload: {
+        name: ' ',
+        farmName: '',
+        addressLine1: '',
+        postcode: '  '
+      }
+    })
+
+    expect(response.statusCode).toBe(400)
+    expect(response.payload).toContain('There is a problem')
+    expect(response.request.response.source.context.errors).toEqual({
+      name: 'Enter client name',
+      farmName: 'Enter farm name',
+      addressLine1: 'Enter the first line of the address',
+      postcode: 'Enter postcode'
+    })
+    for (const field of ['name', 'farmName', 'addressLine1', 'postcode']) {
+      expect(response.payload).toContain(`href="#${field}"`)
+      expect(response.payload).toContain(`id="${field}-error"`)
+    }
+  })
+
   test('shows client and animal-address CPH errors on the client details page', async () => {
     const response = await server.inject({
       method: 'POST',
@@ -590,6 +616,28 @@ describe('Submission client details page', () => {
     expect(response.payload).toContain('href="#animalAddressCph"')
     expect(response.payload).toContain('id="animalAddressCph-error"')
     expect(response.payload).toContain('value="12-345-6789"')
+  })
+
+  test('requires the first address line and postcode for an animal address', async () => {
+    const response = await server.inject({
+      method: 'POST',
+      url: '/submission-01-animal-address',
+      payload: {
+        animalAddressAddressLine1: ' ',
+        animalAddressPostcode: ''
+      }
+    })
+
+    expect(response.statusCode).toBe(400)
+    expect(response.payload).toContain('There is a problem')
+    expect(response.request.response.source.context.errors).toEqual({
+      animalAddressAddressLine1: 'Enter the first line of the address',
+      animalAddressPostcode: 'Enter postcode'
+    })
+    for (const field of ['animalAddressAddressLine1', 'animalAddressPostcode']) {
+      expect(response.payload).toContain(`href="#${field}"`)
+      expect(response.payload).toContain(`id="${field}-error"`)
+    }
   })
 
   test('canceling an animal address returns to client details without saving it', async () => {

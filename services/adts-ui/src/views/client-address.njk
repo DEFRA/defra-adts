@@ -54,7 +54,8 @@
       id: "name",
       name: "name",
       value: clientDetails.name,
-      label: { text: "Name" },
+      label: { text: "Client name" },
+      errorMessage: { text: errors.name } if errors.name,
       classes: "govuk-!-width-one-half"
     }) }}
     {{ govukInput({
@@ -62,6 +63,7 @@
       name: "farmName",
       value: clientDetails.farmName,
       label: { text: "Farm name" },
+      errorMessage: { text: errors.farmName } if errors.farmName,
       classes: "govuk-!-width-one-half"
     }) }}
     {{ govukInput({
@@ -69,6 +71,7 @@
       name: "addressLine1",
       value: clientDetails.addressLine1,
       label: { text: "Address line 1" },
+      errorMessage: { text: errors.addressLine1 } if errors.addressLine1,
       autocomplete: "address-line1",
       classes: "govuk-!-width-one-half"
     }) }}
@@ -101,6 +104,7 @@
       name: "postcode",
       value: clientDetails.postcode,
       label: { text: "Postcode" },
+      errorMessage: { text: errors.postcode } if errors.postcode,
       autocomplete: "postal-code",
       classes: "govuk-!-width-one-half"
     }) }}

@@ -69,6 +69,7 @@
       name: "animalAddressAddressLine1",
       value: animalAddressDetails.addressLine1,
       label: { text: "Address line 1" },
+      errorMessage: { text: errors.animalAddressAddressLine1 } if errors.animalAddressAddressLine1,
       autocomplete: "address-line1",
       classes: "govuk-!-width-one-half"
     }) }}
@@ -101,6 +102,7 @@
       name: "animalAddressPostcode",
       value: animalAddressDetails.postcode,
       label: { text: "Postcode" },
+      errorMessage: { text: errors.animalAddressPostcode } if errors.animalAddressPostcode,
       autocomplete: "postal-code",
       classes: "govuk-!-width-one-half"
     }) }}

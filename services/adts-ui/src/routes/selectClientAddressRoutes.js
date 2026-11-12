@@ -21,6 +21,12 @@ import {
   submissionClientSchema
 } from './selectClient.js'
 
+const getRequiredAddressErrors = (details, requiredFields) => Object.fromEntries(
+  requiredFields
+    .filter(([valueField]) => !details[valueField].trim())
+    .map(([, errorField, label]) => [errorField, `Enter ${label}`])
+)
+
 const getClientAddressPageRoute = (submissionFormStateKey) => ({
   method: 'GET',
   path: `/${clientAddressPageName}`,
@@ -78,7 +84,12 @@ const postClientAddressRoute = (submissionFormStateKey) => ({
     const submissionFormState = request.yar.get(submissionFormStateKey) || {}
     const formData = submissionFormState.formData || {}
     const clientDetails = getClientFieldValues(request.payload)
-    const errors = {}
+    const errors = getRequiredAddressErrors(clientDetails, [
+      ['name', 'name', 'client name'],
+      ['farmName', 'farmName', 'farm name'],
+      ['addressLine1', 'addressLine1', 'the first line of the address'],
+      ['postcode', 'postcode', 'postcode']
+    ])
     if (clientDetails.cph.trim() && !CPH_PATTERN.test(clientDetails.cph.trim())) {
       errors.cph = CPH_ERROR
     }
@@ -183,7 +194,10 @@ const postAnimalAddressRoute = (submissionFormStateKey) => ({
     const submissionFormState = request.yar.get(submissionFormStateKey) || {}
     const formData = submissionFormState.formData || {}
     const details = getAnimalAddressFieldValues(request.payload)
-    const errors = {}
+    const errors = getRequiredAddressErrors(details, [
+      ['addressLine1', 'animalAddressAddressLine1', 'the first line of the address'],
+      ['postcode', 'animalAddressPostcode', 'postcode']
+    ])
     if (details.cph.trim() && !CPH_PATTERN.test(details.cph.trim())) {
       errors.animalAddressCph = CPH_ERROR
     }

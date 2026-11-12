@@ -7,7 +7,7 @@ describe('Submissions-service LIMS integration', () => {
 
   beforeAll(async () => {
     process.env.PORT = '3100'
-    process.env.LIMS_BASE_URL = 'https://mock-lims.local'
+    process.env.LIMS_API_URL = 'https://mock-lims.local'
     server = await createServer()
   })
 

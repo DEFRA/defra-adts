@@ -49,6 +49,12 @@ describe('GET /GetAnimalDetails', () => {
     expect(response.result).toEqual({
       speciesId: 'COW',
       ageCategories: [{ value: 'ADULT', label: 'Adult' }],
+      ageUnits: [
+        { value: 'DAYS', label: 'Days' },
+        { value: 'WEEKS', label: 'Weeks' },
+        { value: 'MONTHS', label: 'Months' },
+        { value: 'YEARS', label: 'Years' }
+      ],
       purposes: [{ value: 'DAIRY', label: 'Dairy' }],
       keepingTypes: [{ value: 'OUTDOOR', label: 'Outdoor' }],
       breeds: [{ value: 'HOLSTEIN', label: 'Holstein' }],

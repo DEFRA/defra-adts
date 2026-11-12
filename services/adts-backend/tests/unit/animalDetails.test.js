@@ -65,6 +65,12 @@ describe('getAnimalDetails', () => {
     expect(details).toEqual({
       speciesId: '123',
       ageCategories: [{ value: 'CHICK', label: 'Chick' }],
+      ageUnits: [
+        { value: 'DAYS', label: 'Days' },
+        { value: 'WEEKS', label: 'Weeks' },
+        { value: 'MONTHS', label: 'Months' },
+        { value: 'YEARS', label: 'Years' }
+      ],
       purposes: [{ value: 'PURPOSE', label: 'Purpose' }],
       keepingTypes: [
         { value: 'AVIARY', label: 'Aviary' },
@@ -121,6 +127,12 @@ describe('getAnimalDetails', () => {
     expect(details).toEqual({
       speciesId: 'CHICKEN',
       ageCategories: [],
+      ageUnits: [
+        { value: 'DAYS', label: 'Days' },
+        { value: 'WEEKS', label: 'Weeks' },
+        { value: 'MONTHS', label: 'Months' },
+        { value: 'YEARS', label: 'Years' }
+      ],
       purposes: [{ value: 'AVIAN-PURPOSE', label: 'Avian purpose' }],
       keepingTypes: [],
       breeds: [{ value: 'BIRD-BREED', label: 'Bird breed' }],
@@ -148,6 +160,12 @@ describe('getAnimalDetails', () => {
     await expect(getAnimalDetails(docClient, 'COW')).resolves.toEqual({
       speciesId: 'COW',
       ageCategories: [],
+      ageUnits: [
+        { value: 'DAYS', label: 'Days' },
+        { value: 'WEEKS', label: 'Weeks' },
+        { value: 'MONTHS', label: 'Months' },
+        { value: 'YEARS', label: 'Years' }
+      ],
       purposes: [],
       keepingTypes: [],
       breeds: [],

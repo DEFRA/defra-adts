@@ -1,6 +1,13 @@
 import { QueryCommand } from '@aws-sdk/lib-dynamodb'
 import { referenceDataTable } from './dynamo.js'
 
+const ageUnits = [
+  { value: 'DAYS', label: 'Days' },
+  { value: 'WEEKS', label: 'Weeks' },
+  { value: 'MONTHS', label: 'Months' },
+  { value: 'YEARS', label: 'Years' }
+]
+
 const queryItems = async (docClient, partitionKey, exclusiveStartKey) => {
   const result = await docClient.send(new QueryCommand({
     TableName: referenceDataTable(),
@@ -77,6 +84,7 @@ export const getAnimalDetails = async (docClient, speciesId) => {
   return {
     speciesId,
     ageCategories: applicableOptions(ageCategories, speciesId, isAvian),
+    ageUnits,
     purposes: applicableOptions(purposes, speciesId, isAvian),
     keepingTypes: applicableOptions(keepingTypes, speciesId, isAvian),
     breeds: applicableOptions(breeds, speciesId, isAvian),

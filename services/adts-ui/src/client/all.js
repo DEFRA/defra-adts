@@ -65,3 +65,16 @@ if (numberOfAnimals) {
   numberOfAnimals.addEventListener('change', syncAnimalIds)
   syncAnimalIds()
 }
+
+const ageCategoryRadios = document.querySelectorAll('input[name="ageCategory"]')
+const ageDetail = document.querySelector('#age-detail')
+
+if (ageCategoryRadios.length && ageDetail) {
+  const syncAgeDetail = () => {
+    const selectedCategory = document.querySelector('input[name="ageCategory"]:checked')
+    ageDetail.hidden = Boolean(selectedCategory?.hasAttribute('data-age-detail-excluded'))
+  }
+
+  ageCategoryRadios.forEach((radio) => radio.addEventListener('change', syncAgeDetail))
+  syncAgeDetail()
+}

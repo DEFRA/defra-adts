@@ -105,7 +105,7 @@ const createServer = async () => {
       try {
         const response = await fetch(`${process.env.LIMS_BASE_URL}/submissions?${queryParams}`)
         if (!response.ok) {
-          console.error('LIMS integration error:', error.message)
+          console.error('LIMS integration error:', response.statusText)
           return h.response({ error: 'LIMS integration error' }).code(response.status)
         }
         const data = await response.json()

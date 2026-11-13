@@ -91,6 +91,40 @@ jobs:
           echo "ADTS Backend changed: ${BACKEND_CHANGED}"
           echo "ADTS Submissions service changed: ${SUBMISSIONS_CHANGED}"
 
+  get_service_matix:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - name: Get Service Matrix
+        id: set-matrix
+        run: |
+          echo "::set-output name=matrix::{\"include\": \
+            [ \
+              { \
+                \"service\": \"adts-ui\", \
+                \"path\": \"services/adts-ui\", \
+                \"dockerfile\": \"services/adts-ui/Dockerfile\", \
+                \"repository\": \"${{ vars.ADTS_UI_ECR }}\" \
+              }, \
+              { \
+                \"service\": \"adts-backend\", \
+                \"path\": \"services/adts-backend\", \
+                \"dockerfile\": \"services/adts-backend/Dockerfile\", \
+                \"repository\": \"${{ vars.ADTS_BACKEND_ECR }}\" \
+              }, \
+              { \
+                \"service\": \"adts-submissions-service\", \
+                \"path\": \"services/adts-submissions-service\", \
+                \"dockerfile\": \"services/adts-submissions-service/Dockerfile\", \
+                \"repository\": \"${{ vars.ADTS_SUBMISSIONS_ECR }}\" \
+              } \
+            ]\ 
+          }"
+
+      - name: Show Service Matrix
+        run: echo ${{ steps.set-matrix.outputs.matrix }}
+
   validate_ui_service:
     name: Validate ADTS UI
     needs:

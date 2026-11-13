@@ -32,7 +32,7 @@ describe('Backend API contracts', () => {
     docClient.send.mockResolvedValue({
       Items: [
         { code: 'CHICKEN', description: 'Chicken' },
-        { code: 'COW', description: 'Cow' }
+        { code: 'CATTLE', description: 'Cattle' }
       ]
     })
 
@@ -41,7 +41,7 @@ describe('Backend API contracts', () => {
     expect(response.statusCode).toBe(200)
     expect(response.result).toEqual([
       { speciesId: 'CHICKEN', name: 'Chicken' },
-      { speciesId: 'COW', name: 'Cow' }
+      { speciesId: 'CATTLE', name: 'Cattle' }
     ])
     expect(response.result.every((item) =>
       Object.keys(item).length === 2 &&

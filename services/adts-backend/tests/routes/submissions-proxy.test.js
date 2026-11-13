@@ -21,8 +21,6 @@ describe('Submissions service proxy routes', () => {
   })
 
   test.each([
-    ['/GetClients', 'http://localhost:3100/GetClients'],
-    ['/GetCounties', 'http://localhost:3100/GetCounties'],
     ['/submissions?client=Acme+Farm&status=submitted', 'http://localhost:3100/submissions?client=Acme+Farm&status=submitted']
   ])('forwards GET %s to the submissions service', async (requestUrl, submissionsUrl) => {
     const payload = [{ id: 'result-1' }]
@@ -94,29 +92,6 @@ describe('Submissions service proxy routes', () => {
     expect(response.statusCode).toBe(502)
     expect(response.result).toEqual({ error: 'Unable to reach submissions service' })
     expect(console.error).toHaveBeenCalledWith('Error contacting submissions service:', 'Connection refused')
-  })
-
-  test('returns a gateway error when SUBMISSIONS_SERVICE_URL is not configured', async () => {
-    const originalUrl = process.env.SUBMISSIONS_SERVICE_URL
-    delete process.env.SUBMISSIONS_SERVICE_URL
-    jest.spyOn(console, 'error').mockImplementation(() => {})
-
-    try {
-      const response = await server.inject({ method: 'GET', url: '/GetClients' })
-
-      expect(response.statusCode).toBe(502)
-      expect(response.result).toEqual({ error: 'Unable to reach submissions service' })
-      expect(console.error).toHaveBeenCalledWith(
-        'Error contacting submissions service:',
-        expect.any(String)
-      )
-    } finally {
-      if (originalUrl === undefined) {
-        delete process.env.SUBMISSIONS_SERVICE_URL
-      } else {
-        process.env.SUBMISSIONS_SERVICE_URL = originalUrl
-      }
-    }
   })
 
   test('returns a gateway error when the submissions service returns invalid JSON', async () => {

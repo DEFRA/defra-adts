@@ -1,0 +1,118 @@
+{% extends "govuk/template.njk" %}
+
+{% from "govuk/components/header/macro.njk" import govukHeader %}
+{% from "govuk/components/back-link/macro.njk" import govukBackLink %}
+{% from "govuk/components/input/macro.njk" import govukInput %}
+{% from "govuk/components/select/macro.njk" import govukSelect %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
+{% from "govuk/components/error-summary/macro.njk" import govukErrorSummary %}
+{% from "macros/submissionProgress.njk" import submissionProgress %}
+
+{% block pageTitle %}{% if errorList.length %}Error: {% endif %}Client address – ADTS{% endblock %}
+
+{% block head %}
+  <link rel="stylesheet" href="/assets/css/application.css">
+  <link rel="stylesheet" href="/assets/css/accessible-autocomplete.min.css">
+{% endblock %}
+
+{% block header %}
+  {{ govukHeader({
+    serviceName: "Animal Disease Testing Service",
+    serviceUrl: "/",
+    navigation: [
+      { text: "My Account", href: "#" },
+      { text: "Sign out", href: "#" }
+    ]
+  }) }}
+{% endblock %}
+
+{% block content %}
+  {{ submissionProgress(1) }}
+  {{ govukBackLink({ text: "Back", href: "/submission-01-client-details" }) }}
+
+  {% if errorList.length %}
+    {{ govukErrorSummary({
+      titleText: "There is a problem",
+      errorList: errorList
+    }) }}
+  {% endif %}
+
+  <h1 class="govuk-heading-l">{% if isEditing %}Edit{% else %}Create{% endif %} client address</h1>
+  <p class="govuk-body-l">Enter the details of the client.</p>
+  <form method="post" action="/submission-01-client-address" novalidate>
+    <input type="hidden" name="isEditing" value="{% if isEditing %}yes{% else %}no{% endif %}">
+    {{ govukInput({
+      id: "cph",
+      name: "cph",
+      value: clientDetails.cph,
+      label: { text: "CPH number eg 48/234/2348" },
+      errorMessage: { text: errors.cph } if errors.cph,
+      attributes: { "data-cph-input": "true" },
+      classes: "govuk-!-width-one-half"
+    }) }}
+    {{ govukInput({
+      id: "name",
+      name: "name",
+      value: clientDetails.name,
+      label: { text: "Client name" },
+      errorMessage: { text: errors.name } if errors.name,
+      classes: "govuk-!-width-one-half"
+    }) }}
+    {{ govukInput({
+      id: "farmName",
+      name: "farmName",
+      value: clientDetails.farmName,
+      label: { text: "Farm name" },
+      errorMessage: { text: errors.farmName } if errors.farmName,
+      classes: "govuk-!-width-one-half"
+    }) }}
+    {{ govukInput({
+      id: "addressLine1",
+      name: "addressLine1",
+      value: clientDetails.addressLine1,
+      label: { text: "Address line 1" },
+      errorMessage: { text: errors.addressLine1 } if errors.addressLine1,
+      autocomplete: "address-line1",
+      classes: "govuk-!-width-one-half"
+    }) }}
+    {{ govukInput({
+      id: "addressLine2",
+      name: "addressLine2",
+      value: clientDetails.addressLine2,
+      label: { text: "Address line 2" },
+      autocomplete: "address-line2",
+      classes: "govuk-!-width-one-half"
+    }) }}
+    {{ govukInput({
+      id: "addressLine3",
+      name: "addressLine3",
+      value: clientDetails.addressLine3,
+      label: { text: "Address line 3" },
+      autocomplete: "address-line3",
+      classes: "govuk-!-width-one-half"
+    }) }}
+    {{ govukSelect({
+      id: "county",
+      name: "county",
+      label: { text: "County" },
+      items: countyOptions,
+      attributes: { "data-default-value": clientDetails.county },
+      classes: "govuk-!-width-one-half"
+    }) }}
+    {{ govukInput({
+      id: "postcode",
+      name: "postcode",
+      value: clientDetails.postcode,
+      label: { text: "Postcode" },
+      errorMessage: { text: errors.postcode } if errors.postcode,
+      autocomplete: "postal-code",
+      classes: "govuk-!-width-one-half"
+    }) }}
+    {{ govukButton({ text: "Save" }) }}
+    <button class="govuk-button govuk-button--secondary" type="submit" name="intent" value="cancel">Cancel</button>
+  </form>
+{% endblock %}
+
+{% block bodyEnd %}
+  <script type="module" src="/assets/js/all.js"></script>
+{% endblock %}

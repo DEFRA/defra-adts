@@ -1,6 +1,13 @@
 import { QueryCommand } from '@aws-sdk/lib-dynamodb'
 import { referenceDataTable } from './dynamo.js'
 
+const ageUnits = [
+  { value: 'DAYS', label: 'Days' },
+  { value: 'WEEKS', label: 'Weeks' },
+  { value: 'MONTHS', label: 'Months' },
+  { value: 'YEARS', label: 'Years' }
+]
+
 const queryItems = async (docClient, partitionKey, exclusiveStartKey) => {
   const result = await docClient.send(new QueryCommand({
     TableName: referenceDataTable(),
@@ -18,8 +25,17 @@ const queryItems = async (docClient, partitionKey, exclusiveStartKey) => {
 }
 
 const querySpecies = async (docClient, speciesId) => {
-  const species = await queryItems(docClient, 'REF#SPECIES')
-  return species.find((item) => String(item.code) === speciesId)
+  const result = await docClient.send(new QueryCommand({
+    TableName: referenceDataTable(),
+    IndexName: 'ByCode',
+    KeyConditionExpression: 'GSI1PK = :gsi1pk AND GSI1SK = :gsi1sk',
+    ExpressionAttributeValues: {
+      ':gsi1pk': 'CODE#SPECIES',
+      ':gsi1sk': speciesId
+    }
+  }))
+
+  return result.Items?.[0]
 }
 
 const optionItems = (items) => items.map((item) => ({
@@ -71,6 +87,7 @@ export const getAnimalDetails = async (docClient, speciesId) => {
   return {
     speciesId,
     ageCategories: applicableOptions(ageCategories, speciesId, isAvian),
+    ageUnits,
     purposes: applicableOptions(purposes, speciesId, isAvian),
     keepingTypes: applicableOptions(keepingTypes, speciesId, isAvian),
     breeds: applicableOptions(breeds, speciesId, isAvian),

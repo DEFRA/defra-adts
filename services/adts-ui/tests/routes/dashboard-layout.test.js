@@ -19,6 +19,11 @@ import path from 'node:path'
 import * as sass from 'sass'
 import createServer from '../../src/app.js'
 
+const getCookieHeader = (response) => {
+  const setCookieHeader = response.headers['set-cookie']
+  return setCookieHeader?.[0]?.split(';')[0] || ''
+}
+
 describe('Dashboard Layout', () => {
   let server
   let html
@@ -72,7 +77,7 @@ describe('Dashboard Layout', () => {
     })
 
     test('renders the submission actions as GOV.UK styled link buttons', () => {
-      const actions = [...html.matchAll(/<a\b[^>]*href="\/submission-01-client-details"[^>]*>[\s\S]*?<\/a>/g)]
+      const actions = [...html.matchAll(/<a\b[^>]*href="\/submission-01-client-details\/start"[^>]*>[\s\S]*?<\/a>/g)]
         .map(([link]) => link)
 
       expect(actions).toHaveLength(2)
@@ -81,23 +86,36 @@ describe('Dashboard Layout', () => {
         expect(action).toContain('draggable="false"')
         expect(action).toContain('data-module="govuk-button"')
         expect(action).toMatch(/class="[^"]*\bgovuk-button\b/)
+        expect(action).toContain('govuk-button--start')
+        expect(action).toContain('govuk-button__start-icon')
         expect(action).not.toContain('class="govuk-link"')
       }
-      expect(actions[0]).toContain('app-button--sick')
-      expect(actions[0]).toContain('Sick animal submission')
-      expect(actions[1]).toContain('app-button--healthy')
-      expect(actions[1]).toContain('Healthy animal submission')
-      expect(html).toMatch(/<div class="govuk-button-group">\s*<a[^>]*app-button--sick/)
+      for (const { text, className } of [
+        { text: 'Sick animal submission', className: 'app-button--sick' },
+        { text: 'Healthy animal submission', className: 'app-button--healthy' }
+      ]) {
+        const action = actions.find((link) => link.includes(text))
+        expect(action).toContain(className)
+      }
+      expect(html).toMatch(/<div class="app-button-stack">\s*<a[^>]*app-button--sick/)
     })
 
-    test('styles healthy as the brand colour and sick as yellow tint 25%', () => {
+    test('styles both submission actions with the brand colour', () => {
       const { css } = sass.compile(
         path.join(process.cwd(), 'src/assets/scss/application.scss'),
         { loadPaths: [path.join(process.cwd(), 'node_modules')], style: 'compressed', quietDeps: true, silenceDeprecations: ['import', 'global-builtin', 'color-functions'] }
       )
 
-      expect(css).toMatch(/\.app-button--healthy\{background-color:#1d70b8;color:#fff/)
-      expect(css).toMatch(/\.app-button--sick\{background-color:#ffe640;color:#0b0c0c/)
+      expect(css).toMatch(/\.app-button--healthy,.app-button--sick\{background-color:#1d70b8;color:#fff/)
+    })
+
+    test('stacks the submission buttons vertically', () => {
+      const { css } = sass.compile(
+        path.join(process.cwd(), 'src/assets/scss/application.scss'),
+        { loadPaths: [path.join(process.cwd(), 'node_modules')], style: 'compressed', quietDeps: true, silenceDeprecations: ['import', 'global-builtin', 'color-functions'] }
+      )
+
+      expect(css).toMatch(/\.app-button-stack\{display:flex;flex-direction:column;align-items:flex-start/)
     })
 
     test('both submission links navigate to the client details page', async () => {
@@ -106,16 +124,42 @@ describe('Dashboard Layout', () => {
           .find(([, , content]) => content.includes(linkText))
 
         expect(link).toBeDefined()
-        expect(link[1]).toContain('href="/submission-01-client-details"')
+        expect(link[1]).toContain('href="/submission-01-client-details/start"')
       }
 
       const destinationResponse = await server.inject({
         method: 'GET',
-        url: '/submission-01-client-details'
+        url: '/submission-01-client-details/start'
       })
 
-      expect(destinationResponse.statusCode).toBe(200)
-      expect(destinationResponse.payload).toContain('1. Client details')
+      expect(destinationResponse.statusCode).toBe(302)
+      expect(destinationResponse.headers.location).toBe('/submission-01-client-details')
+    })
+
+    test('starting a submission clears previously entered form details', async () => {
+      const partialSubmission = await server.inject({
+        method: 'POST',
+        url: '/submission-01-client-details',
+        payload: {
+          name: 'Previous client',
+          addressLine1: '1 Previous Road'
+        }
+      })
+      const startResponse = await server.inject({
+        method: 'GET',
+        url: '/submission-01-client-details/start',
+        headers: { cookie: getCookieHeader(partialSubmission) }
+      })
+      const clientDetailsResponse = await server.inject({
+        method: 'GET',
+        url: startResponse.headers.location,
+        headers: { cookie: getCookieHeader(startResponse) || getCookieHeader(partialSubmission) }
+      })
+
+      expect(clientDetailsResponse.statusCode).toBe(200)
+      expect(clientDetailsResponse.request.response.source.context.submissionFormState).toEqual({})
+      expect(clientDetailsResponse.payload).not.toContain('Previous client')
+      expect(clientDetailsResponse.payload).not.toContain('1 Previous Road')
     })
 
     test('renders the completed and draft submissions subheading', () => {

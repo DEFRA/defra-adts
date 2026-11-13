@@ -3,7 +3,7 @@ import { fileURLToPath } from 'node:url'
 import Hapi from '@hapi/hapi'
 import Inert from '@hapi/inert'
 import Joi from 'joi'
-import { constants } from 'http2'
+import { constants } from 'node:http2'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 

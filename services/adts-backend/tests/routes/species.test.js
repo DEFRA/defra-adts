@@ -1,6 +1,23 @@
 import { afterAll, afterEach, beforeAll, describe, expect, jest, test } from '@jest/globals'
 import createServer from '../../src/app.js'
 
+const speciesItem = ({ code, description, order, index, isAvian, isMammal, isRuminant }) => ({
+  PK: 'REF#SPECIES',
+  SK: `ORDER#${order}#${code}`,
+  type: 'SPECIES',
+  code,
+  description,
+  isAvian,
+  isMammal,
+  isRuminant,
+  mostCommon: true,
+  index,
+  GSI1PK: 'CODE#SPECIES',
+  GSI1SK: code,
+  GSI2PK: 'NAME#SPECIES',
+  GSI2SK: description.toLowerCase()
+})
+
 describe('GET /GetSpecies', () => {
   let server
   const docClient = { send: jest.fn() }
@@ -21,8 +38,24 @@ describe('GET /GetSpecies', () => {
   test('returns species from the reference data table in the UI contract shape', async () => {
     docClient.send.mockResolvedValue({
       Items: [
-        { PK: 'REF#SPECIES', SK: 'ORDER#0001#CHICKEN', code: 'CHICKEN', description: 'Chicken', isAvian: true },
-        { PK: 'REF#SPECIES', SK: 'ORDER#0002#COW', code: 'COW', description: 'Cow', isAvian: false }
+        speciesItem({
+          code: 'CATTLE',
+          description: 'Cattle',
+          order: '0001',
+          index: 0,
+          isAvian: false,
+          isMammal: true,
+          isRuminant: true
+        }),
+        speciesItem({
+          code: 'CHICKEN',
+          description: 'Chicken',
+          order: '0003',
+          index: 2,
+          isAvian: true,
+          isMammal: false,
+          isRuminant: false
+        })
       ]
     })
 
@@ -30,8 +63,8 @@ describe('GET /GetSpecies', () => {
 
     expect(response.statusCode).toBe(200)
     expect(response.result).toEqual([
-      { speciesId: 'CHICKEN', name: 'Chicken' },
-      { speciesId: 'COW', name: 'Cow' }
+      { speciesId: 'CATTLE', name: 'Cattle' },
+      { speciesId: 'CHICKEN', name: 'Chicken' }
     ])
 
     const { input } = docClient.send.mock.calls[0][0]
@@ -42,16 +75,40 @@ describe('GET /GetSpecies', () => {
 
   test('follows pagination until all species are read', async () => {
     docClient.send
-      .mockResolvedValueOnce({ Items: [{ code: 'A', description: 'Alpaca' }], LastEvaluatedKey: { PK: 'k' } })
-      .mockResolvedValueOnce({ Items: [{ code: 'B', description: 'Bee' }] })
+      .mockResolvedValueOnce({
+        Items: [speciesItem({
+          code: 'CATTLE',
+          description: 'Cattle',
+          order: '0001',
+          index: 0,
+          isAvian: false,
+          isMammal: true,
+          isRuminant: true
+        })],
+        LastEvaluatedKey: { PK: 'REF#SPECIES', SK: 'ORDER#0001#CATTLE' }
+      })
+      .mockResolvedValueOnce({
+        Items: [speciesItem({
+          code: 'CHICKEN',
+          description: 'Chicken',
+          order: '0003',
+          index: 2,
+          isAvian: true,
+          isMammal: false,
+          isRuminant: false
+        })]
+      })
 
     const response = await server.inject({ method: 'GET', url: '/GetSpecies' })
 
     expect(response.result).toEqual([
-      { speciesId: 'A', name: 'Alpaca' },
-      { speciesId: 'B', name: 'Bee' }
+      { speciesId: 'CATTLE', name: 'Cattle' },
+      { speciesId: 'CHICKEN', name: 'Chicken' }
     ])
-    expect(docClient.send.mock.calls[1][0].input.ExclusiveStartKey).toEqual({ PK: 'k' })
+    expect(docClient.send.mock.calls[1][0].input.ExclusiveStartKey).toEqual({
+      PK: 'REF#SPECIES',
+      SK: 'ORDER#0001#CATTLE'
+    })
   })
 
   test('returns an empty array when there are no species', async () => {

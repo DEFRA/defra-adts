@@ -15,7 +15,7 @@ All tables use on-demand billing (`PAY_PER_REQUEST`), which is the local equival
 |-------|------|-----------|----------|
 | `ByCode` | `GSI1PK` / `GSI1SK` | ALL | Look up an item by type and code (`CODE#<TYPE>` / `<code>`) |
 | `ByName` | `GSI2PK` / `GSI2SK` | ALL | Look up by name (`NAME#<TYPE>` / lowercase name) |
-| `ByAvian` | `GSI3PK` / `GSI3SK` | ALL | Species by avian flag (`AVIAN#SPECIES#1` or `#0`) |
+| `ByAvian` | `GSI3PK` / `GSI3SK` | ALL | Species by avian flag (`AVIAN#SPECIES#1` or `#0`); the species `GSI3SK` matches `SK` |
 
 **Access pattern used by the backend**: `GET /GetSpecies` queries `PK = REF#SPECIES` on the base table and pages through results using `ExclusiveStartKey`. See [species.js](../../services/adts-backend/src/data/species.js).
 
@@ -46,7 +46,7 @@ All values are synthetic. The seeded state is loaded by `test-db.sh reset` (defa
 
 | Table | Count | Entities |
 |-------|-------|----------|
-| `adts-reference-data` | 18 | Species `CHICKEN` (avian), `COW`, `SHEEP`; breeds `HOLSTEIN` (for COW); purposes `DAIRY` (for COW); ages `ADULT`, `CALF`; housings `HOUSED`, `OUTDOOR` (non-avian), `AVIARY` (avian); sexes `FEMALE`, `MALE`, `MIXED`; organic accreditation applicability (non-avian); counties `AB`, `DEV`; practice `PRACTICE-123`; information message `WELCOME` |
+| `adts-reference-data` | 26 | Species `CHICKEN` (avian), `CATTLE`, `SHEEP`; breeds `HOLSTEIN` (for CATTLE); purposes `DAIRY` (for CATTLE); ages `ADULT`, `CALF`; housings `HOUSED`, `OUTDOOR` (non-avian), `AVIARY` (avian); sexes `FEMALE`, `MALE`, `MIXED`; organic accreditation applicability (non-avian); ten sample counties spread alphabetically from the v1 `counties.csv` (loaded from `adts-reference-counties.json`); practice `PRACTICE-123`; information message `WELCOME` |
 | `adts-submissions` | 4 | `submission-123` for `practice-123`, submitted by `user-456`; Drafts `draft-001` and `draft-002` for Acme Farm and `draft-003` for Beta Farm |
 | `adts-ci-lims-mapping` | 2 | `USER-123` to `LIMS-456789`; `USER-456` to `LIMS-987654` |
 

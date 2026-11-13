@@ -225,22 +225,20 @@ describe('Submission species page', () => {
     })
 
     const manualEntry = await server.inject({
-      method: 'POST',
-      url: '/submission-01-client-details',
-      payload: { intent: 'new' }
+      method: 'GET',
+      url: '/submission-01-client-address?intent=new'
     })
 
     expect(manualEntry.statusCode).toBe(200)
-    expect(manualEntry.payload).toContain('name="manualClientEntry"')
+    expect(manualEntry.payload).toContain('name="name"')
+    expect(manualEntry.payload).not.toContain('name="animalsAtClientAddress"')
     expect(globalThis.fetch).not.toHaveBeenCalledWith('http://localhost:3200/GetClients')
 
-    const clientDetails = await server.inject({
+    const savedClientAddress = await server.inject({
       method: 'POST',
-      url: '/submission-01-client-details',
+      url: '/submission-01-client-address',
       headers: { cookie: getCookieHeader(manualEntry) },
       payload: {
-        clientId: '',
-        manualClientEntry: 'yes',
         name: 'Jane Smith',
         farmName: 'Green Farm',
         addressLine1: '1 Farm Lane',
@@ -248,9 +246,29 @@ describe('Submission species page', () => {
       }
     })
 
+    expect(savedClientAddress.statusCode).toBe(302)
+    expect(savedClientAddress.headers.location).toBe('/submission-01-client-details')
+    expect(globalThis.fetch).not.toHaveBeenCalledWith('http://localhost:3200/GetClients')
+
+    const clientDetailsPage = await server.inject({
+      method: 'GET',
+      url: '/submission-01-client-details',
+      headers: { cookie: getCookieHeader(savedClientAddress) }
+    })
+    expect(clientDetailsPage.statusCode).toBe(200)
+    expect(clientDetailsPage.payload).toContain('Jane Smith')
+    expect(globalThis.fetch).toHaveBeenCalledWith('http://localhost:3200/GetClients')
+
+    const clientDetails = await server.inject({
+      method: 'POST',
+      url: '/submission-01-client-details',
+      headers: { cookie: getCookieHeader(clientDetailsPage) || getCookieHeader(savedClientAddress) },
+      payload: { clientId: '' }
+    })
+
     expect(clientDetails.statusCode).toBe(302)
     expect(clientDetails.headers.location).toBe('/submission-02-species')
-    expect(globalThis.fetch).not.toHaveBeenCalledWith('http://localhost:3200/GetClients')
+    expect(globalThis.fetch).toHaveBeenCalledWith('http://localhost:3200/GetClients')
 
     const speciesResponse = await server.inject({
       method: 'POST',
@@ -274,7 +292,7 @@ describe('Submission species page', () => {
     expect(animalDetails.payload).toContain('1 Farm Lane, AB1 2CD')
     expect(animalDetails.payload).toContain('Species: <strong>Sheep</strong>')
     expect(animalDetails.payload).toContain('Sheep')
-    expect(globalThis.fetch).not.toHaveBeenCalledWith('http://localhost:3200/GetClients')
+    expect(globalThis.fetch).toHaveBeenCalledWith('http://localhost:3200/GetClients')
   })
 
   test('warns and blocks continuing when the species list cannot be loaded', async () => {

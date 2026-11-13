@@ -8,12 +8,11 @@ export const clients = [
   {
     clientId: 'client-001',
     name: 'Example Farm',
-    farmName: 'North Field',
-    addressLine1: '1 Test Lane',
-    addressLine2: 'Teston',
-    county: 'Example County',
+    farm: 'North Field',
+    address: '1 Test Lane, Teston',
+    county: 'DORS',
     postcode: 'ZZ1 1ZZ',
-    cph: '12/345/6789'
+    cphh: '12/345/6789'
   },
   { clientId: 42, name: 'Second Example Farm' }
 ]

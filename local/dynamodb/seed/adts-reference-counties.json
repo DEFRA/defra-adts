@@ -1,0 +1,364 @@
+{
+  "adts-reference-data": [
+    {
+      "PutRequest": {
+        "Item": {
+          "PK": {
+            "S": "REF#COUNTY"
+          },
+          "SK": {
+            "S": "ORDER#0001#AB"
+          },
+          "type": {
+            "S": "COUNTY"
+          },
+          "code": {
+            "S": "AB"
+          },
+          "name": {
+            "S": "Argyll and Bute"
+          },
+          "index": {
+            "N": "0"
+          },
+          "GSI1PK": {
+            "S": "CODE#COUNTY"
+          },
+          "GSI1SK": {
+            "S": "AB"
+          },
+          "GSI2PK": {
+            "S": "NAME#COUNTY"
+          },
+          "GSI2SK": {
+            "S": "argyll and bute"
+          }
+        }
+      }
+    },
+    {
+      "PutRequest": {
+        "Item": {
+          "PK": {
+            "S": "REF#COUNTY"
+          },
+          "SK": {
+            "S": "ORDER#0002#CI"
+          },
+          "type": {
+            "S": "COUNTY"
+          },
+          "code": {
+            "S": "CI"
+          },
+          "name": {
+            "S": "Channel Islands"
+          },
+          "index": {
+            "N": "1"
+          },
+          "GSI1PK": {
+            "S": "CODE#COUNTY"
+          },
+          "GSI1SK": {
+            "S": "CI"
+          },
+          "GSI2PK": {
+            "S": "NAME#COUNTY"
+          },
+          "GSI2SK": {
+            "S": "channel islands"
+          }
+        }
+      }
+    },
+    {
+      "PutRequest": {
+        "Item": {
+          "PK": {
+            "S": "REF#COUNTY"
+          },
+          "SK": {
+            "S": "ORDER#0003#DORS"
+          },
+          "type": {
+            "S": "COUNTY"
+          },
+          "code": {
+            "S": "DORS"
+          },
+          "name": {
+            "S": "Dorset"
+          },
+          "index": {
+            "N": "2"
+          },
+          "GSI1PK": {
+            "S": "CODE#COUNTY"
+          },
+          "GSI1SK": {
+            "S": "DORS"
+          },
+          "GSI2PK": {
+            "S": "NAME#COUNTY"
+          },
+          "GSI2SK": {
+            "S": "dorset"
+          }
+        }
+      }
+    },
+    {
+      "PutRequest": {
+        "Item": {
+          "PK": {
+            "S": "REF#COUNTY"
+          },
+          "SK": {
+            "S": "ORDER#0004#ESX"
+          },
+          "type": {
+            "S": "COUNTY"
+          },
+          "code": {
+            "S": "ESX"
+          },
+          "name": {
+            "S": "Essex"
+          },
+          "index": {
+            "N": "3"
+          },
+          "GSI1PK": {
+            "S": "CODE#COUNTY"
+          },
+          "GSI1SK": {
+            "S": "ESX"
+          },
+          "GSI2PK": {
+            "S": "NAME#COUNTY"
+          },
+          "GSI2SK": {
+            "S": "essex"
+          }
+        }
+      }
+    },
+    {
+      "PutRequest": {
+        "Item": {
+          "PK": {
+            "S": "REF#COUNTY"
+          },
+          "SK": {
+            "S": "ORDER#0005#HIGH"
+          },
+          "type": {
+            "S": "COUNTY"
+          },
+          "code": {
+            "S": "HIGH"
+          },
+          "name": {
+            "S": "Highlands"
+          },
+          "index": {
+            "N": "4"
+          },
+          "GSI1PK": {
+            "S": "CODE#COUNTY"
+          },
+          "GSI1SK": {
+            "S": "HIGH"
+          },
+          "GSI2PK": {
+            "S": "NAME#COUNTY"
+          },
+          "GSI2SK": {
+            "S": "highlands"
+          }
+        }
+      }
+    },
+    {
+      "PutRequest": {
+        "Item": {
+          "PK": {
+            "S": "REF#COUNTY"
+          },
+          "SK": {
+            "S": "ORDER#0006#MERS"
+          },
+          "type": {
+            "S": "COUNTY"
+          },
+          "code": {
+            "S": "MERS"
+          },
+          "name": {
+            "S": "Merseyside"
+          },
+          "index": {
+            "N": "5"
+          },
+          "GSI1PK": {
+            "S": "CODE#COUNTY"
+          },
+          "GSI1SK": {
+            "S": "MERS"
+          },
+          "GSI2PK": {
+            "S": "NAME#COUNTY"
+          },
+          "GSI2SK": {
+            "S": "merseyside"
+          }
+        }
+      }
+    },
+    {
+      "PutRequest": {
+        "Item": {
+          "PK": {
+            "S": "REF#COUNTY"
+          },
+          "SK": {
+            "S": "ORDER#0007#NSSG"
+          },
+          "type": {
+            "S": "COUNTY"
+          },
+          "code": {
+            "S": "NSSG"
+          },
+          "name": {
+            "S": "Northern Somerset & South Gloucestershire"
+          },
+          "index": {
+            "N": "6"
+          },
+          "GSI1PK": {
+            "S": "CODE#COUNTY"
+          },
+          "GSI1SK": {
+            "S": "NSSG"
+          },
+          "GSI2PK": {
+            "S": "NAME#COUNTY"
+          },
+          "GSI2SK": {
+            "S": "northern somerset & south gloucestershire"
+          }
+        }
+      }
+    },
+    {
+      "PutRequest": {
+        "Item": {
+          "PK": {
+            "S": "REF#COUNTY"
+          },
+          "SK": {
+            "S": "ORDER#0008#SCB"
+          },
+          "type": {
+            "S": "COUNTY"
+          },
+          "code": {
+            "S": "SCB"
+          },
+          "name": {
+            "S": "Scottish Borders"
+          },
+          "index": {
+            "N": "7"
+          },
+          "GSI1PK": {
+            "S": "CODE#COUNTY"
+          },
+          "GSI1SK": {
+            "S": "SCB"
+          },
+          "GSI2PK": {
+            "S": "NAME#COUNTY"
+          },
+          "GSI2SK": {
+            "S": "scottish borders"
+          }
+        }
+      }
+    },
+    {
+      "PutRequest": {
+        "Item": {
+          "PK": {
+            "S": "REF#COUNTY"
+          },
+          "SK": {
+            "S": "ORDER#0009#SURR"
+          },
+          "type": {
+            "S": "COUNTY"
+          },
+          "code": {
+            "S": "SURR"
+          },
+          "name": {
+            "S": "Surrey"
+          },
+          "index": {
+            "N": "8"
+          },
+          "GSI1PK": {
+            "S": "CODE#COUNTY"
+          },
+          "GSI1SK": {
+            "S": "SURR"
+          },
+          "GSI2PK": {
+            "S": "NAME#COUNTY"
+          },
+          "GSI2SK": {
+            "S": "surrey"
+          }
+        }
+      }
+    },
+    {
+      "PutRequest": {
+        "Item": {
+          "PK": {
+            "S": "REF#COUNTY"
+          },
+          "SK": {
+            "S": "ORDER#0010#WORC"
+          },
+          "type": {
+            "S": "COUNTY"
+          },
+          "code": {
+            "S": "WORC"
+          },
+          "name": {
+            "S": "Worcestershire"
+          },
+          "index": {
+            "N": "9"
+          },
+          "GSI1PK": {
+            "S": "CODE#COUNTY"
+          },
+          "GSI1SK": {
+            "S": "WORC"
+          },
+          "GSI2PK": {
+            "S": "NAME#COUNTY"
+          },
+          "GSI2SK": {
+            "S": "worcestershire"
+          }
+        }
+      }
+    }
+  ]
+}

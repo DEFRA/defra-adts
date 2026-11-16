@@ -1,26 +1,30 @@
 import Joi from 'joi'
-import { getClients } from '../backend/clients.js'
 import { BAD_REQUEST_STATUS } from './submissionViewHelpers.js'
+import {
+  animalAddressFieldNames,
+  animalAddressPageName,
+  clientAddressPageName,
+  clientFieldNames,
+  getClientIntentViewOptions,
+  getAnimalAddressFieldValues,
+  getClientFieldValues,
+  getClientLabel,
+  getSelectedClientDetails,
+  isManualClientEntry,
+  loadClients,
+  loadCounties,
+  pageName,
+  renderClientDetailsPage
+} from './selectClientView.js'
 
-const pageName = 'submission-01-client-details'
 const nextPageName = 'submission-02-species'
-const clientFieldNames = [
-  'cph',
-  'name',
-  'farmName',
-  'addressLine1',
-  'addressLine2',
-  'addressLine3',
-  'county',
-  'postcode'
-]
-const animalAddressFieldNames = clientFieldNames.map((fieldName) =>
-  `animalAddress${fieldName[0].toUpperCase()}${fieldName.slice(1)}`
-)
+export const CPH_ERROR = 'Enter a CPH number in the format XX/XXX/XXXX'
+export const CPH_PATTERN = /^\d{2}\/\d{3}\/\d{4}$/
 
-const submissionClientSchema = Joi.object({
-  intent: Joi.string().valid('edit', 'new', 'cancel', 'newAnimalAddress', 'cancelAnimalAddress').optional(),
+export const submissionClientSchema = Joi.object({
+  intent: Joi.string().valid('edit', 'new', 'cancel', 'newClientAddress', 'newAnimalAddress', 'editAnimalAddress', 'cancelAnimalAddress').optional(),
   clientId: Joi.string().allow('').optional(),
+  animalAddressClientId: Joi.string().allow('').optional(),
   manualClientEntry: Joi.string().valid('yes').optional(),
   ...Object.fromEntries(clientFieldNames.map((fieldName) => [fieldName, Joi.string().allow('').optional()])),
   ...Object.fromEntries(animalAddressFieldNames.map((fieldName) => [fieldName, Joi.string().allow('').optional()])),
@@ -28,105 +32,119 @@ const submissionClientSchema = Joi.object({
   animalAddress: Joi.string().allow('').optional()
 })
 
-const getClientLabel = (client) => [
-  client.name,
-  client.farmName,
-  client.addressLine1,
-  client.addressLine2,
-  client.addressLine3,
-  client.county,
-  client.postcode,
-  client.cph
-].filter(Boolean).join(', ')
+const getCphErrors = (payload) => {
+  const errors = {}
+  const clientCph = payload.cph?.trim()
+  const animalAddressCph = payload.animalAddressCph?.trim()
 
-const getClientOptions = (clients, selectedClientId) => [
-  { value: '', text: 'Select a client', selected: !selectedClientId },
-  ...clients.map((client) => ({
-    value: client.clientId,
-    text: getClientLabel(client),
-    selected: client.clientId === selectedClientId
-  }))
-]
-
-const getClientFieldValues = (client = {}) => Object.fromEntries(
-  clientFieldNames.map((fieldName) => [fieldName, client[fieldName] || ''])
-)
-
-const getAnimalAddressFieldValues = (values = {}) => Object.fromEntries(
-  clientFieldNames.map((fieldName) => {
-    const animalAddressFieldName = `animalAddress${fieldName[0].toUpperCase()}${fieldName.slice(1)}`
-    return [fieldName, values[animalAddressFieldName] || '']
-  })
-)
-
-const isManualClientEntry = (savedDetails) =>
-  !savedDetails.clientId &&
-  clientFieldNames.some((fieldName) => Object.hasOwn(savedDetails, fieldName))
-
-const getSelectedClientDetails = (savedDetails, selectedClient) => {
-  if (!selectedClient) {
-    return savedDetails
+  if (clientCph && !CPH_PATTERN.test(clientCph)) {
+    errors.cph = CPH_ERROR
   }
 
-  const savedDetailsForSelection = savedDetails.clientId === selectedClient.clientId
-    ? savedDetails
-    : {}
+  if (animalAddressCph && !CPH_PATTERN.test(animalAddressCph)) {
+    errors.animalAddressCph = CPH_ERROR
+  }
 
-  return { ...getClientFieldValues(selectedClient), ...savedDetailsForSelection }
+  return errors
 }
 
-const getClientAddress = (clientDetails) => [
-  clientDetails.addressLine1,
-  clientDetails.addressLine2,
-  clientDetails.addressLine3
-].filter(Boolean).join(', ')
+const renderCphValidationErrors = (
+  h,
+  submissionFormState,
+  clients,
+  counties,
+  payload,
+  selectedClient,
+  errors
+) => {
+  const clientDetails = hasSubmittedClientFields(payload)
+    ? {
+        ...getClientFieldValues(payload),
+        ...(selectedClient && { clientId: selectedClient.clientId })
+      }
+    : undefined
+  const animalAddressDetails = animalAddressFieldNames.some((fieldName) => Object.hasOwn(payload, fieldName))
+    ? getAnimalAddressFieldValues(payload)
+    : undefined
+  const errorList = Object.entries(errors).map(([fieldName, text]) => ({
+    text,
+    href: `#${fieldName}`
+  }))
 
-const getClientDetailsViewContext = (submissionFormState, clients, overrides = {}) => {
-  const savedDetails = submissionFormState.formData?.clientDetails || {}
-  const selectedClientId = overrides.selectedClientId ?? savedDetails.clientId ?? ''
-  const selectedClient = clients.find((client) => client.clientId === selectedClientId)
-  const selectedClientDetails = getSelectedClientDetails(savedDetails, selectedClient)
+  return renderClientDetailsPage(h, submissionFormState, clients, counties, {
+    ...(clientDetails && { clientDetails, editMode: true }),
+    ...(animalAddressDetails && { animalAddressDetails }),
+    selectedClientId: selectedClient?.clientId || '',
+    animalAddressClientId: payload.animalAddressClientId || '',
+    errors,
+    errorList
+  }).code(BAD_REQUEST_STATUS)
+}
+
+const getClientDetailsForSubmission = (payload, client, savedClientDetails) => {
+  if (hasSubmittedClientFields(payload)) {
+    return getClientFieldValues(payload)
+  }
+  if (client) {
+    return getSelectedClientDetails(savedClientDetails, client)
+  }
+  return getClientFieldValues(savedClientDetails)
+}
+
+const getAnimalAddressDetailsForSubmission = (payload, animalAddressClient, savedClientDetails) => {
+  if (animalAddressFieldNames.some((fieldName) => Object.hasOwn(payload, fieldName))) {
+    return getAnimalAddressFieldValues(payload)
+  }
+  if (animalAddressClient) {
+    return getClientFieldValues(animalAddressClient)
+  }
+  return savedClientDetails.animalAddressDetails || getClientFieldValues()
+}
+
+const getAnimalAddressDetailsToSave = (payload, animalAddressClient, savedClientDetails) => {
+  if (payload.animalsAtClientAddress !== 'no') {
+    return {}
+  }
+
+  if (animalAddressClient) {
+    return {
+      animalAddressClientId: String(animalAddressClient.clientId),
+      animalAddress: getClientLabel(animalAddressClient)
+    }
+  }
+
+  const submittedAddress = payload.animalAddress?.trim()
+  if (submittedAddress) {
+    return { animalAddress: submittedAddress }
+  }
+
+  const savedAddress = savedClientDetails.animalAddress?.trim()
+  if (savedAddress) {
+    return { animalAddress: savedAddress }
+  }
+
+  return {}
+}
+
+const getSavedAnimalAddressDetails = (payload, animalAddressDetails) => {
+  const hasDetails = clientFieldNames.some((fieldName) => animalAddressDetails[fieldName].trim())
+  if (payload.animalsAtClientAddress !== 'no' || !hasDetails) {
+    return {}
+  }
 
   return {
-    clientOptions: getClientOptions(clients, selectedClientId),
-    animalsAtClientAddress: savedDetails.animalsAtClientAddress,
-    animalAddress: savedDetails.animalAddress || '',
-    animalAddressDetails: savedDetails.animalAddressDetails || getClientFieldValues(),
-    animalAddressEditMode: Boolean(savedDetails.animalAddressDetails),
-    selectedClientName: getClientLabel(selectedClient || {}),
-    selectedClient: selectedClient
-      ? {
-          ...selectedClientDetails,
-          address: getClientAddress(selectedClientDetails)
-        }
-      : undefined,
-    clientDetails: overrides.clientDetails || selectedClientDetails,
-    editMode: isManualClientEntry(savedDetails),
-    ...overrides,
-    submissionFormState
+    animalAddressDetails: Object.fromEntries(
+      clientFieldNames.map((fieldName) => [fieldName, animalAddressDetails[fieldName].trim()])
+    )
   }
 }
 
-const loadClients = async () => {
-  try {
-    return await getClients()
-  } catch (error) {
-    console.error('Error contacting backend server:', error.message)
-    return []
-  }
-}
-
-const renderClientDetailsPage = (h, submissionFormState, clients, overrides = {}) =>
-  h.view('select-client.njk', getClientDetailsViewContext(submissionFormState, clients, overrides))
-
-const buildClientDetails = (payload, client) => {
-  const submittedFields = clientFieldNames.some((fieldName) => Object.hasOwn(payload, fieldName))
-  const details = submittedFields
-    ? getClientFieldValues(payload)
-    : getClientFieldValues(client)
-  const animalAddressDetails = getAnimalAddressFieldValues(payload)
-  const hasAnimalAddressDetails = clientFieldNames.some((fieldName) =>
-    animalAddressDetails[fieldName].trim()
+const buildClientDetails = (payload, client, animalAddressClient, savedClientDetails = {}) => {
+  const details = getClientDetailsForSubmission(payload, client, savedClientDetails)
+  const animalAddressDetails = getAnimalAddressDetailsForSubmission(
+    payload,
+    animalAddressClient,
+    savedClientDetails
   )
 
   return {
@@ -135,34 +153,36 @@ const buildClientDetails = (payload, client) => {
       clientFieldNames.map((fieldName) => [fieldName, String(details[fieldName] || '').trim()])
     ),
     ...(payload.animalsAtClientAddress && { animalsAtClientAddress: payload.animalsAtClientAddress }),
-    ...(payload.animalsAtClientAddress === 'no' && payload.animalAddress?.trim() && {
-      animalAddress: payload.animalAddress.trim()
-    }),
-    ...(payload.animalsAtClientAddress === 'no' && hasAnimalAddressDetails && {
-      animalAddressDetails: Object.fromEntries(
-        clientFieldNames.map((fieldName) => [fieldName, animalAddressDetails[fieldName].trim()])
-      )
-    })
+    ...getAnimalAddressDetailsToSave(payload, animalAddressClient, savedClientDetails),
+    ...getSavedAnimalAddressDetails(payload, animalAddressDetails)
   }
 }
 
 const hasSubmittedClientFields = (payload) =>
   clientFieldNames.some((fieldName) => Object.hasOwn(payload, fieldName))
 
-const isManualClientEntryPayload = (payload) =>
-  payload.intent === 'new' ||
-  payload.manualClientEntry === 'yes' ||
-  (!payload.clientId && hasSubmittedClientFields(payload))
+const getAnimalAddressDetailsForLocation = (payload, savedDetails, animalAddressClient) => {
+  const hasSubmittedFields = animalAddressFieldNames.some((fieldName) => Object.hasOwn(payload, fieldName))
+  if (hasSubmittedFields) {
+    return getAnimalAddressFieldValues(payload)
+  }
+  return savedDetails.animalAddressDetails ||
+    (animalAddressClient ? getClientFieldValues(animalAddressClient) : getClientFieldValues())
+}
 
-const getAnimalLocation = (payload, formData, intent) => ({
-  animalsAtClientAddress: payload.animalsAtClientAddress ??
-    formData.clientDetails?.animalsAtClientAddress,
-  animalAddress: payload.animalAddress ??
-    formData.clientDetails?.animalAddress ?? '',
-  animalAddressDetails: getAnimalAddressFieldValues(payload),
-  animalAddressEditMode: intent === 'newAnimalAddress' ||
-    (intent !== 'cancelAnimalAddress' && Boolean(formData.clientDetails?.animalAddressDetails))
-})
+const getAnimalLocation = (payload, formData, animalAddressClient) => {
+  const savedDetails = formData.clientDetails || {}
+
+  return {
+    animalsAtClientAddress: payload.animalsAtClientAddress ??
+      savedDetails.animalsAtClientAddress,
+    animalAddressClientId: payload.animalAddressClientId ??
+      savedDetails.animalAddressClientId ?? '',
+    animalAddress: payload.animalAddress ??
+      savedDetails.animalAddress ?? '',
+    animalAddressDetails: getAnimalAddressDetailsForLocation(payload, savedDetails, animalAddressClient)
+  }
+}
 
 const getSubmittedClientDetails = (payload, selectedClient, formData) => {
   if (hasSubmittedClientFields(payload)) {
@@ -184,52 +204,81 @@ const getSubmittedClientDetails = (payload, selectedClient, formData) => {
   return { ...getClientFieldValues(selectedClient), ...savedDetails }
 }
 
-const getClientIntentViewOptions = ({
-  intent,
-  selectedClient,
+export const saveClientDraftForAnimalAddress = ({
+  request,
+  submissionFormStateKey,
+  submissionFormState,
   formData,
-  submittedClientDetails,
-  hasSubmittedFields,
   payload,
-  animalLocation
+  selectedClient,
+  selectedAnimalAddress,
+  startNewAnimalAddress = false
 }) => {
-  if (intent === 'edit' && selectedClient) {
-    const clientDetails = getSelectedClientDetails(formData.clientDetails || {}, selectedClient)
-    return {
-      clientDetails: { ...clientDetails, clientId: selectedClient.clientId },
-      editMode: true,
-      ...animalLocation
-    }
+  const clientDetails = { ...getSubmittedClientDetails(payload, selectedClient, formData) }
+  const animalLocation = selectedAnimalAddress
+    ? {
+        animalAddressClientId: String(selectedAnimalAddress.clientId),
+        animalAddress: getClientLabel(selectedAnimalAddress)
+      }
+    : {}
+  if (startNewAnimalAddress) {
+    delete clientDetails.animalAddressClientId
+    delete clientDetails.animalAddress
+    delete clientDetails.animalAddressDetails
   }
 
-  if (intent === 'new') {
-    return {
-      clientDetails: getClientFieldValues(),
-      editMode: true,
-      ...animalLocation
+  request.yar.set(submissionFormStateKey, {
+    ...submissionFormState,
+    formData: {
+      ...formData,
+      clientDetails: {
+        ...clientDetails,
+        animalsAtClientAddress: 'no',
+        ...animalLocation
+      }
     }
-  }
-
-  if (intent === 'newAnimalAddress' || intent === 'cancelAnimalAddress') {
-    return {
-      clientDetails: submittedClientDetails,
-      editMode: hasSubmittedFields || payload.manualClientEntry === 'yes',
-      ...animalLocation
-    }
-  }
-
-  if (intent === 'cancel') {
-    return {
-      selectedClientId: selectedClient?.clientId || '',
-      editMode: false,
-      ...animalLocation
-    }
-  }
-
-  return null
+  })
+  request.yar.touch()
 }
 
-const shouldShowClientSelectionError = (payload, selectedClient, hasSubmittedFields) =>
+export const saveClientDraftForAddress = (
+  request,
+  submissionFormStateKey,
+  submissionFormState,
+  formData,
+  payload,
+  selectedClient,
+  selectedAnimalAddress
+) => {
+  const clientDetails = {
+    ...getSubmittedClientDetails(payload, selectedClient, formData),
+    ...(selectedClient && { clientId: selectedClient.clientId })
+  }
+  const animalLocation = getAnimalLocation(payload, formData, selectedAnimalAddress)
+
+  request.yar.set(submissionFormStateKey, {
+    ...submissionFormState,
+    formData: {
+      ...formData,
+      clientDetails: { ...clientDetails, ...animalLocation }
+    }
+  })
+  request.yar.touch()
+}
+
+export const animalAddressSchema = Joi.object({
+  intent: Joi.string().valid('save', 'cancel').optional(),
+  animalAddressClientId: Joi.string().allow('').optional(),
+  ...Object.fromEntries(animalAddressFieldNames.map((fieldName) => [fieldName, Joi.string().allow('').optional()]))
+})
+
+export const clientAddressSchema = Joi.object({
+  intent: Joi.string().valid('save', 'cancel').optional(),
+  isEditing: Joi.string().valid('yes', 'no').optional(),
+  ...Object.fromEntries(clientFieldNames.map((fieldName) => [fieldName, Joi.string().allow('').optional()]))
+})
+
+export const shouldShowClientSelectionError = (payload, selectedClient, hasSubmittedFields) =>
   Boolean(payload.clientId && !selectedClient) ||
   (!selectedClient && !hasSubmittedFields)
 
@@ -245,46 +294,117 @@ const getClientSelectionErrorOptions = (payload, selectedClient) => {
   return options
 }
 
-const renderClientSelectionError = (h, submissionFormState, clients, payload, selectedClient) =>
+const renderClientSelectionError = (h, submissionFormState, clients, counties, payload, selectedClient) =>
   renderClientDetailsPage(
     h,
     submissionFormState,
     clients,
+    counties,
     getClientSelectionErrorOptions(payload, selectedClient)
   ).code(BAD_REQUEST_STATUS)
+
+const handleClientPostIntent = ({
+  request,
+  h,
+  submissionFormStateKey,
+  submissionFormState,
+  formData,
+  payload,
+  clients,
+  counties,
+  selectedClient,
+  selectedAnimalAddress
+}) => {
+  const savedClientDetails = formData.clientDetails || {}
+  if (
+    payload.intent === 'editAnimalAddress' &&
+    (selectedAnimalAddress || savedClientDetails.animalAddressDetails)
+  ) {
+    saveClientDraftForAnimalAddress({
+      request,
+      submissionFormStateKey,
+      submissionFormState,
+      formData,
+      payload,
+      selectedClient,
+      selectedAnimalAddress
+    })
+    const animalAddressClientId = selectedAnimalAddress
+      ? `&animalAddressClientId=${selectedAnimalAddress.clientId}`
+      : ''
+    return h.redirect(`/${animalAddressPageName}?intent=edit${animalAddressClientId}`)
+  }
+
+  const hasSubmittedFields = hasSubmittedClientFields(payload) || isManualClientEntry(savedClientDetails)
+  const intentViewOptions = getClientIntentViewOptions({
+    intent: payload.intent,
+    selectedClient,
+    formData,
+    submittedClientDetails: getSubmittedClientDetails(payload, selectedClient, formData),
+    hasSubmittedFields,
+    payload,
+    animalLocation: getAnimalLocation(payload, formData, selectedAnimalAddress)
+  })
+
+  return intentViewOptions
+    ? renderClientDetailsPage(h, submissionFormState, clients, counties, intentViewOptions)
+    : undefined
+}
 
 const createPostHandler = (submissionFormStateKey) => async (request, h) => {
   const submissionFormState = request.yar.get(submissionFormStateKey) || {}
   const formData = submissionFormState.formData || {}
   const payload = request.payload
-  const clients = isManualClientEntryPayload(payload) ? [] : await loadClients()
-  const selectedClient = clients.find((client) => client.clientId === payload.clientId)
-  const hasSubmittedFields = hasSubmittedClientFields(payload)
-  const submittedClientDetails = getSubmittedClientDetails(payload, selectedClient, formData)
-  const animalLocation = getAnimalLocation(payload, formData, payload.intent)
-  const intentViewOptions = getClientIntentViewOptions({
-    intent: payload.intent,
-    selectedClient,
-    formData,
-    submittedClientDetails,
-    hasSubmittedFields,
-    payload,
-    animalLocation
-  })
+  if (payload.intent === 'new') {
+    return h.redirect(`/${clientAddressPageName}?intent=new`)
+  }
 
-  if (intentViewOptions) {
-    return renderClientDetailsPage(h, submissionFormState, clients, intentViewOptions)
+  const clients = await loadClients()
+  const counties = await loadCounties()
+  const selectedClient = clients.find((client) => client.clientId === payload.clientId)
+  const selectedAnimalAddress = clients.find((client) =>
+    String(client.clientId) === String(payload.animalAddressClientId)
+  )
+  const savedClientDetails = formData.clientDetails || {}
+  const hasSubmittedFields = hasSubmittedClientFields(payload) || isManualClientEntry(savedClientDetails)
+  const intentResponse = handleClientPostIntent({
+    request,
+    h,
+    submissionFormStateKey,
+    submissionFormState,
+    formData,
+    payload,
+    clients,
+    counties,
+    selectedClient,
+    selectedAnimalAddress
+  })
+  if (intentResponse) {
+    return intentResponse
+  }
+
+  const cphErrors = getCphErrors(payload)
+  if (Object.keys(cphErrors).length) {
+    return renderCphValidationErrors(
+      h,
+      submissionFormState,
+      clients,
+      counties,
+      payload,
+      selectedClient,
+      cphErrors
+    )
   }
 
   if (shouldShowClientSelectionError(payload, selectedClient, hasSubmittedFields)) {
-    return renderClientSelectionError(h, submissionFormState, clients, payload, selectedClient)
+    return renderClientSelectionError(h, submissionFormState, clients, counties, payload, selectedClient)
   }
 
   request.yar.set(submissionFormStateKey, {
     ...submissionFormState,
     formData: {
       ...formData,
-      clientDetails: buildClientDetails(payload, selectedClient)
+      clientDetails: buildClientDetails(payload, selectedClient, selectedAnimalAddress, savedClientDetails)
     }
   })
   request.yar.touch()
@@ -292,28 +412,51 @@ const createPostHandler = (submissionFormStateKey) => async (request, h) => {
   return h.redirect(`/${nextPageName}`)
 }
 
+const getStartRoute = (submissionFormStateKey) => ({
+  method: 'GET',
+  path: `/${pageName}/start`,
+  handler: (request, h) => {
+    request.yar.set(submissionFormStateKey, {})
+    request.yar.touch()
+    return h.redirect(`/${pageName}`)
+  }
+})
+
+const getClientDetailsRoute = (submissionFormStateKey) => ({
+  method: 'GET',
+  path: `/${pageName}`,
+  handler: async (request, h) => {
+    const submissionFormState = request.yar.get(submissionFormStateKey) || {}
+    const clients = await loadClients()
+    const counties = await loadCounties()
+    const intent = request.query.intent
+    if (intent === 'newAnimalAddress') {
+      return h.redirect(`/${animalAddressPageName}?intent=new`)
+    }
+    if (intent === 'new') {
+      return h.redirect(`/${clientAddressPageName}?intent=new`)
+    }
+
+    return renderClientDetailsPage(h, submissionFormState, clients, counties)
+  }
+})
+
+const postClientDetailsRoute = (submissionFormStateKey) => ({
+  method: 'POST',
+  path: `/${pageName}`,
+  options: {
+    validate: {
+      payload: submissionClientSchema
+    }
+  },
+  handler: createPostHandler(submissionFormStateKey)
+})
+
 const selectClient = (server, submissionFormStateKey) => {
   server.route([
-    {
-      method: 'GET',
-      path: `/${pageName}`,
-      handler: async (request, h) => {
-        const submissionFormState = request.yar.get(submissionFormStateKey) || {}
-        const clients = await loadClients()
-
-        return renderClientDetailsPage(h, submissionFormState, clients)
-      }
-    },
-    {
-      method: 'POST',
-      path: `/${pageName}`,
-      options: {
-        validate: {
-          payload: submissionClientSchema
-        }
-      },
-      handler: createPostHandler(submissionFormStateKey)
-    }
+    getStartRoute(submissionFormStateKey),
+    getClientDetailsRoute(submissionFormStateKey),
+    postClientDetailsRoute(submissionFormStateKey)
   ])
 }
 

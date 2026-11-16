@@ -13,6 +13,14 @@ const nextPageName = 'submission-03-clinical-history'
 const optionsOf = (list) => (Array.isArray(list) ? list : [])
 const hasValue = (options, value) => options.some((option) => option.value === value)
 const text = (value) => (typeof value === 'string' ? value.trim() : '')
+const normalized = (value) => text(value).toLowerCase().replace(/[^a-z]/g, '')
+const isAgeDetailExcluded = (value, options) => {
+  const category = optionsOf(options).find((option) => option.value === value)
+  const terms = [normalized(value), normalized(category?.label)]
+
+  return terms.some((term) =>
+    term === 'unknown' || term === 'doesntapply' || term === 'doesnotapply')
+}
 
 const maxAnimals = 10
 const maxAnimalIdLength = 50
@@ -39,22 +47,30 @@ const validateOption = (values, details, errors, field, listName, label, require
   }
 }
 
-// Age category and purpose are required whenever the species offers options; the rest are optional.
-// A supplied value must be one of the options offered for the species.
-const validate = (payload, details) => {
-  const errors = {}
-  const numberOfAnimals = Number(text(payload.numberOfAnimals) || 1)
-  const values = {
-    ageCategory: text(payload.ageCategory),
+const ageDetailsAllowed = (ageCategory, details) =>
+  optionsOf(details.ageCategories).length > 0 &&
+  !isAgeDetailExcluded(ageCategory, details.ageCategories)
+
+const buildValues = (payload, details) => {
+  const ageCategory = text(payload.ageCategory)
+  const includeAgeDetail = ageDetailsAllowed(ageCategory, details)
+
+  return {
+    ageCategory,
+    age: includeAgeDetail ? text(payload.age) : '',
+    ageIndicator: includeAgeDetail ? text(payload.ageIndicator) : '',
+    isEstimate: includeAgeDetail && ['true', 'on', true].includes(payload.isEstimate),
     purpose: text(payload.purpose),
     keepingType: text(payload.keepingType),
     breed: text(payload.breed),
     sex: text(payload.sex),
     organicAccreditation: text(payload.organicAccreditation),
-    numberOfAnimals: Number.isInteger(numberOfAnimals) ? numberOfAnimals : 0,
+    numberOfAnimals: Number(text(payload.numberOfAnimals) || 1),
     animalIds: Array.from({ length: maxAnimals }, (_, i) => text(payload[animalIdField(i + 1)]))
   }
+}
 
+const validateOptions = (values, details, errors) => {
   const optionChecks = [
     ['ageCategory', 'ageCategories', 'age category', true],
     ['purpose', 'purposes', 'purpose', true],
@@ -66,26 +82,66 @@ const validate = (payload, details) => {
   for (const [field, listName, label, required] of optionChecks) {
     validateOption(values, details, errors, field, listName, label, required)
   }
+}
 
-  if (values.organicAccreditation &&
-    !(details.organicAccreditationApplicable && hasValue(organicOptions, values.organicAccreditation))) {
+const validateAgeDetail = (values, details, errors) => {
+  if (values.age || values.ageIndicator) {
+    const age = Number(values.age)
+    if (!values.age || !Number.isFinite(age) || age < 0) {
+      errors.age = 'Enter an age of 0 or more'
+    }
+
+    if (!values.ageIndicator || !hasValue(optionsOf(details.ageUnits), values.ageIndicator)) {
+      errors.ageIndicator = 'Select a valid age indicator'
+    }
+  }
+}
+
+const validateOrganicAccreditation = (values, details, errors) => {
+  const isValid = details.organicAccreditationApplicable &&
+    hasValue(organicOptions, values.organicAccreditation)
+
+  if (values.organicAccreditation && !isValid) {
     errors.organicAccreditation = 'Select a valid option for organic accreditation'
   }
+}
 
+const validateNumberOfAnimals = (values, errors) => {
   if (values.numberOfAnimals < 1 || values.numberOfAnimals > maxAnimals) {
     errors.numberOfAnimals = `Select a number of animals from 1 to ${maxAnimals}`
   }
+}
 
+const validateAnimalIds = (values, errors) => {
   const tooLong = values.animalIds.findIndex((id, i) => i < values.numberOfAnimals && id.length > maxAnimalIdLength)
   if (tooLong >= 0) {
     errors[animalIdField(tooLong + 1)] = `Animal ${tooLong + 1} ID must be ${maxAnimalIdLength} characters or fewer`
   }
+}
+
+// Age category and purpose are required whenever the species offers options; the rest are optional.
+// A supplied value must be one of the options offered for the species.
+const validate = (payload, details) => {
+  const values = buildValues(payload, details)
+  if (!Number.isInteger(values.numberOfAnimals)) {
+    values.numberOfAnimals = 0
+  }
+
+  const errors = {}
+  validateOptions(values, details, errors)
+  validateAgeDetail(values, details, errors)
+  validateOrganicAccreditation(values, details, errors)
+  validateNumberOfAnimals(values, errors)
+  validateAnimalIds(values, errors)
 
   return { values, errors }
 }
 
 const savedValues = (animalDetails = {}) => ({
   ageCategory: animalDetails.ageCategory || '',
+  age: animalDetails.ageDetail?.value === undefined ? '' : String(animalDetails.ageDetail.value),
+  ageIndicator: animalDetails.ageDetail?.unit || '',
+  isEstimate: animalDetails.ageDetail?.isEstimate === true,
   purpose: animalDetails.purpose || '',
   keepingType: animalDetails.keepingType || '',
   breed: animalDetails.breed || '',
@@ -104,7 +160,19 @@ const toRadioItems = (options, selected) =>
   optionsOf(options).map((option) => ({ value: option.value, text: option.label, checked: option.value === selected }))
 
 const buildFields = (details, values, errors) => ({
-  ageCategoryItems: toRadioItems(details.ageCategories, values.ageCategory),
+  ageCategoryItems: optionsOf(details.ageCategories).map((option) => ({
+    value: option.value,
+    text: option.label,
+    checked: option.value === values.ageCategory,
+    ...(isAgeDetailExcluded(option.value, details.ageCategories)
+      ? { attributes: { 'data-age-detail-excluded': 'true' } }
+      : {})
+  })),
+  showAgeDetails: optionsOf(details.ageCategories).length > 0 &&
+    !isAgeDetailExcluded(values.ageCategory, details.ageCategories),
+  ageIndicatorItems: toSelectItems(details.ageUnits, values.ageIndicator, 'Select an age indicator'),
+  ageError: errors.age,
+  ageIndicatorError: errors.ageIndicator,
   purposeItems: toRadioItems(details.purposes, values.purpose),
   keepingTypeItems: toRadioItems(details.keepingTypes, values.keepingType),
   breedItems: toSelectItems(details.breeds, values.breed, ''),
@@ -176,7 +244,7 @@ const getAnimalDetailsPage = async (request, h, submissionFormStateKey) => {
 }
 
 const buildAnimalDetails = (submissionFormState, values) => {
-  const { numberOfAnimals, animalIds, ...rest } = values
+  const { numberOfAnimals, animalIds, age, ageIndicator, isEstimate, ...rest } = values
   const savedDetails = submissionFormState.formData.animalDetails
   const animalDetails = {
     speciesId: savedDetails.speciesId,
@@ -187,6 +255,14 @@ const buildAnimalDetails = (submissionFormState, values) => {
   for (const [key, value] of Object.entries(rest)) {
     if (value) {
       animalDetails[key] = value
+    }
+  }
+
+  if (age && ageIndicator) {
+    animalDetails.ageDetail = {
+      value: Number(age),
+      unit: ageIndicator,
+      isEstimate
     }
   }
 

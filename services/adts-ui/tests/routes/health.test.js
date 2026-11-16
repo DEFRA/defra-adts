@@ -6,7 +6,7 @@
  */
 import { afterAll, afterEach, beforeAll, describe, expect, test, jest } from '@jest/globals'
 import createServer from '../../src/app.js'
-import { constants } from 'http2'
+import { constants } from 'node:http2'
 
 describe('Healthcheck endpoint', () => {
   let server

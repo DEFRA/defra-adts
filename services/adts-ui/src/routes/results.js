@@ -17,7 +17,11 @@ const results = (server) => {
       request.yar.set(HOME_FILTER_STATE_KEY, request.query)
       request.yar.touch()
 
-      const queryParams = new URLSearchParams(request.query).toString()
+      const searchFilters = { ...request.query }
+      if (searchFilters.status === 'show_all') {
+        delete searchFilters.status
+      }
+      const queryParams = new URLSearchParams(searchFilters).toString()
       const backendUrl = `${process.env.BACKEND_SERVICE_URL}/submissions?${queryParams}`
       const viewContext = {
         filteredValues: {

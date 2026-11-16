@@ -35,16 +35,18 @@
       <p class="govuk-body">Signed in as Test User 2</p>
       <h2 class="govuk-heading-m">New submission</h2>
       <p class="govuk-body">Start a new sick animal submission or healthy animal submission.</p>
-      <div class="govuk-button-group">
+      <div class="app-button-stack">
         {{ govukButton({
           text: "Sick animal submission",
-          href: "/submission-01-client-details",
-          classes: "app-button--sick"
+          href: "/submission-01-client-details/start",
+          classes: "app-button--sick",
+          isStartButton: true
         }) }}
         {{ govukButton({
           text: "Healthy animal submission",
-          href: "/submission-01-client-details",
-          classes: "app-button--healthy"
+          href: "/submission-01-client-details/start",
+          classes: "app-button--healthy",
+          isStartButton: true
         }) }}
       </div>
 

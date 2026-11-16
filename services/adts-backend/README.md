@@ -69,9 +69,10 @@ It returns `502` if DynamoDB can't be reached.
 
 `GET /GetAnimalDetails?speciesId=<code>` returns the reference-data options used by the
 animal-details form: `ageCategories`, `purposes`, `keepingTypes`, `breeds`, and `sexes`,
-plus `organicAccreditationApplicable`. Breed and purpose rows are selected from their
-shared type partitions by `speciesCode`. Options with an `isAvian` attribute
-are matched to the species' avian status, and sex options marked `excludeAvian` are
+plus the age indicators `ageUnits` (Days, Weeks, Months, and Years) and
+`organicAccreditationApplicable`. Breed and purpose rows are selected from their
+shared type partitions by `speciesCode`. Options with an `isAvian` attribute are
+matched to the species' avian status, and sex options marked `excludeAvian` are
 omitted for avian species. `forAvianSpecies` and `excludeSpeciesLimsCodes` are also
 respected when present. It returns `400` when `speciesId` is missing, `404` for an
 unknown species, and `502` if DynamoDB can't be reached.

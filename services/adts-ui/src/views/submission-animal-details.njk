@@ -7,6 +7,7 @@
 {% from "govuk/components/radios/macro.njk" import govukRadios %}
 {% from "govuk/components/select/macro.njk" import govukSelect %}
 {% from "govuk/components/input/macro.njk" import govukInput %}
+{% from "govuk/components/checkboxes/macro.njk" import govukCheckboxes %}
 {% from "govuk/components/button/macro.njk" import govukButton %}
 {% from "macros/submissionProgress.njk" import submissionProgress %}
 {% from "macros/clientSummary.njk" import clientSummaryBar %}
@@ -16,6 +17,8 @@
   { key: "numberOfAnimals", id: "numberOfAnimals" },
   { key: "sex", id: "sex" },
   { key: "ageCategory", id: "ageCategory" },
+  { key: "age", id: "age" },
+  { key: "ageIndicator", id: "ageIndicator" },
   { key: "organicAccreditation", id: "organicAccreditation" },
   { key: "purpose", id: "purpose" },
   { key: "keepingType", id: "keepingType" }
@@ -146,6 +149,32 @@
           errorMessage: { text: errors.ageCategory } if errors.ageCategory,
           items: ageCategoryItems
         }) }}
+        <div id="age-detail" {% if not showAgeDetails %}hidden{% endif %}>
+          <h2 class="govuk-heading-m">Age detail (optional)</h2>
+          {{ govukInput({
+            id: "age",
+            name: "age",
+            label: { text: "Age" },
+            value: values.age,
+            inputmode: "decimal",
+            errorMessage: { text: ageError } if ageError
+          }) }}
+          {{ govukSelect({
+            id: "ageIndicator",
+            name: "ageIndicator",
+            label: { text: "Age Indicator" },
+            items: ageIndicatorItems,
+            errorMessage: { text: ageIndicatorError } if ageIndicatorError
+          }) }}
+          {{ govukCheckboxes({
+            idPrefix: "isEstimate",
+            name: "isEstimate",
+            classes: "govuk-checkboxes--small",
+            items: [
+              { value: "true", text: "Is this an estimate?", checked: values.isEstimate }
+            ]
+          }) }}
+        </div>
       {% endif %}
 
       {% if showOrganicAccreditation %}

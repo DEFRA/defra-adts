@@ -6,7 +6,18 @@ const getCookieHeader = (response) => response.headers['set-cookie']?.[0]?.split
 
 const sheepDetails = {
   speciesId: '2',
-  ageCategories: [{ value: 'lamb', label: 'Lamb' }, { value: 'adult', label: 'Adult' }],
+  ageCategories: [
+    { value: 'lamb', label: 'Lamb' },
+    { value: 'adult', label: 'Adult' },
+    { value: 'unknown', label: 'Unknown' },
+    { value: 'does-not-apply', label: "Doesn't Apply" }
+  ],
+  ageUnits: [
+    { value: 'DAYS', label: 'Days' },
+    { value: 'WEEKS', label: 'Weeks' },
+    { value: 'MONTHS', label: 'Months' },
+    { value: 'YEARS', label: 'Years' }
+  ],
   purposes: [{ value: 'meat', label: 'Meat' }, { value: 'wool', label: 'Wool' }],
   keepingTypes: [{ value: 'outdoor', label: 'Outdoor' }],
   breeds: [{ value: 'texel', label: 'Texel' }],
@@ -17,6 +28,12 @@ const sheepDetails = {
 const goatDetails = {
   speciesId: '4',
   ageCategories: [{ value: 'kid', label: 'Kid' }],
+  ageUnits: [
+    { value: 'DAYS', label: 'Days' },
+    { value: 'WEEKS', label: 'Weeks' },
+    { value: 'MONTHS', label: 'Months' },
+    { value: 'YEARS', label: 'Years' }
+  ],
   purposes: [{ value: 'milk', label: 'Milk' }],
   keepingTypes: [],
   breeds: [],
@@ -195,11 +212,58 @@ describe('Submission animal details page', () => {
     expect((await post(selection, {})).statusCode).toBe(302)
   })
 
-  test('renders age as categories only, with no age detail fields', async () => {
+  test('renders optional age detail fields and age indicators', async () => {
     const response = await get(await selectSpecies('Sheep'))
 
-    expect(response.payload).not.toContain('Age detail')
-    expect(response.payload).not.toContain('ageUnit')
+    expect(response.payload).toContain('Age detail (optional)')
+    expect(response.payload).toContain('name="age"')
+    expect(response.payload).toContain('Age Indicator')
+    expect(response.payload).toContain('name="ageIndicator"')
+    expect(response.payload).toContain('Days')
+    expect(response.payload).toContain('Is this an estimate?')
+    expect(response.payload).toContain('data-age-detail-excluded="true"')
+  })
+
+  test.each([
+    ['unknown', 'Unknown'],
+    ['does-not-apply', "Doesn't Apply"]
+  ])('hides age detail when age category is %s', async (ageCategory) => {
+    const selection = await selectSpecies('Sheep')
+    const response = await post(selection, { ageCategory })
+
+    expect(response.statusCode).toBe(400)
+    expect(response.payload).toMatch(/id="age-detail" hidden/)
+  })
+
+  test('persists and restores age detail when an age category applies', async () => {
+    const selection = await selectSpecies('Sheep')
+    const response = await post(selection, {
+      ageCategory: 'lamb',
+      purpose: 'meat',
+      age: '3',
+      ageIndicator: 'MONTHS',
+      isEstimate: 'true'
+    })
+
+    expect(response.statusCode).toBe(302)
+    const revisit = await get(selection)
+    expect(saved(revisit).ageDetail).toEqual({ value: 3, unit: 'MONTHS', isEstimate: true })
+    expect(revisit.payload).toContain('value="3"')
+    expect(revisit.payload).toMatch(/value="MONTHS"\s+selected/)
+    expect(revisit.payload).toMatch(/value="true"\s+checked/)
+  })
+
+  test('does not save age detail for Unknown or Does not Apply categories', async () => {
+    const selection = await selectSpecies('Sheep')
+    await post(selection, {
+      ageCategory: 'unknown',
+      purpose: 'meat',
+      age: '3',
+      ageIndicator: 'MONTHS',
+      isEstimate: 'true'
+    })
+
+    expect(saved(await get(selection))).not.toHaveProperty('ageDetail')
   })
 
   test('persists chosen values and restores them on return', async () => {
@@ -245,6 +309,8 @@ describe('Submission animal details page', () => {
     [{ ageCategory: 'lamb', purpose: 'meat', keepingType: 'indoor' }, 'Select a valid option for where the animals are kept'],
     [{ ageCategory: 'lamb', purpose: 'meat', breed: 'unknown' }, 'Select a valid breed'],
     [{ ageCategory: 'lamb', purpose: 'meat', sex: 'gelding' }, 'Select a valid sex'],
+    [{ ageCategory: 'lamb', purpose: 'meat', age: '-1', ageIndicator: 'DAYS' }, 'Enter an age of 0 or more'],
+    [{ ageCategory: 'lamb', purpose: 'meat', age: '3', ageIndicator: 'invalid' }, 'Select a valid age indicator'],
     [{ ageCategory: 'lamb', purpose: 'meat', organicAccreditation: 'maybe' }, 'Select a valid option for organic accreditation'],
     [{ ageCategory: 'lamb', purpose: 'meat', numberOfAnimals: '11' }, 'Select a number of animals from 1 to 10'],
     [{ ageCategory: 'lamb', purpose: 'meat', numberOfAnimals: 'x' }, 'Select a number of animals from 1 to 10'],

@@ -11,7 +11,7 @@
 ## Clarifications
 
 - **Q1 - Resolved**: The Backend-facing contract will be domain-oriented. The Submission Service owns validation and mapping between the agreed domain contract and LIMS. The legacy model and current application callers establish existing ADTS behaviour; the authoritative LIMS contract verifies external semantics. As tasks progress, establish the fields, operation responses, report/attachment formats, and legacy behaviours from both sources, documenting and resolving discrepancies before implementing each affected operation. Do not infer these details from the abbreviated reference.
-- **Q2 - Resolved**: The Submission Service authenticates Backend callers. The Backend owns PVS authorization and must authorize access before making a PVS-scoped request; the service accepts PVS scope only from an authenticated Backend caller.
+- **Q2 - Resolved for initial release**: Backend-to-Submission-Service calls use HTTPS on the approved private AWS network, with network policy/security groups allowing only the Backend workload. The service does not verify SigV4 or another per-request caller identity in this release. IAM roles govern workload access to AWS resources, not incoming HTTP caller identity. The Backend remains responsible for PVS authorization. Adding in-service request authentication requires a future spec.
 - **Q3 - Resolved**: The service does not automatically retry confirmation or cancellation when the outcome is ambiguous. It reports an indeterminate outcome, and a caller must reconcile whether the action completed before retrying.
 
 ### Session 2026-10-30
@@ -19,6 +19,11 @@
 - Q: Which evidence should be authoritative when defining the complete draft, response, and report contract? → A: Use both the legacy model and current application callers to establish current ADTS behavior, verify LIMS semantics against its authoritative contract, and document and resolve discrepancies before implementing each affected operation as tasks progress.
 - Q: How should the service handle a first draft-creation request that times out before LIMS returns a draft ID? → A: Do not retry automatically; report an indeterminate outcome and reconcile whether the draft was created before retrying.
 - Q: Which availability and response-time targets should the Submission Service meet for Backend requests? → A: Define no numeric targets; use current test acceptance and operational monitoring.
+
+### Session 2026-11-04
+
+- Q: How should the service handle the current production LIMS endpoint, which uses HTTP? → A: Treat HTTP as an explicit temporary exception until the LIMS client enables HTTPS; the schedule is unknown. Document the unencrypted transport risk and remove the exception when HTTPS is available.
+- Q: How should the Backend access the Submission Service in the initial release? → A: Use HTTPS on a private AWS network restricted to the Backend workload by network policy/security groups, with no request-level SigV4 check. IAM roles govern AWS resource access. Consider in-service request authentication in a future spec.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -83,7 +88,7 @@ Service operators and the Backend can distinguish whether the Submission Service
 2. **Given** LIMS is reachable, **When** its connectivity health is checked, **Then** the service reports the LIMS result independently of its own process health.
 3. **Given** LIMS returns a business error, rejects credentials, times out, or cannot be reached, **When** an operation is requested, **Then** the Backend receives a predictable error category and meaningful non-secret details.
 4. **Given** requests are processed or fail, **When** operational information is recorded, **Then** credentials and sensitive request or response data are not exposed.
-5. **Given** a caller is not an authenticated Backend, **When** it requests a PVS-scoped operation, **Then** the Submission Service rejects the request. For an authenticated Backend caller, the Backend is responsible for authorizing access to the requested PVS before making the request.
+5. **Given** the Submission Service is deployed, **When** a request originates outside the approved Backend private-network boundary, **Then** AWS network policy prevents the connection. The service does not establish per-request caller identity in the initial release; the Backend authorizes PVS access before making the request.
 
 ### Edge Cases
 
@@ -93,6 +98,7 @@ Service operators and the Backend can distinguish whether the Submission Service
 - LIMS returns an HTTP success response containing a business-level rejection, including cancellation errors; the service must preserve and report the rejection.
 - LIMS returns an incomplete or unexpected response, including a missing draft or submission identifier after a lifecycle action; the service must not claim success without the required evidence.
 - LIMS rejects credentials, presents an untrusted TLS certificate, times out, or is unavailable; the service must fail predictably and must not disable certificate validation.
+- The current production LIMS endpoint uses HTTP; this temporary exception is unencrypted, must be explicit and limited to the configured LIMS origin, and must be removed when the client enables HTTPS.
 - Search criteria include optional filters or endpoint-specific legacy parameter spellings; the service must preserve supported semantics without exposing those inconsistencies in its Backend contract.
 - A report or attachment is empty, unavailable, or returned in a format not yet confirmed by the Backend; the response must not misrepresent it as a valid report.
 - The abbreviated draft example omits data required by the real application; the service must not treat that example as the complete draft schema.
@@ -111,10 +117,10 @@ Service operators and the Backend can distinguish whether the Submission Service
 - **FR-008**: The service MUST support requesting cancellation and accurately report the LIMS outcome, including business-level rejection details.
 - **FR-009**: The service MUST support retrieving the latest released results, charges, release summaries, and reports, preserving the content required by the current application in the agreed response representation.
 - **FR-010**: The service MUST distinguish validation errors, LIMS business-level errors, transport failures, timeouts, and unavailable dependencies. It MUST preserve meaningful LIMS error information for the Backend without exposing credentials or sensitive request data.
-- **FR-011**: All outbound LIMS connections MUST validate TLS certificates. The service MUST NOT reproduce the legacy client's disabled certificate verification.
+- **FR-011**: The service MUST use the current production LIMS HTTP endpoint only under an explicit, documented temporary security exception until the LIMS client enables HTTPS; the schedule is unknown. The exception MUST be limited to the configured LIMS origin, MUST NOT silently downgrade HTTPS or follow redirects to a different origin, and MUST have its unencrypted transport risk and mitigations accepted by an accountable risk owner before production release. When LIMS enables HTTPS, the service MUST use HTTPS and validate certificates and hostnames; it MUST NOT disable TLS verification.
 - **FR-012**: LIMS host/prefix and authentication MUST be configurable per environment. Secrets MUST NOT be embedded in source code or exposed in logs.
 - **FR-013**: The service MUST NOT automatically retry an initial draft-creation request when LIMS may have created the draft but the response containing its identifier was not received. It MUST report an indeterminate outcome and require reconciliation before a caller retries. The service MUST apply the same rule to ambiguous draft confirmation and cancellation. Timeout values and retry behaviour for other operations MUST be documented before implementation.
-- **FR-014**: The service MUST authenticate Backend callers and reject requests from unauthenticated callers. The Backend MUST authorize access to a PVS before making a PVS-scoped request; the service MUST accept PVS scope only from an authenticated Backend caller.
+- **FR-014**: Backend-to-Submission-Service traffic MUST use HTTPS over the approved private AWS network. AWS network policy/security groups MUST restrict service ingress to the Backend workload. The initial release MUST NOT claim per-request Backend identity verification; IAM roles apply to AWS resource permissions and are not an incoming HTTP auth check. The Backend MUST authorize PVS access before making a PVS-scoped request. In-service request authentication is deferred to a future spec. This network-only trust boundary MUST be documented and its residual risk accepted by an accountable risk owner before production release.
 - **FR-015**: Automated tests MUST cover successful requests, rejected inputs, LIMS business errors, transport/timeouts, and unavailable LIMS responses for the supported service behaviours.
 - **FR-016**: The service contract and tests MUST distinguish confirmed legacy behaviour from incomplete or uncertain reference information. As tasks progress, the team MUST use the legacy model and current application callers to establish ADTS behaviour, verify LIMS semantics against its authoritative contract, and document and resolve discrepancies before implementing each affected operation. The team MUST document the full draft fields, operation responses, report/attachment formats, and legacy behaviours to preserve or correct; unverified details MUST NOT be inferred from the abbreviated reference.
 
@@ -142,8 +148,9 @@ Service operators and the Backend can distinguish whether the Submission Service
 
 - The existing LIMS remains the system of record for products, clients, PVS details, submissions, drafts, results, charges, summaries, and reports.
 - The source reference documents observed legacy behaviour only. The legacy `Submission.php` and `LimsApiClient.php` sources are not present in this workspace; tasks will locate the legacy model and current application callers and verify LIMS semantics against the authoritative contract incrementally. Each operation's contract must be confirmed before that operation is implemented; unrelated verified work need not wait for the full schema catalogue.
+- The current production LIMS endpoint uses HTTP. This is a temporary, explicitly approved exception with no confirmed HTTPS enablement date; it does not provide transport encryption and must be removed when the LIMS client supports HTTPS.
 - Existing business workflows should be preserved where verified, but known defects must not be reproduced automatically. The intended corrections and compatibility requirements remain to be agreed.
-- Backend callers are authenticated by the Submission Service; the Backend is responsible for PVS authorization before calling it.
+- Backend calls use HTTPS over a private AWS network restricted to the Backend workload; the initial release has no request-level caller identity check. IAM roles govern access to AWS resources, and the Backend is responsible for PVS authorization. In-service authentication is a possible future change.
 - No new persistent data store or asynchronous processing is required for this feature unless separately agreed.
 - Existing repository and service operational standards apply; deployment details and technology choices are for the planning phase.
 - The feature includes only the Submission Service, its Backend-facing contract, LIMS integration, configuration, observability, testing, and deployment integration. UI changes, redesign of Backend workflows, changes to LIMS, a new persistent data store, and asynchronous processing are out of scope unless separately agreed.

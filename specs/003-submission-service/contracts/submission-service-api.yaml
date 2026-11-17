@@ -7,10 +7,11 @@ info:
     Service. LIMS-specific endpoint names and parameter spellings are internal.
     Draft field schemas and report representations are deliberately incomplete
     until verified against legacy callers and the authoritative LIMS contract.
+    Initial access control relies on HTTPS and private AWS network restrictions;
+    this service does not verify per-request SigV4 identity. API Gateway is not
+    part of the deployment path.
 servers:
   - url: /
-security:
-  - BackendBearer: []
 paths:
   /health:
     get:
@@ -41,7 +42,11 @@ paths:
     get:
       summary: Search products
       parameters:
-        - $ref: '#/components/parameters/Filter'
+        - name: filter
+          in: query
+          required: true
+          schema:
+            type: string
         - name: species
           in: query
           schema:
@@ -53,6 +58,9 @@ paths:
             application/json:
               schema:
                 type: array
+                description: >-
+                  LIMS product records passed through without field transformation.
+                  Exact product fields remain unconfirmed pending authoritative LIMS evidence.
                 items:
                   type: object
                   additionalProperties: true
@@ -119,6 +127,10 @@ paths:
   /v1/submissions:
     get:
       summary: Search submitted records
+      description: >-
+        Query names map to observed LIMS filters. Response fields remain
+        pass-through and provisional until verified against authoritative LIMS
+        evidence.
       parameters:
         - $ref: '#/components/parameters/PvsId'
         - $ref: '#/components/parameters/Filter'
@@ -146,20 +158,12 @@ paths:
             format: date
       responses:
         '200':
-          description: Matching submitted records.
+          description: Matching submitted records in the verified upstream response shape.
           content:
             application/json:
               schema:
                 type: object
-                required: [items]
-                properties:
-                  items:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/SubmissionSummary'
-                  nextPageToken:
-                    type: string
-                    nullable: true
+                additionalProperties: true
         '400':
           $ref: '#/components/responses/ValidationError'
         default:
@@ -177,6 +181,29 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/DraftSubmission'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        default:
+          $ref: '#/components/responses/ServiceError'
+  /v1/submissions/{submissionId}:
+    get:
+      summary: View a previously submitted record
+      parameters:
+        - $ref: '#/components/parameters/SubmissionIdPath'
+        - $ref: '#/components/parameters/PvsId'
+        - name: isDraft
+          in: query
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '200':
+          description: Previously submitted record in the verified upstream response shape.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
         '404':
           $ref: '#/components/responses/NotFoundError'
         default:
@@ -309,12 +336,11 @@ paths:
             application/json:
               schema:
                 type: object
-                required: [accepted]
+                required: [hasErrors, errorMessages]
                 properties:
-                  accepted:
+                  hasErrors:
                     type: boolean
-                    enum: [true]
-                  messages:
+                  errorMessages:
                     type: array
                     items:
                       type: string
@@ -334,7 +360,7 @@ paths:
         - $ref: '#/components/parameters/PvsId'
       responses:
         '200':
-          description: Latest released result and charge information.
+          description: Latest released result and charge records; fields are pass-through pending authoritative LIMS evidence.
           content:
             application/json:
               schema:
@@ -344,47 +370,44 @@ paths:
           $ref: '#/components/responses/ServiceError'
   /v1/submissions/{submissionId}/release-summary:
     get:
-      summary: Retrieve a release summary
+      summary: Retrieve the structured released-results summary
+      description: >-
+        This view is mapped from getLatestReleasedResults. The exact upstream
+        fields are source-derived and remain open to further LIMS verification.
       parameters:
         - $ref: '#/components/parameters/SubmissionIdPath'
         - $ref: '#/components/parameters/PvsId'
       responses:
         '200':
-          description: Release summary in the verified LIMS representation; media type and schema require contract discovery.
-          headers:
-            Content-Type:
+          description: Structured summary in the upstream JSON representation.
+          content:
+            application/json:
               schema:
-                type: string
+                type: object
+                additionalProperties: true
         default:
           $ref: '#/components/responses/ServiceError'
   /v1/submissions/{submissionId}/report:
     get:
-      summary: Retrieve report content
+      summary: Retrieve the inline PDF report
       description: >-
-        The report media type and attachment behavior are discovery gates. The
-        implementation must preserve the verified media type and content.
+        LIMS returns JSON with a base64 LastReportString. The service decodes it
+        and serves application/pdf inline, matching the legacy application; no
+        Content-Disposition filename is added.
       parameters:
         - $ref: '#/components/parameters/SubmissionIdPath'
         - $ref: '#/components/parameters/PvsId'
       responses:
         '200':
-          description: Report in its verified upstream media type.
+          description: Decoded PDF bytes served inline.
           content:
-            '*/*':
+            application/pdf:
               schema:
                 type: string
                 format: binary
         default:
           $ref: '#/components/responses/ServiceError'
 components:
-  securitySchemes:
-    BackendBearer:
-      type: http
-      scheme: bearer
-      bearerFormat: JWT
-      description: >-
-        Proposed workload identity contract. Issuer, audience, and verification
-        configuration must be supplied by the approved runtime platform.
   parameters:
     PvsId:
       name: pvsId
@@ -420,24 +443,193 @@ components:
     DraftSubmissionInput:
       type: object
       description: >-
-        Proposed domain payload. Exact required fields, nested structures,
-        optionality, and validation are not final until verified against the
-        complete legacy model/callers and authoritative LIMS contract.
-      required: [pvsId, data]
+        Full draft body matching the 52 keys serialized by legacy ADTS release
+        12.1.6. This is source-derived compatibility behavior, not an
+        authoritative statement of LIMS validation rules.
+      required:
+        - draftSubmissionId
+        - submissionType
+        - pvsId
+        - clientName
+        - clientFarm
+        - clientAddress
+        - clientPostcode
+        - clientCounty
+        - clientSubCounty
+        - clientCPHH
+        - clinician
+        - resultsReadyConfirmationEmail
+        - resultsReadyConfirmationPhoneNumber
+        - areAnimalsAtFarmAddress
+        - animalCPHH
+        - animalFarm
+        - animalAddress
+        - animalPostcode
+        - animalCounty
+        - animalSubCounty
+        - animalSpeciesId
+        - animalBreedId
+        - animals
+        - animalSexId
+        - animalAgeId
+        - ageDetail
+        - ageIndicator
+        - ageIsEstimate
+        - animalOrganicId
+        - animalPurposeId
+        - animalHousingId
+        - dateSamplesTaken
+        - previousSubmissionId
+        - previousSubmissionContactByPhone
+        - previousSubmissionContactByAphaFarmVisit
+        - herdTotal
+        - herdBreedingTotal
+        - herdAffectedTotal
+        - herdAffectedIncDead
+        - herdDeadTotal
+        - clinicalSign1Id
+        - clinicalSign2Id
+        - clinicalSign3Id
+        - clinicalSignDurationId
+        - clinicalHistory
+        - products
+        - samplesWillSendToSeparateAddresses
+        - canUseSurveillance
+        - cancelSubmission
+        - masterSubmissionId
+        - linkedFirstOfPairSubmissionId
+        - sendersReference
       properties:
-        pvsId:
+        draftSubmissionId:
           type: string
-        data:
-          type: object
-          additionalProperties: true
+          nullable: true
+        submissionType:
+          type: string
+          enum: [MONI, DIAG]
+        pvsId: { type: string }
+        clientName: { type: string }
+        clientFarm: { type: string }
+        clientAddress: { type: string }
+        clientPostcode: { type: string }
+        clientCounty: { type: string }
+        clientSubCounty: { type: string, nullable: true }
+        clientCPHH: { type: string }
+        clinician:
+          type: string
+          maxLength: 1000
+        resultsReadyConfirmationEmail: { type: string }
+        resultsReadyConfirmationPhoneNumber: { type: string }
+        areAnimalsAtFarmAddress: { type: boolean }
+        animalCPHH: { type: string, nullable: true }
+        animalFarm: { type: string, nullable: true }
+        animalAddress: { type: string }
+        animalPostcode: { type: string, nullable: true }
+        animalCounty: { type: string, nullable: true }
+        animalSubCounty: { type: string, nullable: true }
+        animalSpeciesId: { type: string }
+        animalBreedId: { type: string }
+        animals:
+          type: array
+          items:
+            $ref: '#/components/schemas/DraftAnimal'
+        animalSexId: { type: string }
+        animalAgeId: { type: string }
+        ageDetail: { type: string, nullable: true }
+        ageIndicator:
+          type: string
+          nullable: true
+          enum: [NONE, DAYS, WEEKS, MONTHS, YEARS, null]
+        ageIsEstimate: { type: boolean, nullable: true }
+        animalOrganicId: { type: string }
+        animalPurposeId: { type: string }
+        animalHousingId: { type: string }
+        dateSamplesTaken:
+          type: string
+          nullable: true
+          pattern: '^\d{2}/\d{2}/\d{4}$'
+        previousSubmissionId: { type: string }
+        previousSubmissionContactByPhone: { type: boolean, nullable: true }
+        previousSubmissionContactByAphaFarmVisit: { type: boolean, nullable: true }
+        herdTotal: { type: string, nullable: true }
+        herdBreedingTotal: { type: string, nullable: true }
+        herdAffectedTotal: { type: string, nullable: true }
+        herdAffectedIncDead: { type: string, nullable: true }
+        herdDeadTotal: { type: string, nullable: true }
+        clinicalSign1Id: { type: string }
+        clinicalSign2Id: { type: string }
+        clinicalSign3Id: { type: string }
+        clinicalSignDurationId: { type: string }
+        clinicalHistory: { type: string, nullable: true }
+        products:
+          type: array
+          items:
+            $ref: '#/components/schemas/DraftProduct'
+        samplesWillSendToSeparateAddresses: { type: boolean, nullable: true }
+        canUseSurveillance: { type: boolean }
+        cancelSubmission: { type: string, nullable: true, enum: [null] }
+        masterSubmissionId: { type: string, nullable: true }
+        linkedFirstOfPairSubmissionId: { type: string, nullable: true }
+        sendersReference: { type: string, nullable: true }
+      additionalProperties: false
     DraftSubmission:
-      allOf:
-        - $ref: '#/components/schemas/DraftSubmissionInput'
-        - type: object
-          required: [draftId]
-          properties:
-            draftId:
-              type: string
+      type: object
+      description: >-
+        Legacy getSubmission response includes the serialized draft fields plus
+        display labels and update metadata; its exact response schema is not
+        authoritative for LIMS validation.
+      additionalProperties: true
+    DraftAnimal:
+      type: object
+      required: [id, name]
+      properties:
+        id: { type: integer, minimum: 0 }
+        name: { type: string }
+      additionalProperties: false
+    DraftProduct:
+      type: object
+      required: [productId, productType, isFOP, isSOP, animalSamples, sampleTypes, options]
+      properties:
+        productId: { type: string }
+        productType: { type: string }
+        isFOP: { type: boolean }
+        isSOP: { type: boolean }
+        animalSamples:
+          type: array
+          items:
+            $ref: '#/components/schemas/DraftAnimalSample'
+        sampleTypes:
+          type: array
+          items:
+            $ref: '#/components/schemas/DraftSampleType'
+        options:
+          type: array
+          items:
+            $ref: '#/components/schemas/DraftProductOption'
+      additionalProperties: false
+    DraftAnimalSample:
+      type: object
+      required: [animalId, animalName, sampleId, poolGroup]
+      properties:
+        animalId: { type: integer, minimum: 0 }
+        animalName: { type: string }
+        sampleId: { type: string }
+        poolGroup: { type: integer, nullable: true }
+        packageProductId: { type: string }
+      additionalProperties: false
+    DraftSampleType:
+      type: object
+      required: [packageProductId, sampleType]
+      properties:
+        packageProductId: { type: string }
+        sampleType: { type: string }
+      additionalProperties: false
+    DraftProductOption:
+      type: object
+      required: [packageProductId, option]
+      properties:
+        packageProductId: { type: string }
+        option: { type: string }
+      additionalProperties: false
     DraftIdentifier:
       type: object
       required: [draftId]
@@ -486,6 +678,11 @@ components:
         upstreamCode:
           type: string
           description: Allowlisted, non-sensitive LIMS code when available.
+        upstreamMessages:
+          type: array
+          description: Bounded LIMS business messages; credential-shaped text is redacted.
+          items:
+            type: string
   responses:
     ValidationError:
       description: Backend request failed service-side validation.

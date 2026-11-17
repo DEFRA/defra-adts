@@ -27,12 +27,29 @@ const config = {
   },
 webServer: [
   {
+    command: 'node tests/mocks/lims/server.js',
+    url: 'http://localhost:8500/health',
+    reuseExistingServer: !process.env.CI,
+    timeout: 60 * 1000,
+    env: {
+      PORT: '8500',
+      LIMS_USERNAME: 'e2e-user',
+      LIMS_PASSWORD: 'e2e-password'
+    }
+  },
+  {
     command: 'npm start --prefix services/adts-submissions-service',
     url: 'http://localhost:3100',
     reuseExistingServer: !process.env.CI,
     timeout: 60 * 1000,
     env: {
-      PORT: '3100'
+      PORT: '3100',
+      LIMS_BASE_URL: 'http://localhost:8500',
+      LIMS_PREFIX: '/LIMSRestAPi/',
+      LIMS_USERNAME: 'e2e-user',
+      LIMS_PASSWORD: 'e2e-password',
+      LIMS_TIMEOUT_MS: '1000',
+      LIMS_ALLOW_HTTP: 'true'
     }
   },
   {

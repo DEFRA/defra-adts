@@ -115,6 +115,11 @@ const registerSubmissionsRoutes = (server, getDynamoClient) => {
   server.route([
     {
       method: 'GET',
+      path: '/v1/products',
+      handler: createProxyGet('v1/products')
+    },
+    {
+      method: 'GET',
       path: '/GetClients',
       handler: createProxyGet('GetClients')
     },

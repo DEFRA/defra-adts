@@ -36,23 +36,39 @@
 
 **Alternatives considered**: Directly proxy arbitrary paths/query/body (rejected because it leaks LIMS conventions and bypasses validation); copy LIMS route names into Backend API (rejected because it couples the Backend to LIMS).
 
-### 4. Authenticate Backend callers using platform-backed workload identity
+**Incremental product-search discovery**: The supplied observed reference identifies `general/getProducts`, requires `filter`, and allows optional `species`. Use those request semantics for the initial product-search slice. The exact product response fields are not established; pass records through without claiming a complete product schema, and update the contract when authoritative LIMS evidence becomes available.
 
-**Decision**: Require a verifiable service identity for every non-health Backend operation. Prefer the hosting platform's approved workload-token or mutual-TLS identity mechanism, with the service validating the caller and the Backend remaining responsible for PVS authorization. Do not introduce a hard-coded or long-lived static shared token. Health probes must be restricted by network/platform policy and must not expose secrets.
+**Incremental client/practice discovery**: The observed reference identifies `general/getClients` with `pvsId` and `filter`, and `general/getPVS` with `pvsId`. Use canonical Backend `pvsId` and map it internally. Client and practice response fields remain unconfirmed; pass through the LIMS records until authoritative evidence and current callers establish the required shapes.
 
-**Rationale**: No existing application service-auth implementation or runtime deployment/secret-injection manifest is tracked. CI's AWS OIDC role is only for image publication and is not runtime service authentication.
+**Incremental submission-read discovery**: The observed reference identifies `submissions/getSubmissionIdList` and `submissions/getSubmissions` with lowercase `pvsid`; `submissions/getSubmission` and `submissions/viewSubmission` use `submissionId` and `pvsId`, with `isDraft` for view; `submissions/getDeliveryAddresses` uses `draftSubmissionId`. Map these spellings from canonical Backend names. Keep read responses pass-through until authoritative evidence confirms their fields, dates, and pagination.
 
-**Alternatives considered**: Trust network location alone (rejected as insufficient caller authentication); accept a static token in source or configuration with no rotation plan (rejected); select a specific token issuer/library before the runtime platform is known (deferred).
+**Incremental results/report discovery**: The uploaded release 12.1.6 reference describes the fields the legacy app reads from `getLatestReleasedResults` (including `Sections`, `VioComment`, `WorkInProgress`, `Charges`, and `samples`). Map the Backend release-summary view to this JSON operation. `getReleaseSummaryAndReport` instead returns JSON with base64 `LastReportString`; decode it and serve the PDF inline as `application/pdf`, without a filename header, matching legacy behavior. LIMS-only maximum PDF size, missing-report status, additional result fields, and malformed-base64 behavior remain unknown.
 
-**Release gate**: The hosting/platform owner must identify the supported identity issuer or mTLS trust configuration, token audience/claims or client identity, rotation, and runtime injection before implementation is released. The Hapi authentication integration must remain replaceable until that platform contract is supplied.
+**Incremental draft-mutation discovery**: The uploaded `LIMS_API_REFERENCE.md` describes legacy ADTS release 12.1.6 and cites `FullSubmissionForm::toSubmissionObject`, `Submission::jsonSerialize`, `BasketProduct::getLimsApiObject`, and mutation callers. Its save request contains exactly 52 top-level serialized keys, with documented nested `products[].animalSamples`, `sampleTypes`, and `options` structures. The legacy app calls save repeatedly for partial drafts and before confirm; initial save uses a null/empty draft ID and expects `draftSubmissionId` in the response. Treat these as source-derived compatibility behavior for the implementation and mock.
 
-### 5. Use configured LIMS credentials and verified TLS
+The legacy evidence does not establish LIMS validation rules, failure status/body, guaranteed create/upsert behavior, or idempotency. In particular, a timed-out initial create can leave an orphan draft. Keep those unknowns open; do not infer that repeated creates are safe or that the suggested mock upsert is a LIMS guarantee.
 
-**Decision**: Configure the LIMS origin and prefix per environment, retrieve LIMS credentials from the approved runtime secret provider, and use authenticated HTTPS with normal certificate and hostname verification. Trust a custom CA only through the approved runtime CA configuration. Never disable verification or log credentials, authorization headers, full request bodies, or sensitive response bodies.
+**Incremental confirmation/cancellation discovery**: The legacy reference specifies confirmation as `{draftSubmissionId, pvsId}` with `{submissionId}` on success; the legacy caller always saves the full draft immediately before confirming. Cancellation uses `{pvsId, submissionDraftId, clinician}` and requires `{hasErrors, errorMessages}` in the response. The legacy controller hard-codes `clinician` to `Joe Blogs` and ignores the business-error fields; the new service must accept the clinician from its caller and report business rejection. LIMS idempotency, exact rejection statuses, and cancellation eligibility/state remain unknown.
 
-**Rationale**: The reference documents legacy Basic Authentication and explicitly identifies disabled certificate validation as a defect. The current service uses global `fetch` without authentication or custom TLS handling. No production secret or custom-CA deployment pattern is present in the repository.
+### 4. Use the private AWS network as the initial Backend trust boundary
 
-**Alternatives considered**: Copy the legacy disabled verification (rejected as insecure); embed secrets or include them in URLs (rejected); invent a production secret-store mapping without runtime manifests (deferred to platform integration).
+**Decision**: Backend-to-Submission-Service calls use HTTPS over the approved private AWS network, with network policy/security groups restricted to the Backend workload. The initial release does not verify SigV4 or another per-request caller identity. IAM roles govern service access to AWS resources, not incoming HTTP caller identity. The Backend remains responsible for PVS authorization. Do not add a shared token or claim that the service authenticates an individual request. Health probes must be restricted by network/platform policy and must not expose secrets.
+
+**Rationale**: The user selected HTTPS and AWS private networking/security groups for the initial boundary, with no SigV4 check. No runtime deployment manifest is tracked. CI's AWS OIDC role is only for image publication and does not authenticate runtime requests.
+
+**Alternatives considered**: In-service SigV4 verification (deferred to a future spec); API Gateway (explicitly out of scope per user direction); security-group/network trust alone for initial scope (selected, with residual risk documented); static shared tokens (rejected).
+
+**Release gate**: Confirm the private network route, security-group ingress restricted to the Backend workload, HTTPS termination, IAM roles for service AWS resource access, and runtime secret injection. The residual absence of per-request caller identity must be documented and accepted by an accountable risk owner before production release. In-service authentication requires a future spec.
+
+### 5. Use configured LIMS credentials and track the HTTP exception
+
+**Decision**: Configure the LIMS origin and prefix per environment and retrieve LIMS credentials from the approved runtime secret provider. Current production uses HTTP under the explicit temporary exception in FR-011; this transport is unencrypted, has no known HTTPS enablement date, and must be limited to the configured LIMS origin. Do not silently downgrade HTTPS or follow redirects to another origin. When the LIMS client enables HTTPS, require normal certificate and hostname verification and trust a custom CA only through approved runtime configuration. Never disable verification or log credentials, authorization headers, full request bodies, or sensitive response bodies.
+
+**Rationale**: The reference documents legacy Basic Authentication and explicitly identifies disabled certificate validation as a defect. The user confirmed that the current production LIMS endpoint is HTTP and that HTTPS will be enabled in the future, with no schedule currently known. No production secret-injection pattern is present in the repository.
+
+**Alternatives considered**: Copy the legacy disabled verification (rejected); silently treat HTTP as encrypted (rejected); embed secrets or include them in URLs (rejected); invent a production secret-store mapping without runtime manifests (deferred to platform integration).
+
+**Exception condition**: Before production release, an accountable risk owner must accept the unencrypted HTTP transport risk and record mitigations. The exception must be reviewed until HTTPS is available, then removed and replaced with verified TLS; no date is assumed.
 
 ### 6. Bound each outbound request and do not replay operations automatically
 
@@ -98,9 +114,16 @@
 
 **Alternatives considered**: Add a second test framework (rejected); rely only on proxy tests that mock arbitrary JSON (rejected because they do not prove the LIMS contract).
 
+## PVS Context Gap For Backend Adapters
+
+The current UI's submission filters contain `client`, `clinician`, `status`, and `submitted-date`, but no PVS identifier. Its client lookup calls `GET /GetClients` without a query. The current Backend has no PVS identity/authorization source in the inspected route code and forwards those calls without user context. The new Submission Service client and submission search contracts require PVS scope.
+
+The non-PVS-scoped Backend `GET /v1/products` proxy can proceed and is implemented. Do not complete the PVS-scoped client/submission Backend adapters by trusting a browser-supplied `pvsId`. The service interfaces accept canonical `pvsId`, but Backend adapters remain blocked until the source of authorized PVS context and its validation rule are defined. This may require a future clarification or an explicit UI/authentication integration decision, despite UI changes being out of scope.
+
 ## Open Release Gates
 
 1. Progressively obtain `Submission.php`, `LimsApiClient.php`, current lifecycle callers, and an authoritative LIMS contract or verified test environment; make each affected operation depend on its own verified contract task rather than gating all implementation.
-2. Confirm platform workload identity, runtime LIMS secret delivery/rotation, and any trusted CA configuration.
-3. Confirm LIMS reconciliation/idempotency support for a lost first-draft-create response and agree the operational reconciliation procedure.
-4. Confirm the hosting team's approved availability/latency objectives and request/payload limits; the feature defines no new numeric SLO.
+2. Confirm the private Backend-to-service route, security-group rules, Backend/service IAM roles and permissions for AWS resources, and runtime LIMS secret delivery/rotation. Record accountable risk acceptance for the network-only caller trust boundary. Configure trusted CA material only when the LIMS endpoint enables HTTPS.
+3. Before production release, record accountable risk acceptance and mitigations for the current unencrypted HTTP endpoint; remove this exception when the LIMS client enables HTTPS.
+4. Confirm LIMS reconciliation/idempotency support for a lost first-draft-create response and agree the operational reconciliation procedure.
+5. Confirm the hosting team's approved availability/latency objectives and request/payload limits; the feature defines no new numeric SLO.

@@ -17,16 +17,52 @@ export const getClientSummary = (clients, clientId) => {
 
   return {
     name: client?.name || 'No client name set',
-    address: [client?.addressLine1, client?.addressLine2, client?.addressLine3, client?.postcode]
+    farmName: client?.farmName || '',
+    address: [
+      client?.addressLine1,
+      client?.addressLine2,
+      client?.addressLine3,
+      client?.county,
+      client?.postcode
+    ]
       .filter(Boolean)
       .join(', ') || 'No address set',
     cph: client?.cph || 'No CPH number set'
   }
 }
 
+const getClientSummaryFromDetails = (clientDetails) => ({
+  name: clientDetails.name || 'No client name set',
+  farmName: clientDetails.farmName || '',
+  address: [
+    clientDetails.addressLine1,
+    clientDetails.addressLine2,
+    clientDetails.addressLine3,
+    clientDetails.county,
+    clientDetails.postcode
+  ].filter(Boolean).join(', ') || 'No address set',
+  cph: clientDetails.cph || 'No CPH number set'
+})
+
 const CLIENT_DETAILS_UNAVAILABLE = 'Client details unavailable'
 
 export const loadClientSummary = async (submissionFormState) => {
+  const clientDetails = submissionFormState.formData?.clientDetails
+  const hasSubmittedClientDetails = clientDetails && [
+    'name',
+    'farmName',
+    'addressLine1',
+    'addressLine2',
+    'addressLine3',
+    'county',
+    'postcode',
+    'cph'
+  ].some((fieldName) => Object.hasOwn(clientDetails, fieldName))
+
+  if (hasSubmittedClientDetails) {
+    return { clientSummary: getClientSummaryFromDetails(clientDetails) }
+  }
+
   const clientsResult = await safeLoad(getClients)
 
   if (clientsResult.error) {
@@ -41,9 +77,6 @@ export const loadClientSummary = async (submissionFormState) => {
   }
 
   return {
-    clientSummary: getClientSummary(
-      clientsResult.data,
-      submissionFormState.formData?.clientDetails?.clientId
-    )
+    clientSummary: getClientSummary(clientsResult.data, clientDetails?.clientId)
   }
 }

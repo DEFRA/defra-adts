@@ -9,14 +9,14 @@
 - A configured `SESSION_SECRET` of at least 32 characters for the UI and service URLs:
   - UI `BACKEND_SERVICE_URL`
   - Backend `SUBMISSIONS_SERVICE_URL` and its own storage configuration
-  - Submissions service `LIMS_BASE_URL`
+  - Submissions service `LIMS_API_URL`
 
 ## Start the services
 
 Run each service in a separate terminal, with the backend's storage dependency and a LIMS mock available:
 
 ```bash
-PORT=9180 LIMS_BASE_URL=http://localhost:8500 npm start --prefix services/adts-submissions-service
+PORT=9180 LIMS_API_URL=http://localhost:8500 npm start --prefix services/adts-submissions-service
 PORT=9182 SUBMISSIONS_SERVICE_URL=http://localhost:9180 npm start --prefix services/adts-backend
 PORT=9181 SESSION_SECRET=test-session-secret-with-at-least-32-characters BACKEND_SERVICE_URL=http://localhost:9182 npm start --prefix services/adts-ui
 ```

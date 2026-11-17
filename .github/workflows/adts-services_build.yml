@@ -1,9 +1,11 @@
-name: Build
+name: Workflow
 
 on:
   push:
     branches:
       - main
+    paths-ignore:
+      - VERSIONS.txt
 
   pull_request:
     branches:
@@ -21,7 +23,7 @@ concurrency:
 
 jobs:
   detect_changes:
-    name: Detect application changes
+    name: Detect service changes
     runs-on: ubuntu-latest
 
     outputs:
@@ -34,7 +36,7 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v6
 
-      - name: Detect changed applications
+      - name: Detect changed services
         id: filter
         uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d  #v4.0.3
         with:
@@ -47,6 +49,7 @@ jobs:
 
             backend_service:
               - 'services/adts-backend/**'
+              - 'tests/api/**'
               - 'local/dynamodb/**'
               - ".github/workflows/adts-services_build.yml"
               - ".github/workflows/_validation.yml"
@@ -61,10 +64,18 @@ jobs:
             any_service:
               - 'services/adts-ui/**'
               - 'services/adts-backend/**'
-              - 'local/dynamodb/**'
+              - 'services/adts-submissions-service/**'
               - ".github/workflows/adts-services_build.yml"
               - ".github/workflows/_validation.yml"
               - ".github/workflows/_container_build.yml"
+            
+            e2e_tests:
+              - 'tests/api/**'
+              - 'tests/e2e/**'
+              - 'local/dynamodb/**'
+              - 'playwright.config.js'
+              - 'package.json'
+              - 'package-lock.json'
               - '.github/workflows/_e2e-tests.yml'
 
       - name: Display change detection results
@@ -127,7 +138,7 @@ jobs:
       run-format-check: false
       run-tests: true
       run-sonarqube-scan: true
-      test-command: npm run test:coverage
+      test-command: npm run test:coverage && npm run test:integration && npm run test:contract && npm run test:api
       build-command: npm run build
     secrets:
       SQ_ACCESS_TOKEN: ${{ secrets.BACKEND_SONAR_TOKEN }}
@@ -159,7 +170,7 @@ jobs:
       SQ_ACCESS_TOKEN: ${{ secrets.SUBMISSIONS_SONAR_TOKEN }}
 
   e2e_testing:
-    name: Run End to End Tests
+    name: End to End Tests
 
     needs:
       - detect_changes
@@ -172,18 +183,21 @@ jobs:
     if: |
       ${{
         !cancelled() &&
-        needs.detect_changes.outputs.any_service == 'true' &&
+        needs.detect_changes.outputs.e2e_tests == 'true' ||
         (
-          needs.detect_changes.outputs.ui_service != 'true' ||
-          needs.validate_ui_service.result == 'success'
-        ) &&
-        (
-          needs.detect_changes.outputs.backend_service != 'true' ||
-          needs.validate_backend_service.result == 'success'
-        ) &&
-        (
-          needs.detect_changes.outputs.submissions_service != 'true' ||
-          needs.validate_submissions_service.result == 'success'
+          needs.detect_changes.outputs.any_service == 'true' &&
+          (
+            needs.detect_changes.outputs.ui_service != 'true' ||
+            needs.validate_ui_service.result == 'success'
+          ) &&
+          (
+            needs.detect_changes.outputs.backend_service != 'true' ||
+            needs.validate_backend_service.result == 'success'
+          ) &&
+          (
+            needs.detect_changes.outputs.submissions_service != 'true' ||
+            needs.validate_submissions_service.result == 'success'
+          )
         )
       }}
 
@@ -199,14 +213,17 @@ jobs:
 
     if: |
       ${{
-        !cancelled()
-        && needs.detect_changes.outputs.ui_service == 'true'
-        && needs.validate_ui_service.result == 'success'
-        && needs.e2e_testing.result == 'success'
-        && github.event_name != 'pull_request'
+        !cancelled() &&
+        needs.detect_changes.outputs.e2e_tests == 'true' ||
+        (
+          needs.detect_changes.outputs.ui_service == 'true' &&
+          needs.validate_ui_service.result == 'success' &&
+          needs.e2e_testing.result == 'success' &&
+          github.event_name != 'pull_request'
+        )
       }}
     permissions:
-      contents: read
+      contents: write
       id-token: write
       security-events: write
 
@@ -221,7 +238,6 @@ jobs:
       aws-account-id: ${{ vars.AWS_ECR_ROLE_ACCOUNT_ID }}
       aws-role: ${{ vars.AWS_ECR_ROLE_NAME }}
       platforms: linux
-      is-release: true
 
   build_backend_container:
     name: Publish Backend container image
@@ -233,15 +249,18 @@ jobs:
 
     if: |
       ${{
-        !cancelled()
-        && needs.detect_changes.outputs.backend_service == 'true'
-        && needs.validate_backend_service.result == 'success'
-        && needs.e2e_testing.result == 'success'
-        && github.event_name != 'pull_request'
+        !cancelled() &&
+        needs.detect_changes.outputs.e2e_tests == 'true' ||
+        (
+          needs.detect_changes.outputs.backend_service == 'true' &&
+          needs.validate_backend_service.result == 'success' &&
+          needs.e2e_testing.result == 'success' &&
+          github.event_name != 'pull_request'
+        )
       }}
 
     permissions:
-      contents: read
+      contents: write
       id-token: write
       security-events: write
 
@@ -256,7 +275,6 @@ jobs:
       aws-account-id: ${{ vars.AWS_ECR_ROLE_ACCOUNT_ID }}
       aws-role: ${{ vars.AWS_ECR_ROLE_NAME }}
       platforms: linux
-      is-release: true
 
   build_submissions_container:
     name: Publish Submissions container image
@@ -268,15 +286,18 @@ jobs:
 
     if: |
       ${{
-        !cancelled()
-        && needs.detect_changes.outputs.submissions_service == 'true'
-        && needs.validate_submissions_service.result == 'success'
-        && needs.e2e_testing.result == 'success'
-        && github.event_name != 'pull_request'
+        !cancelled() &&
+        needs.detect_changes.outputs.e2e_tests == 'true' ||
+        (
+          needs.detect_changes.outputs.submissions_service == 'true' &&
+          needs.validate_submissions_service.result == 'success' &&
+          needs.e2e_testing.result == 'success' &&
+          github.event_name != 'pull_request'
+        )
       }}
 
     permissions:
-      contents: read
+      contents: write
       id-token: write
       security-events: write
 
@@ -291,4 +312,40 @@ jobs:
       aws-account-id: ${{ vars.AWS_ECR_ROLE_ACCOUNT_ID }}
       aws-role: ${{ vars.AWS_ECR_ROLE_NAME }}
       platforms: linux
-      is-release: true
+
+  update_versions:
+    name: Versions
+
+    needs:
+      - detect_changes
+      - e2e_testing
+      - build_ui_container
+      - build_backend_container
+      - build_submissions_container
+
+
+    permissions:
+      contents: write
+
+    if: |
+      ${{
+        !cancelled() &&
+        needs.detect_changes.outputs.e2e_tests == 'true' ||
+        (
+          needs.detect_changes.outputs.any_service == 'true' &&
+          (
+            needs.detect_changes.outputs.ui_service != 'true' ||
+            needs.build_ui_container.result == 'success'
+          ) &&
+          (
+            needs.detect_changes.outputs.backend_service != 'true' ||
+            needs.build_backend_container.result == 'success'
+          ) &&
+          (
+            needs.detect_changes.outputs.submissions_service != 'true' ||
+            needs.build_submissions_container.result == 'success'
+          )
+        )
+      }}
+
+    uses: ./.github/workflows/_update_versions.yml

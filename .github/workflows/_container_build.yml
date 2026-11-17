@@ -44,11 +44,6 @@ on:
         default: "linux/amd64"
         type: string
 
-      is-release:
-        description: Set true if the current image built should be a release and labeled as ':latest'
-        default: false
-        type: boolean
-
     outputs:
       image-uri:
         description: ECR image repository URI
@@ -71,14 +66,14 @@ jobs:
     runs-on: ubuntu-latest
 
     permissions:
-      contents: read
+      contents: write
       id-token: write
       security-events: write
 
     timeout-minutes: 30
 
     outputs:
-      image-uri: ${{ steps.image.outputs.image-uri }}
+      image-uri: ${{ steps.ecr-login.outputs.registry }}/${{ inputs.ecr-repository }}
       image-digest: ${{ steps.build.outputs.digest }}
       image-reference: ${{ steps.result.outputs.image-reference }}
 
@@ -86,7 +81,7 @@ jobs:
       - name: Check out source code
         uses: actions/checkout@v7
         with:
-          persist-credentials: false
+          fetch-depth: 0
 
       - name: Validate container build inputs
         shell: bash
@@ -106,6 +101,94 @@ jobs:
             exit 1
           fi
 
+      - name: Fetch service version tags
+        run: git fetch --force --tags
+
+      - name: Calculate service version
+        id: version
+        shell: bash
+        env:
+          SERVICE: ${{ inputs.service-name }}
+          SERVICE_PATH: ${{ inputs.service-directory }}
+        run: |
+          set -euo pipefail
+
+          TAG_PREFIX="${SERVICE}-v"
+
+          LAST_TAG="$(
+            git tag \
+              --list "${TAG_PREFIX}[0-9]*.[0-9]*.[0-9]*" \
+              --sort=-v:refname |
+            head -n 1
+          )"
+
+          if [[ -z "${LAST_TAG}" ]]; then
+            echo "No previous version tag exists for ${SERVICE}."
+
+            VERSION="0.5.0"
+            CHANGE_RANGE="HEAD"
+            CHANGED="true"
+            BUMP_TYPE="initial"
+          else
+            echo "Last service tag: ${LAST_TAG}"
+
+            CHANGE_RANGE="${LAST_TAG}..HEAD"
+
+            PREVIOUS_VERSION="${LAST_TAG#${TAG_PREFIX}}"
+
+            if [[ ! "${PREVIOUS_VERSION}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+              echo "Invalid previous semantic version: ${PREVIOUS_VERSION}"
+              exit 1
+            fi
+
+            IFS='.' read -r MAJOR MINOR PATCH <<< "${PREVIOUS_VERSION}"
+
+            COMMIT_MESSAGES="$(
+              git log \
+                --format='%B%n---END-COMMIT---' \
+                "${CHANGE_RANGE}" \
+                -- "${SERVICE_PATH}"
+            )"
+
+            if grep -Eqi \
+              '(^|[[:space:]])BREAKING CHANGE:|^[a-zA-Z]+(\([^)]*\))?!:' \
+              <<< "${COMMIT_MESSAGES}"; then
+              MAJOR=$((MAJOR + 1))
+              MINOR=0
+              PATCH=0
+              BUMP_TYPE="major"
+
+            elif grep -Eqi \
+              '^feat(\([^)]*\))?:' \
+              <<< "${COMMIT_MESSAGES}"; then
+              MINOR=$((MINOR + 1))
+              PATCH=0
+              BUMP_TYPE="minor"
+
+            else
+              PATCH=$((PATCH + 1))
+              BUMP_TYPE="patch"
+            fi
+
+            VERSION="${MAJOR}.${MINOR}.${PATCH}"
+            CHANGED="true"
+          fi
+
+          VERSION_TAG="${SERVICE}-v${VERSION}"
+
+          echo "Service: ${SERVICE}"
+          echo "Version: ${VERSION}"
+          echo "Version tag: ${VERSION_TAG}"
+          echo "Bump type: ${BUMP_TYPE}"
+          echo "Change range: ${CHANGE_RANGE}"
+
+          {
+            echo "version=${VERSION}"
+            echo "version_tag=${VERSION_TAG}"
+            echo "bump_type=${BUMP_TYPE}"
+            echo "change_range=${CHANGE_RANGE}"
+          } >> "${GITHUB_OUTPUT}"
+
       - name: Configure AWS credentials using OIDC
         uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd  #v6.3.0
         with:
@@ -120,32 +203,17 @@ jobs:
         with:
           mask-password: true
 
-      - name: Set image repository
-        id: image
-        shell: bash
-        env:
-          ECR_REGISTRY: ${{ steps.ecr-login.outputs.registry }}
-          ECR_REPOSITORY: ${{ inputs.ecr-repository }}
-        run: |
-          set -euo pipefail
-
-          image_uri="${ECR_REGISTRY}/${ECR_REPOSITORY}"
-
-          echo "image-uri=${image_uri}" >> "${GITHUB_OUTPUT}"
-          echo "IMAGE_URI=${image_uri}" >> "${GITHUB_ENV}"
-          echo "version-tag=$(cat ${{ inputs.service-directory }}/VERSION_PREFIX).${{ github.run_number }}" >> "${GITHUB_OUTPUT}"
-
       - name: Generate container metadata
         id: metadata
         uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
         with:
-          images: ${{ steps.image.outputs.image-uri }}
+          images:  ${{ steps.ecr-login.outputs.registry }}/${{ inputs.ecr-repository }}
           tags: |
-            type=raw,value=${{ steps.image.outputs.version-tag }}
-            type=raw,value=latest,enable=${{ inputs.is-release }}
-            type=sha,prefix=sha-,format=long
+            type=raw,value=v${{ steps.version.outputs.version }}
+            type=raw,value=v${{ steps.version.outputs.version }},suffix=-${{ github.sha }}
           labels: |
             org.opencontainers.image.title=${{ inputs.service-name }}
+            org.opencontainers.image.version=${{ steps.version.outputs.version }}
             org.opencontainers.image.description=${{ inputs.service-name }} JavaScript service
             org.opencontainers.image.revision=${{ github.sha }}
             org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
@@ -159,10 +227,6 @@ jobs:
                 "containerd-snapshotter": true
               }
             }
-
-      - name: Show metadata tags
-        run: |
-          echo "Tags are ${{ steps.metadata.outputs.tags }}"
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069  # v4.4.1
@@ -182,10 +246,6 @@ jobs:
           cache-to: type=gha,mode=max,scope=${{ inputs.service-name }}
           provenance: mode=max
           sbom: true
-
-      - name: Show images
-        run: |
-          docker images
 
       # Scan the image before it is pushed
       - name: Scan image with Trivy
@@ -222,14 +282,16 @@ jobs:
       # Push image to ECR.
       - name: Push container image
         run: |
+          docker images
           echo "Image destination is ${{ fromJson(steps.metadata.outputs.json).tags[0] }}"
           docker push ${{ fromJson(steps.metadata.outputs.json).tags[0] }}
+          docker push --all-tags ${{ steps.ecr-login.outputs.registry }}/${{ inputs.ecr-repository }}
 
       - name: Set immutable image reference
         id: result
         shell: bash
         env:
-          IMAGE_URI: ${{ steps.image.outputs.image-uri }}
+          IMAGE_URI: ${{ steps.ecr-login.outputs.registry }}/${{ inputs.ecr-repository }}
           IMAGE_DIGEST: ${{ steps.build.outputs.digest }}
         run: |
           set -euo pipefail
@@ -238,20 +300,53 @@ jobs:
 
           echo "image-reference=${image_reference}" >> "${GITHUB_OUTPUT}"
 
+      - name: Create service version tag
+        shell: bash
+        env:
+          SERVICE: ${{ matrix.service }}
+          VERSION: ${{ steps.version.outputs.version }}
+          VERSION_TAG: ${{ steps.version.outputs.version_tag }}
+          BUMP_TYPE: ${{ steps.version.outputs.bump_type }}
+        run: |
+          set -euo pipefail
+
+          # Ensure another process has not created the same tag.
+          git fetch --force --tags
+
+          if git rev-parse "${VERSION_TAG}" >/dev/null 2>&1; then
+            echo "Tag ${VERSION_TAG} already exists."
+            exit 1
+          fi
+
+          git config user.name "${{ github.actor }}"
+          git config user.email \
+            "${{ github.actor_id }}+${{ github.actor }}@users.noreply.github.com"
+
+          git tag \
+            --annotate "${VERSION_TAG}" \
+            --message "${SERVICE} ${VERSION} (${BUMP_TYPE} release)"
+
+          git push origin "${VERSION_TAG}"
+
       - name: Write container build summary
+        if: always()
         shell: bash
         env:
           SERVICE_NAME: ${{ inputs.service-name }}
-          IMAGE_URI: ${{ steps.image.outputs.image-uri }}
+          VERSION: ${{ steps.version.outputs.version }}
+          BUMP_TYPE: ${{ steps.version.outputs.bump_type }}
+          IMAGE_URI: ${{ steps.ecr-login.outputs.registry }}/${{ inputs.ecr-repository }}
           IMAGE_TAGS: ${{ steps.metadata.outputs.tags }}
           IMAGE_DIGEST: ${{ steps.build.outputs.digest }}
         run: |
           {
-            echo "## Container image published"
+            echo "## ${SERVICE_NAME} Container image published"
             echo
             echo "| Property | Value |"
             echo "|---|---|"
             echo "| Service | \`${SERVICE_NAME}\` |"
+            echo "| Version | \`${VERSION}\` |"
+            echo "| Bump Type | \`${BUMP_TYPE}\` |"
             echo "| Repository | \`${IMAGE_URI}\` |"
             echo "| Digest | \`${IMAGE_DIGEST}\` |"
             echo "| Commit | \`${GITHUB_SHA}\` |"

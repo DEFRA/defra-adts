@@ -50,12 +50,18 @@ Retrieves animal details or reference data needed for the selected report specie
 
 - **Input**: The selected species and any other context required by the backend method contract.
 - **Output**: Animal details/reference data required by the form.
-- **Expected wire contract (not yet implemented in `adts-backend`; the UI is built to this shape)**: `GET /GetAnimalDetails?speciesId=<id>` (`speciesId` required) returns the following. Every option list may be empty, meaning the field does not apply to the species and the UI omits it. Option `value`s are strings and `label`s are display text.
+- **Wire contract**: `GET /GetAnimalDetails?speciesId=<id>` (`speciesId` required) returns the following. Every option list may be empty, meaning the field does not apply to the species and the UI omits it. Option `value`s are strings and `label`s are display text.
 
   ```json
   {
     "speciesId": "2",
     "ageCategories": [{ "value": "lamb", "label": "Lamb" }],
+    "ageUnits": [
+      { "value": "DAYS", "label": "Days" },
+      { "value": "WEEKS", "label": "Weeks" },
+      { "value": "MONTHS", "label": "Months" },
+      { "value": "YEARS", "label": "Years" }
+    ],
     "purposes": [{ "value": "meat", "label": "Meat" }],
     "keepingTypes": [{ "value": "outdoor", "label": "Outdoor" }],
     "breeds": [{ "value": "texel", "label": "Texel" }],

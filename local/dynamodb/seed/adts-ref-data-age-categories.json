@@ -1,0 +1,158 @@
+{
+  "adts-reference-data": [
+    { "PutRequest": { "Item": {
+      "PK": { "S": "REF#AGE_CATEGORY" },
+      "SK": { "S": "ORDER#0001#0-3" },
+      "type": { "S": "AGE_CATEGORY" },
+      "code": { "S": "0-3" },
+      "description": { "S": "0-3 Days" },
+      "isAvian": { "BOOL": true },
+      "index": { "N": "1" },
+      "GSI1PK": { "S": "CODE#AGE_CATEGORY" },
+      "GSI1SK": { "S": "0-3" }
+    } } },
+    { "PutRequest": { "Item": {
+      "PK": { "S": "REF#AGE_CATEGORY" },
+      "SK": { "S": "ORDER#0002#4-7" },
+      "type": { "S": "AGE_CATEGORY" },
+      "code": { "S": "4-7" },
+      "description": { "S": "4-7 Days" },
+      "isAvian": { "BOOL": true },
+      "index": { "N": "2" },
+      "GSI1PK": { "S": "CODE#AGE_CATEGORY" },
+      "GSI1SK": { "S": "4-7" }
+    } } },
+    { "PutRequest": { "Item": {
+      "PK": { "S": "REF#AGE_CATEGORY" },
+      "SK": { "S": "ORDER#0003#IMMATURE" },
+      "type": { "S": "AGE_CATEGORY" },
+      "code": { "S": "IMMATURE" },
+      "description": { "S": "Immature" },
+      "isAvian": { "BOOL": true },
+      "index": { "N": "3" },
+      "GSI1PK": { "S": "CODE#AGE_CATEGORY" },
+      "GSI1SK": { "S": "IMMATURE" }
+    } } },
+    { "PutRequest": { "Item": {
+      "PK": { "S": "REF#AGE_CATEGORY" },
+      "SK": { "S": "ORDER#0004#ADULT" },
+      "type": { "S": "AGE_CATEGORY" },
+      "code": { "S": "ADULT" },
+      "description": { "S": "Adult (20 weeks and over)" },
+      "isAvian": { "BOOL": true },
+      "index": { "N": "4" },
+      "GSI1PK": { "S": "CODE#AGE_CATEGORY" },
+      "GSI1SK": { "S": "ADULT" }
+    } } },
+    { "PutRequest": { "Item": {
+      "PK": { "S": "REF#AGE_CATEGORY" },
+      "SK": { "S": "ORDER#0005#MIXED" },
+      "type": { "S": "AGE_CATEGORY" },
+      "code": { "S": "MIXED" },
+      "description": { "S": "Mixed" },
+      "isAvian": { "BOOL": true },
+      "index": { "N": "5" },
+      "GSI1PK": { "S": "CODE#AGE_CATEGORY" },
+      "GSI1SK": { "S": "MIXED" }
+    } } },
+    { "PutRequest": { "Item": {
+      "PK": { "S": "REF#AGE_CATEGORY" },
+      "SK": { "S": "ORDER#0006#UNKNOWN" },
+      "type": { "S": "AGE_CATEGORY" },
+      "code": { "S": "UNKNOWN" },
+      "description": { "S": "Unknown" },
+      "isAvian": { "BOOL": true },
+      "index": { "N": "6" },
+      "GSI1PK": { "S": "CODE#AGE_CATEGORY" },
+      "GSI1SK": { "S": "UNKNOWN" }
+    } } },
+    { "PutRequest": { "Item": {
+      "PK": { "S": "REF#AGE_CATEGORY" },
+      "SK": { "S": "ORDER#0007#NA" },
+      "type": { "S": "AGE_CATEGORY" },
+      "code": { "S": "NA" },
+      "description": { "S": "Doesn’t apply" },
+      "isAvian": { "BOOL": true },
+      "index": { "N": "7" },
+      "GSI1PK": { "S": "CODE#AGE_CATEGORY" },
+      "GSI1SK": { "S": "NA" }
+    } } },
+    { "PutRequest": { "Item": {
+      "PK": { "S": "REF#AGE_CATEGORY" },
+      "SK": { "S": "ORDER#0009#NEONATAL" },
+      "type": { "S": "AGE_CATEGORY" },
+      "code": { "S": "NEONATAL" },
+      "description": { "S": "Neonatal (1 week old or less)" },
+      "isAvian": { "BOOL": false },
+      "index": { "N": "9" },
+      "GSI1PK": { "S": "CODE#AGE_CATEGORY" },
+      "GSI1SK": { "S": "NEONATAL" }
+    } } },
+    { "PutRequest": { "Item": {
+      "PK": { "S": "REF#AGE_CATEGORY" },
+      "SK": { "S": "ORDER#0010#PREWEAN" },
+      "type": { "S": "AGE_CATEGORY" },
+      "code": { "S": "PREWEAN" },
+      "description": { "S": "Pre weaned" },
+      "isAvian": { "BOOL": false },
+      "index": { "N": "10" },
+      "GSI1PK": { "S": "CODE#AGE_CATEGORY" },
+      "GSI1SK": { "S": "PREWEAN" }
+    } } },
+    { "PutRequest": { "Item": {
+      "PK": { "S": "REF#AGE_CATEGORY" },
+      "SK": { "S": "ORDER#0011#POSTWEAN" },
+      "type": { "S": "AGE_CATEGORY" },
+      "code": { "S": "POSTWEAN" },
+      "description": { "S": "Post weaned" },
+      "isAvian": { "BOOL": false },
+      "index": { "N": "11" },
+      "GSI1PK": { "S": "CODE#AGE_CATEGORY" },
+      "GSI1SK": { "S": "POSTWEAN" }
+    } } },
+    { "PutRequest": { "Item": {
+      "PK": { "S": "REF#AGE_CATEGORY" },
+      "SK": { "S": "ORDER#0012#ADULT" },
+      "type": { "S": "AGE_CATEGORY" },
+      "code": { "S": "ADULT" },
+      "description": { "S": "Adult" },
+      "isAvian": { "BOOL": false },
+      "index": { "N": "12" },
+      "GSI1PK": { "S": "CODE#AGE_CATEGORY" },
+      "GSI1SK": { "S": "ADULT" }
+    } } },
+    { "PutRequest": { "Item": {
+      "PK": { "S": "REF#AGE_CATEGORY" },
+      "SK": { "S": "ORDER#0013#MIXED" },
+      "type": { "S": "AGE_CATEGORY" },
+      "code": { "S": "MIXED" },
+      "description": { "S": "Mixed" },
+      "isAvian": { "BOOL": false },
+      "index": { "N": "13" },
+      "GSI1PK": { "S": "CODE#AGE_CATEGORY" },
+      "GSI1SK": { "S": "MIXED" }
+    } } },
+    { "PutRequest": { "Item": {
+      "PK": { "S": "REF#AGE_CATEGORY" },
+      "SK": { "S": "ORDER#0014#UNKNOWN" },
+      "type": { "S": "AGE_CATEGORY" },
+      "code": { "S": "UNKNOWN" },
+      "description": { "S": "Unknown" },
+      "isAvian": { "BOOL": false },
+      "index": { "N": "14" },
+      "GSI1PK": { "S": "CODE#AGE_CATEGORY" },
+      "GSI1SK": { "S": "UNKNOWN" }
+    } } },
+    { "PutRequest": { "Item": {
+      "PK": { "S": "REF#AGE_CATEGORY" },
+      "SK": { "S": "ORDER#0015#NA" },
+      "type": { "S": "AGE_CATEGORY" },
+      "code": { "S": "NA" },
+      "description": { "S": "Doesn’t apply" },
+      "isAvian": { "BOOL": false },
+      "index": { "N": "15" },
+      "GSI1PK": { "S": "CODE#AGE_CATEGORY" },
+      "GSI1SK": { "S": "NA" }
+    } } }
+  ]
+}

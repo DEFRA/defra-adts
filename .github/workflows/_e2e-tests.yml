@@ -56,6 +56,14 @@ jobs:
           DOCKER_HOST: unix:///var/run/docker.sock
         run: npm run test:e2e:chromium
 
+      - name: Stop local DynamoDB containers
+        if: always()
+        env:
+          TEST_CONTAINER_ENGINE: docker
+          DOCKER_CONTEXT: default
+          DOCKER_HOST: unix:///var/run/docker.sock
+        run: npm run test:db:down
+
       - name: Upload Playwright report on failure
         if: failure()
         uses: actions/upload-artifact@v7

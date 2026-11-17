@@ -60,6 +60,7 @@ describe('Healthcheck endpoint', () => {
     })
     expect(fetch).toHaveBeenCalled()
     expect(response.statusCode).toBe(200)
+    expect(response.result).toEqual({ message: 'Unable to reach my-target-host.internal  at this time.' })
   })
 
   test('should return error when host request throws exception', async () => {
@@ -74,5 +75,24 @@ describe('Healthcheck endpoint', () => {
     })
     expect(fetch).toHaveBeenCalled()
     expect(response.statusCode).toBe(200)
+    expect(response.result).toEqual({ message: 'Unable to reach my-target-host.internal  at this time.' })
+  })
+
+  test('should reject request when a required query parameter is missing', async () => {
+    const response = await server.inject({
+      method: 'GET',
+      url: '/connection_health?protocol=http&host=my-target-host.internal'
+    })
+
+    expect(response.statusCode).toBe(400)
+  })
+
+  test('should reject request when a required query parameter is blank', async () => {
+    const response = await server.inject({
+      method: 'GET',
+      url: '/connection_health?protocol=%20%20%20&host=my-target-host.internal&port=9000'
+    })
+
+    expect(response.statusCode).toBe(400)
   })
 })

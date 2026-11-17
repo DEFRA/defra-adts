@@ -1,0 +1,59 @@
+{
+  "adts-reference-data": [
+    { "PutRequest": { "Item": {
+      "PK": { "S": "REF#SEX_GROUP" },
+      "SK": { "S": "ORDER#0002#FEMALE" },
+      "type": { "S": "SEX_GROUP" },
+      "code": { "S": "FEMALE" },
+      "description": { "S": "Female" },
+      "excludeAvian": { "BOOL": true },
+      "index": { "N": "1" },
+      "GSI1PK": { "S": "CODE#SEX_GROUP" },
+      "GSI1SK": { "S": "FEMALE" }
+    } } },
+    { "PutRequest": { "Item": {
+      "PK": { "S": "REF#SEX_GROUP" },
+      "SK": { "S": "ORDER#0003#MALE" },
+      "type": { "S": "SEX_GROUP" },
+      "code": { "S": "MALE" },
+      "description": { "S": "Male" },
+      "excludeAvian": { "BOOL": true },
+      "index": { "N": "2" },
+      "GSI1PK": { "S": "CODE#SEX_GROUP" },
+      "GSI1SK": { "S": "MALE" }
+    } } },
+    { "PutRequest": { "Item": {
+      "PK": { "S": "REF#SEX_GROUP" },
+      "SK": { "S": "ORDER#0001#CASTRATE" },
+      "type": { "S": "SEX_GROUP" },
+      "code": { "S": "CASTRATE" },
+      "description": { "S": "Castrate" },
+      "excludeAvian": { "BOOL": false },
+      "index": { "N": "0" },
+      "GSI1PK": { "S": "CODE#SEX_GROUP" },
+      "GSI1SK": { "S": "CASTRATE" }
+    } } },
+    { "PutRequest": { "Item": {
+      "PK": { "S": "REF#SEX_GROUP" },
+      "SK": { "S": "ORDER#0004#MIXED" },
+      "type": { "S": "SEX_GROUP" },
+      "code": { "S": "MIXED" },
+      "description": { "S": "Mixed" },
+      "excludeAvian": { "BOOL": true },
+      "index": { "N": "3" },
+      "GSI1PK": { "S": "CODE#SEX_GROUP" },
+      "GSI1SK": { "S": "MIXED" }
+    } } },
+    { "PutRequest": { "Item": {
+      "PK": { "S": "REF#SEX_GROUP" },
+      "SK": { "S": "ORDER#0005#UNKNOWN" },
+      "type": { "S": "SEX_GROUP" },
+      "code": { "S": "UNKNOWN" },
+      "description": { "S": "I don\\'t know" },
+      "excludeAvian": { "BOOL": true },
+      "index": { "N": "4" },
+      "GSI1PK": { "S": "CODE#SEX_GROUP" },
+      "GSI1SK": { "S": "UNKNOWN" }
+    } } }
+  ]
+}

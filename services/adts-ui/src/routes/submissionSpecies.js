@@ -8,37 +8,17 @@ import {
 
 const pageName = 'submission-02-species'
 const nextPageName = 'submission-02-animal-details'
-const OTHER = 'other'
-const COMMON_SPECIES = ['Cattle', 'Sheep', 'Chicken', 'Pig', 'Turkey', 'Duck', 'Alpaca', 'Goat']
-
-const getSavedSpeciesSelection = (savedSpecies) => {
-  if (!savedSpecies) {
-    return undefined
-  }
-
-  return COMMON_SPECIES.includes(savedSpecies) ? savedSpecies : OTHER
-}
-
-const getSpeciesSelection = (selection, otherSpecies) => {
+const getSpeciesSelection = (selection) => {
   const errors = {}
-  let speciesName
 
-  if (COMMON_SPECIES.includes(selection)) {
-    speciesName = selection
-  } else if (selection === OTHER) {
-    if (!otherSpecies) {
-      errors.otherSpecies = 'Specify the species'
-    } else {
-      speciesName = otherSpecies
-    }
-  } else {
+  if (!selection) {
     errors.species = 'Select a species'
   }
 
-  return { speciesName, errors }
+  return { speciesName: selection, errors }
 }
 
-const findSelectedSpecies = async (speciesName, selection, errors) => {
+const findSelectedSpecies = async (speciesName, errors) => {
   if (!speciesName) {
     return undefined
   }
@@ -47,8 +27,7 @@ const findSelectedSpecies = async (speciesName, selection, errors) => {
   const matchedSpecies = speciesResult.data?.find(({ name }) => name === speciesName)
 
   if (!matchedSpecies) {
-    const errorField = selection === OTHER ? 'otherSpecies' : 'species'
-    errors[errorField] = speciesResult.error
+    errors.species = speciesResult.error
       ? 'The species list is unavailable. Try again later'
       : 'Select a species from the list'
   }
@@ -56,32 +35,27 @@ const findSelectedSpecies = async (speciesName, selection, errors) => {
   return matchedSpecies
 }
 
-const buildViewContext = async (submissionFormState, { selection, otherSpecies, errors = {} } = {}) => {
+const buildViewContext = async (submissionFormState, { selection, errors = {} } = {}) => {
   const [speciesResult, clientSummaryResult] = await Promise.all([
     safeLoad(getSpecies),
     loadClientSummary(submissionFormState)
   ])
   const allSpecies = speciesResult.data || []
   const savedSpecies = submissionFormState.formData?.animalDetails?.species
-  const savedIsCommon = COMMON_SPECIES.includes(savedSpecies)
-
-  const currentSelection = selection ?? getSavedSpeciesSelection(savedSpecies)
-  const currentOther = otherSpecies ?? (savedSpecies && !savedIsCommon ? savedSpecies : '')
+  const currentSelection = selection ?? savedSpecies ?? ''
 
   return {
     submissionFormState,
     ...clientSummaryResult,
-    speciesItems: COMMON_SPECIES.map((name) => ({
-      value: name,
-      text: name,
-      checked: currentSelection === name
-    })),
-    otherChecked: currentSelection === OTHER,
-    otherSpeciesOptions: [
-      { value: '', text: 'Select a species', selected: !currentOther },
-      ...allSpecies.map(({ name }) => ({ value: name, text: name, selected: name === currentOther }))
+    speciesOptions: [
+      { value: '', text: 'Select a species', selected: !currentSelection },
+      ...allSpecies.map(({ name }) => ({
+        value: name,
+        text: name,
+        selected: name === currentSelection
+      }))
     ],
-    otherSpecies: currentOther,
+    selectedSpecies: currentSelection,
     errors,
     speciesListUnavailable: Boolean(speciesResult.error)
   }
@@ -106,12 +80,11 @@ const submissionSpecies = (server, submissionFormStateKey) => {
       handler: async (request, h) => {
         const submissionFormState = request.yar.get(submissionFormStateKey) || {}
         const selection = request.payload?.species
-        const otherSpecies = request.payload?.otherSpecies || ''
-        const { speciesName, errors } = getSpeciesSelection(selection, otherSpecies)
-        const matchedSpecies = await findSelectedSpecies(speciesName, selection, errors)
+        const { speciesName, errors } = getSpeciesSelection(selection)
+        const matchedSpecies = await findSelectedSpecies(speciesName, errors)
 
         if (Object.keys(errors).length > 0) {
-          const context = await buildViewContext(submissionFormState, { selection, otherSpecies, errors })
+          const context = await buildViewContext(submissionFormState, { selection, errors })
           const view = h.view('submission-species.njk', context)
 
           return context.clientSummaryError

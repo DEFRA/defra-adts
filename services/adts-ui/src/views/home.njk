@@ -1,7 +1,7 @@
 {% extends "govuk/template.njk" %}
 
-{% from "govuk/components/button/macro.njk" import govukButton %}
 {% from "govuk/components/header/macro.njk" import govukHeader %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
 {% from "macros/submissionSearchForm.njk" import submissionSearchForm %}
 
 {% block pageTitle %}Home – ADTS{% endblock %}
@@ -33,12 +33,22 @@
   <div class="govuk-grid-row">
     <div class="govuk-grid-column-full">
       <p class="govuk-body">Signed in as Test User 2</p>
-      <ul class="govuk-list">
-        <li>{{ govukButton({ text: "Create a sick animal submission", href: "/submission-01-client-details" }) }}</li>
-        <li>{{ govukButton({ text: "Create a healthy animal submission", href: "/submission-01-client-details" }) }}</li>
-        <li>{{ govukButton({ text: "Create a new client", href: "/create-client" }) }}</li>
-        <li>{{ govukButton({ text: "Update an existing client's details", href: "/update-client" }) }}</li>
-      </ul>
+      <h2 class="govuk-heading-m">New submission</h2>
+      <p class="govuk-body">Start a new sick animal submission or healthy animal submission.</p>
+      <div class="app-button-stack">
+        {{ govukButton({
+          text: "Sick animal submission",
+          href: "/submission-01-client-details/start",
+          classes: "app-button--sick",
+          isStartButton: true
+        }) }}
+        {{ govukButton({
+          text: "Healthy animal submission",
+          href: "/submission-01-client-details/start",
+          classes: "app-button--healthy",
+          isStartButton: true
+        }) }}
+      </div>
 
       <hr class="govuk-section-break govuk-section-break--m govuk-section-break--visible">
 

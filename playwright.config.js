@@ -40,7 +40,7 @@ webServer: [
   {
     command: 'npm start --prefix services/adts-submissions-service',
     url: 'http://localhost:3100',
-    reuseExistingServer: !process.env.CI,
+    reuseExistingServer: false,
     timeout: 60 * 1000,
     env: {
       PORT: '3100',

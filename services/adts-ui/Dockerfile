@@ -1,4 +1,4 @@
-ARG PARENT_VERSION=3.2.3-node24.21.0
+ARG PARENT_VERSION=3.2.7-node26.13.0
 ARG PORT=9181
 
 FROM defradigital/node-development:$PARENT_VERSION AS development
@@ -25,6 +25,7 @@ RUN npm run build
 FROM defradigital/node:$PARENT_VERSION AS production
 
 ENV TZ="Europe/London"
+ENV NODE_ENV=production
 
 ARG PORT
 ENV PORT=${PORT}

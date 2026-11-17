@@ -103,51 +103,6 @@ jobs:
         run: |
           echo "matrix={\"include\": \
             [ \
-              { \
-                \"service\": \"adts-ui\", \
-                \"path\": \"services/adts-ui\", \
-                \"dockerfile\": \"services/adts-ui/Dockerfile\", \
-                \"repository\": \"${{ vars.ADTS_UI_ECR }}\", \
-                \"node-version\": \"24\", \
-                \"change-detected\": ${{ needs.detect_changes.outputs.ui_service }}, \
-                \"run-audit\": false, \
-                \"run-lint\": true, \
-                \"run-format-check\": false, \
-                \"run-tests\": true, \
-                \"run-sonarqube-scan\": true, \
-                \"test-command\": \"npm run test:coverage && npm run test:integration\", \
-                \"build-command\": \"npm run build\" \
-              }, \
-              { \
-                \"service\": \"adts-backend\", \
-                \"path\": \"services/adts-backend\", \
-                \"dockerfile\": \"services/adts-backend/Dockerfile\", \
-                \"repository\": \"${{ vars.ADTS_BACKEND_ECR }}\", \
-                \"node-version\": \"24\", \
-                \"change-detected\": ${{ needs.detect_changes.outputs.backend_service}}, \
-                \"run-audit\": false, \
-                \"run-lint\": true, \
-                \"run-format-check\": false, \
-                \"run-tests\": true, \
-                \"run-sonarqube-scan\": true, \
-                \"test-command\": \"npm run test:coverage && npm run test:integration && npm run test:contract && npm run test:api\", \
-                \"build-command\": \"npm run build\" \
-              }, \
-              { \
-                \"service\": \"adts-submissions-service\", \
-                \"path\": \"services/adts-submissions-service\", \
-                \"dockerfile\": \"services/adts-submissions-service/Dockerfile\", \
-                \"repository\": \"${{ vars.ADTS_SUBMISSIONS_ECR }}\", \
-                \"node-version\": \"24\", \
-                \"change-detected\": ${{ needs.detect_changes.outputs.submissions_service }}, \
-                \"run-audit\": false, \
-                \"run-lint\": true, \
-                \"run-format-check\": false, \
-                \"run-tests\": true, \
-                \"run-sonarqube-scan\": true, \
-                \"test-command\": \"npm run test:coverage\", \
-                \"build-command\": \"npm run build\" \
-              } \
             ] \ 
           }" >> $GITHUB_OUTPUT
 

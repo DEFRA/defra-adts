@@ -1,0 +1,121 @@
+{
+  "adts-reference-data": [
+    { "PutRequest": { "Item": {
+      "PK": { "S": "REF#SPECIES_ANIMAL_BREED" },
+      "SK": { "S": "ORDER#2452#PELICAN#DALMATIAN_PELICAN" },
+      "type": { "S": "SPECIES_ANIMAL_BREED" },
+      "speciesCode": { "S": "PELICAN" },
+      "code": { "S": "DALMATIAN_PELICAN" },
+      "description": { "S": "Dalmatian Pelican" },
+      "index": { "N": "2452" },
+      "GSI1PK": { "S": "CODE#SPECIES_ANIMAL_BREED" },
+      "GSI1SK": { "S": "DALMATIAN_PELICAN" },
+      "GSI2PK": { "S": "NAME#SPECIES_ANIMAL_BREED" },
+      "GSI2SK": { "S": "dalmatian pelican" }
+    } } },
+    { "PutRequest": { "Item": {
+      "PK": { "S": "REF#SPECIES_ANIMAL_BREED" },
+      "SK": { "S": "ORDER#2453#SEAL#HARBOUR_SEAL" },
+      "type": { "S": "SPECIES_ANIMAL_BREED" },
+      "speciesCode": { "S": "SEAL" },
+      "code": { "S": "HARBOUR_SEAL" },
+      "description": { "S": "Harbour Seal" },
+      "index": { "N": "2453" },
+      "GSI1PK": { "S": "CODE#SPECIES_ANIMAL_BREED" },
+      "GSI1SK": { "S": "HARBOUR_SEAL" },
+      "GSI2PK": { "S": "NAME#SPECIES_ANIMAL_BREED" },
+      "GSI2SK": { "S": "harbour seal" }
+    } } },
+    { "PutRequest": { "Item": {
+      "PK": { "S": "REF#SPECIES_ANIMAL_BREED" },
+      "SK": { "S": "ORDER#2454#BAT#NATTERERS_BAT" },
+      "type": { "S": "SPECIES_ANIMAL_BREED" },
+      "speciesCode": { "S": "BAT" },
+      "code": { "S": "NATTERERS_BAT" },
+      "description": { "S": "Natterers Bat" },
+      "index": { "N": "2454" },
+      "GSI1PK": { "S": "CODE#SPECIES_ANIMAL_BREED" },
+      "GSI1SK": { "S": "NATTERERS_BAT" },
+      "GSI2PK": { "S": "NAME#SPECIES_ANIMAL_BREED" },
+      "GSI2SK": { "S": "natterers bat" }
+    } } },
+    { "PutRequest": { "Item": {
+      "PK": { "S": "REF#SPECIES_ANIMAL_BREED" },
+      "SK": { "S": "ORDER#2455#CHICKEN#PEKIN_BANTAM_CHICKEN" },
+      "type": { "S": "SPECIES_ANIMAL_BREED" },
+      "speciesCode": { "S": "CHICKEN" },
+      "code": { "S": "PEKIN_BANTAM_CHICKEN" },
+      "description": { "S": "Pekin Bantum Chicken" },
+      "index": { "N": "2455" },
+      "GSI1PK": { "S": "CODE#SPECIES_ANIMAL_BREED" },
+      "GSI1SK": { "S": "PEKIN_BANTAM_CHICKEN" },
+      "GSI2PK": { "S": "NAME#SPECIES_ANIMAL_BREED" },
+      "GSI2SK": { "S": "pekin bantum chicken" }
+    } } },
+    { "PutRequest": { "Item": {
+      "PK": { "S": "REF#SPECIES_ANIMAL_BREED" },
+      "SK": { "S": "ORDER#2456#PELICAN#PELICAN" },
+      "type": { "S": "SPECIES_ANIMAL_BREED" },
+      "speciesCode": { "S": "PELICAN" },
+      "code": { "S": "PELICAN" },
+      "description": { "S": "Pelican" },
+      "index": { "N": "2456" },
+      "GSI1PK": { "S": "CODE#SPECIES_ANIMAL_BREED" },
+      "GSI1SK": { "S": "PELICAN" },
+      "GSI2PK": { "S": "NAME#SPECIES_ANIMAL_BREED" },
+      "GSI2SK": { "S": "pelican" }
+    } } },
+    { "PutRequest": { "Item": {
+      "PK": { "S": "REF#SPECIES_ANIMAL_BREED" },
+      "SK": { "S": "ORDER#2457#CATTLE#SHORTHORN_X" },
+      "type": { "S": "SPECIES_ANIMAL_BREED" },
+      "speciesCode": { "S": "CATTLE" },
+      "code": { "S": "SHORTHORN_X" },
+      "description": { "S": "Shorthorn X" },
+      "index": { "N": "2457" },
+      "GSI1PK": { "S": "CODE#SPECIES_ANIMAL_BREED" },
+      "GSI1SK": { "S": "SHORTHORN_X" },
+      "GSI2PK": { "S": "NAME#SPECIES_ANIMAL_BREED" },
+      "GSI2SK": { "S": "shorthorn x" }
+    } } },
+    { "PutRequest": { "Item": {
+      "PK": { "S": "REF#SPECIES_ANIMAL_BREED" },
+      "SK": { "S": "ORDER#2458#WEAVER#SOUTHERN_MASKED_WEAVER" },
+      "type": { "S": "SPECIES_ANIMAL_BREED" },
+      "speciesCode": { "S": "WEAVER" },
+      "code": { "S": "SOUTHERN_MASKED_WEAVER" },
+      "description": { "S": "Southern Masked Weaver" },
+      "index": { "N": "2458" },
+      "GSI1PK": { "S": "CODE#SPECIES_ANIMAL_BREED" },
+      "GSI1SK": { "S": "SOUTHERN_MASKED_WEAVER" },
+      "GSI2PK": { "S": "NAME#SPECIES_ANIMAL_BREED" },
+      "GSI2SK": { "S": "southern masked weaver" }
+    } } },
+    { "PutRequest": { "Item": {
+      "PK": { "S": "REF#SPECIES_ANIMAL_BREED" },
+      "SK": { "S": "ORDER#2459#CHICKEN#SHAVER_CHICKEN" },
+      "type": { "S": "SPECIES_ANIMAL_BREED" },
+      "speciesCode": { "S": "CHICKEN" },
+      "code": { "S": "SHAVER_CHICKEN" },
+      "description": { "S": "Shaver Chicken" },
+      "index": { "N": "2459" },
+      "GSI1PK": { "S": "CODE#SPECIES_ANIMAL_BREED" },
+      "GSI1SK": { "S": "SHAVER_CHICKEN" },
+      "GSI2PK": { "S": "NAME#SPECIES_ANIMAL_BREED" },
+      "GSI2SK": { "S": "shaver chicken" }
+    } } },
+    { "PutRequest": { "Item": {
+      "PK": { "S": "REF#SPECIES_ANIMAL_BREED" },
+      "SK": { "S": "ORDER#2460#GOAT#ANGLO_NUBIAN_GOAT" },
+      "type": { "S": "SPECIES_ANIMAL_BREED" },
+      "speciesCode": { "S": "GOAT" },
+      "code": { "S": "ANGLO_NUBIAN_GOAT" },
+      "description": { "S": "Anglo Nubian Goat" },
+      "index": { "N": "2460" },
+      "GSI1PK": { "S": "CODE#SPECIES_ANIMAL_BREED" },
+      "GSI1SK": { "S": "ANGLO_NUBIAN_GOAT" },
+      "GSI2PK": { "S": "NAME#SPECIES_ANIMAL_BREED" },
+      "GSI2SK": { "S": "anglo nubian goat" }
+    } } }
+  ]
+}

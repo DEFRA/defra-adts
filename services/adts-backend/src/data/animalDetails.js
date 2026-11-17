@@ -1,6 +1,13 @@
 import { QueryCommand } from '@aws-sdk/lib-dynamodb'
 import { referenceDataTable } from './dynamo.js'
 
+const ageUnits = [
+  { value: 'DAYS', label: 'Days' },
+  { value: 'WEEKS', label: 'Weeks' },
+  { value: 'MONTHS', label: 'Months' },
+  { value: 'YEARS', label: 'Years' }
+]
+
 const queryItems = async (docClient, partitionKey, exclusiveStartKey) => {
   const result = await docClient.send(new QueryCommand({
     TableName: referenceDataTable(),
@@ -18,8 +25,17 @@ const queryItems = async (docClient, partitionKey, exclusiveStartKey) => {
 }
 
 const querySpecies = async (docClient, speciesId) => {
-  const species = await queryItems(docClient, 'REF#SPECIES')
-  return species.find((item) => String(item.code) === speciesId)
+  const result = await docClient.send(new QueryCommand({
+    TableName: referenceDataTable(),
+    IndexName: 'ByCode',
+    KeyConditionExpression: 'GSI1PK = :gsi1pk AND GSI1SK = :gsi1sk',
+    ExpressionAttributeValues: {
+      ':gsi1pk': 'CODE#SPECIES',
+      ':gsi1sk': speciesId
+    }
+  }))
+
+  return result.Items?.[0]
 }
 
 const optionItems = (items) => items.map((item) => ({
@@ -33,26 +49,23 @@ const appliesToSpecies = (item, speciesId, isAvian) => {
     return false
   }
 
+  if (typeof item.isAvian === 'boolean' && item.isAvian !== isAvian) {
+    return false
+  }
+
+  if (item.excludeAvian === true && isAvian) {
+    return false
+  }
+
   return typeof item.forAvianSpecies !== 'boolean' || item.forAvianSpecies === isAvian
 }
 
 const applicableOptions = (items, speciesId, isAvian) =>
   optionItems(items.filter((item) => appliesToSpecies(item, speciesId, isAvian)))
 
-const speciesOptions = async (docClient, speciesId, type, fallbackPartitions = []) => {
-  const speciesItems = await queryItems(docClient, `REF#${type}#SPECIES#${speciesId}`)
-  if (speciesItems.length) {
-    return speciesItems
-  }
-
-  for (const partition of fallbackPartitions) {
-    const items = await queryItems(docClient, partition)
-    if (items.length) {
-      return items
-    }
-  }
-
-  return []
+const speciesOptions = async (docClient, type, speciesId) => {
+  const items = await queryItems(docClient, `REF#${type}`)
+  return items.filter((item) => item.speciesCode === speciesId)
 }
 
 export const getAnimalDetails = async (docClient, speciesId) => {
@@ -63,20 +76,18 @@ export const getAnimalDetails = async (docClient, speciesId) => {
 
   const isAvian = species.isAvian === true
   const [breeds, purposes, keepingTypes, sexes, ageCategories, organicOptions] = await Promise.all([
-    speciesOptions(docClient, speciesId, 'SPECIES_ANIMAL_BREEDS', ['REF#SPECIES_ANIMAL_BREEDS']),
-    speciesOptions(docClient, speciesId, 'SPECIES_ANIMAL_PURPOSES', [
-      `REF#SPECIES_ANIMAL_PURPOSES#AVIAN#${isAvian ? '1' : '0'}`,
-      'REF#SPECIES_ANIMAL_PURPOSES'
-    ]),
-    queryItems(docClient, 'REF#SPECIES_HOUSINGS'),
-    queryItems(docClient, 'REF#SEX_GROUPS'),
-    queryItems(docClient, 'REF#AGE_CATEGORIES'),
+    speciesOptions(docClient, 'SPECIES_ANIMAL_BREED', speciesId),
+    speciesOptions(docClient, 'SPECIES_ANIMAL_PURPOSE', speciesId),
+    queryItems(docClient, 'REF#SPECIES_HOUSING'),
+    queryItems(docClient, 'REF#SEX_GROUP'),
+    queryItems(docClient, 'REF#AGE_CATEGORY'),
     queryItems(docClient, 'REF#ORGANIC_ENVIRONMENT')
   ])
 
   return {
     speciesId,
     ageCategories: applicableOptions(ageCategories, speciesId, isAvian),
+    ageUnits,
     purposes: applicableOptions(purposes, speciesId, isAvian),
     keepingTypes: applicableOptions(keepingTypes, speciesId, isAvian),
     breeds: applicableOptions(breeds, speciesId, isAvian),

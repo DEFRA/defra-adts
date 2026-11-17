@@ -3,8 +3,8 @@ import { expect, test } from '@playwright/test'
 test.describe('Animal details reference data', () => {
   test('loads species-specific fields from the reference table and saves selected answers', async ({ page }) => {
     await page.goto('/submission-02-species')
-    await page.getByLabel('Species').fill('Cow')
-    await page.getByRole('option', { name: 'Cow', exact: true }).click()
+    await page.getByLabel('Species').fill('Cattle')
+    await page.getByRole('option', { name: 'Cattle', exact: true }).click()
     await page.getByRole('button', { name: 'Continue' }).click()
 
     await expect(page).toHaveURL('/submission-02-animal-details')
@@ -31,6 +31,9 @@ test.describe('Animal details reference data', () => {
     await page.getByLabel('Number of animals').selectOption('2')
     await page.getByLabel('Animal 1:').fill('SYNTHETIC-EAR-TAG-1')
     await page.getByRole('button', { name: 'Continue' }).click()
+
+    await expect(page).toHaveURL('/submission-03-clinical-history')
+    await page.getByRole('link', { name: 'Back', exact: true }).click()
 
     await expect(page).toHaveURL('/submission-02-animal-details')
     await expect(page.getByLabel('Breed (optional)')).toHaveValue('Holstein')

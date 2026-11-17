@@ -19,7 +19,35 @@
   .govuk-tag {
     flex: 0 0 auto;
     background-color: govuk-colour("orange");
+    color: govuk-colour("black");
+  }
+}
+
+.app-button--healthy,
+.app-button--sick {
+  background-color: $govuk-brand-colour;
+  color: govuk-colour("white");
+  box-shadow: 0 $govuk-border-width-form-element 0 govuk-shade($govuk-brand-colour, 60%);
+
+  &:link,
+  &:visited,
+  &:hover {
     color: govuk-colour("white");
+  }
+
+  &:hover {
+    background-color: govuk-shade($govuk-brand-colour, 20%);
+  }
+}
+
+.app-button-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: govuk-spacing(3);
+
+  .govuk-button {
+    margin-bottom: 0;
   }
 }
 
@@ -75,6 +103,15 @@
   border-left: 0;
   margin-left: 0;
   padding-left: 0;
+}
+
+.app-create-address-link {
+  margin-top: govuk-spacing(3);
+}
+
+[data-client-edit-button][hidden],
+[data-animal-address-edit-button][hidden] {
+  display: none;
 }
 
 // ==========================================================================

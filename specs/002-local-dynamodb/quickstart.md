@@ -82,7 +82,7 @@ npm run test:integration --prefix services/adts-backend
 
 Or from the root: `npm run test:integration`.
 
-Expected outcome: the command starts the database, resets it, runs the integration tests in `services/adts-backend/tests/integration/` against `http://localhost:8000`, and exits `0`. Species are returned in order as Chicken, Cow, Sheep. Draft search assertions cover:
+Expected outcome: the command starts the database, resets it, runs the integration tests in `services/adts-backend/tests/integration/` against `http://localhost:8000`, and exits `0`. Species are returned in order as Chicken, Cattle, Sheep. Draft search assertions cover:
 
 | Filter | Expected Draft IDs |
 |---|---|
@@ -97,7 +97,7 @@ Expected outcome: the command starts the database, resets it, runs the integrati
 npm run test:e2e:chromium
 ```
 
-Expected outcome: a global setup starts the database and resets it, then Playwright starts the submissions service, the backend (pointed at the local endpoint, never reusing an existing backend process), and the UI, and runs the tests. The species list in the UI matches the seeded species (Chicken, Cow, Sheep).
+Expected outcome: a global setup starts the database and resets it, then Playwright starts the submissions service, the backend (pointed at the local endpoint, never reusing an existing backend process), and the UI, and runs the tests. The species list in the UI matches the seeded species (Chicken, Cattle, Sheep).
 
 ## 5. Stop the database
 

@@ -1,10 +1,39 @@
 import { describe, expect, jest, test } from '@jest/globals'
 import { getAnimalDetails } from '../../src/data/animalDetails.js'
 
+const typesWithNameIndex = new Set([
+  'SPECIES',
+  'SPECIES_ANIMAL_BREED',
+  'SPECIES_ANIMAL_PURPOSE',
+  'SPECIES_HOUSING'
+])
+
+const referenceItem = ({ type, code, description, order, index, ...attributes }) => {
+  const speciesCode = attributes.speciesCode
+  const itemCode = speciesCode ? `${speciesCode}#${code}` : code
+
+  return {
+    PK: `REF#${type}`,
+    SK: `ORDER#${order}#${itemCode}`,
+    type,
+    code,
+    description,
+    index,
+    GSI1PK: `CODE#${type}`,
+    GSI1SK: code,
+    ...(typesWithNameIndex.has(type)
+      ? { GSI2PK: `NAME#${type}`, GSI2SK: description.toLowerCase() }
+      : {}),
+    ...attributes
+  }
+}
+
 const createDocClient = (partitions) => {
   const pages = new Map()
   const send = jest.fn(async (command) => {
-    const partition = command.input.ExpressionAttributeValues[':pk']
+    const partition = command.input.IndexName === 'ByCode'
+      ? command.input.ExpressionAttributeValues[':gsi1sk']
+      : command.input.ExpressionAttributeValues[':pk']
     const pageIndex = pages.get(partition) ?? 0
     pages.set(partition, pageIndex + 1)
 
@@ -18,101 +47,295 @@ const createDocClient = (partitions) => {
 describe('getAnimalDetails', () => {
   test('maps species-specific options, filters applicability, and follows pagination', async () => {
     const docClient = createDocClient({
-      'REF#SPECIES': [
+      123: {
+        Items: [referenceItem({
+          type: 'SPECIES',
+          code: '123',
+          description: 'Bird',
+          order: '0001',
+          index: 0,
+          isAvian: true,
+          isMammal: false,
+          isRuminant: false,
+          mostCommon: true
+        })]
+      },
+      'REF#SPECIES_ANIMAL_BREED': [
         {
-          Items: [{ code: 'COW', description: 'Cow', isAvian: false }],
-          LastEvaluatedKey: { PK: 'REF#SPECIES', SK: 'next' }
+          Items: [
+            referenceItem({
+              type: 'SPECIES_ANIMAL_BREED',
+              speciesCode: '123',
+              code: 'BREED-1',
+              description: 'First breed',
+              order: '0001',
+              index: 1
+            }),
+            referenceItem({
+              type: 'SPECIES_ANIMAL_BREED',
+              speciesCode: '456',
+              code: 'OTHER-BREED',
+              description: 'Other breed',
+              order: '0002',
+              index: 2
+            })
+          ],
+          LastEvaluatedKey: {
+            PK: 'REF#SPECIES_ANIMAL_BREED',
+            SK: 'ORDER#0002#456#OTHER-BREED'
+          }
         },
-        { Items: [{ code: '123', description: 'Bird', isAvian: true }] }
-      ],
-      'REF#SPECIES_ANIMAL_BREEDS#SPECIES#123': [
         {
-          Items: [{ code: 'BREED-1', description: 'First breed' }],
-          LastEvaluatedKey: { PK: 'REF#SPECIES_ANIMAL_BREEDS#SPECIES#123', SK: 'next' }
-        },
-        { Items: [{ code: 'BREED-2', description: 'Second breed' }] }
+          Items: [referenceItem({
+            type: 'SPECIES_ANIMAL_BREED',
+            speciesCode: '123',
+            code: 'BREED-2',
+            description: 'Second breed',
+            order: '0003',
+            index: 3
+          })]
+        }
       ],
-      'REF#SPECIES_ANIMAL_PURPOSES#SPECIES#123': {
-        Items: [{ code: 'PURPOSE', description: 'Purpose' }]
+      'REF#SPECIES_ANIMAL_PURPOSE': {
+        Items: [referenceItem({
+          type: 'SPECIES_ANIMAL_PURPOSE',
+          speciesCode: '123',
+          code: 'PURPOSE',
+          description: 'Purpose',
+          order: '0001',
+          index: 1,
+          isAvian: true
+        })]
       },
-      'REF#SPECIES_HOUSINGS': {
+      'REF#SPECIES_HOUSING': {
         Items: [
-          { code: 'AVIARY', description: 'Aviary', forAvianSpecies: true },
-          { code: 'HOUSED', description: 'Housed', forAvianSpecies: false },
-          { code: 'EXCLUDED', description: 'Excluded', excludeSpeciesLimsCodes: ['123'] },
-          { code: 'GENERAL', name: 'General' }
+          referenceItem({
+            type: 'SPECIES_HOUSING',
+            code: 'BARN',
+            description: 'Pen/Barns',
+            order: '0001',
+            index: 1,
+            isAvian: true
+          }),
+          referenceItem({
+            type: 'SPECIES_HOUSING',
+            code: 'HOUSED',
+            description: 'Housed',
+            order: '0002',
+            index: 2,
+            isAvian: false
+          })
         ]
       },
-      'REF#SEX_GROUPS': {
+      'REF#SEX_GROUP': {
         Items: [
-          { code: 'FEMALE', description: 'Female' },
-          { code: 'NO-LABEL' },
-          { description: 'No code' },
-          { code: 'INVALID-LABEL', description: 12 }
+          referenceItem({
+            type: 'SEX_GROUP',
+            code: 'FEMALE',
+            description: 'Female',
+            order: '0002',
+            index: 1,
+            excludeAvian: true
+          }),
+          referenceItem({
+            type: 'SEX_GROUP',
+            code: 'CASTRATE',
+            description: 'Castrate',
+            order: '0001',
+            index: 0,
+            excludeAvian: false
+          })
         ]
       },
-      'REF#AGE_CATEGORIES': {
+      'REF#AGE_CATEGORY': {
         Items: [
-          { code: 'CHICK', description: 'Chick', forAvianSpecies: true },
-          { code: 'CALF', description: 'Calf', forAvianSpecies: false }
+          referenceItem({
+            type: 'AGE_CATEGORY',
+            code: '0-3',
+            description: '0-3 Days',
+            order: '0001',
+            index: 1,
+            isAvian: true
+          }),
+          referenceItem({
+            type: 'AGE_CATEGORY',
+            code: 'NEONATAL',
+            description: 'Neonatal (1 week old or less)',
+            order: '0009',
+            index: 9,
+            isAvian: false
+          })
         ]
       },
-      'REF#ORGANIC_ENVIRONMENT': {}
+      'REF#ORGANIC_ENVIRONMENT': {
+        Items: [referenceItem({
+          type: 'ORGANIC_ENVIRONMENT',
+          code: 'ORGANIC',
+          description: 'Organic',
+          order: '0001',
+          index: 0,
+          forAvianSpecies: false
+        })]
+      }
     })
 
     const details = await getAnimalDetails(docClient, '123')
 
     expect(details).toEqual({
       speciesId: '123',
-      ageCategories: [{ value: 'CHICK', label: 'Chick' }],
-      purposes: [{ value: 'PURPOSE', label: 'Purpose' }],
-      keepingTypes: [
-        { value: 'AVIARY', label: 'Aviary' },
-        { value: 'GENERAL', label: 'General' }
+      ageCategories: [{ value: '0-3', label: '0-3 Days' }],
+      ageUnits: [
+        { value: 'DAYS', label: 'Days' },
+        { value: 'WEEKS', label: 'Weeks' },
+        { value: 'MONTHS', label: 'Months' },
+        { value: 'YEARS', label: 'Years' }
       ],
+      purposes: [{ value: 'PURPOSE', label: 'Purpose' }],
+      keepingTypes: [{ value: 'BARN', label: 'Pen/Barns' }],
       breeds: [
         { value: 'BREED-1', label: 'First breed' },
         { value: 'BREED-2', label: 'Second breed' }
       ],
-      sexes: [{ value: 'FEMALE', label: 'Female' }],
+      sexes: [{ value: 'CASTRATE', label: 'Castrate' }],
       organicAccreditationApplicable: false
     })
-    const speciesPageCall = docClient.send.mock.calls.find(([command]) =>
-      command.input.ExpressionAttributeValues[':pk'] === 'REF#SPECIES' &&
-      command.input.ExclusiveStartKey
+    const speciesLookupCall = docClient.send.mock.calls.find(([command]) =>
+      command.input.IndexName === 'ByCode'
     )
-    expect(speciesPageCall[0].input.ExclusiveStartKey).toEqual({
-      PK: 'REF#SPECIES',
-      SK: 'next'
+    expect(speciesLookupCall[0].input.KeyConditionExpression).toBe(
+      'GSI1PK = :gsi1pk AND GSI1SK = :gsi1sk'
+    )
+    expect(speciesLookupCall[0].input.ExpressionAttributeValues).toEqual({
+      ':gsi1pk': 'CODE#SPECIES',
+      ':gsi1sk': '123'
     })
     const breedPageCall = docClient.send.mock.calls.find(([command]) =>
-      command.input.ExpressionAttributeValues[':pk'] === 'REF#SPECIES_ANIMAL_BREEDS#SPECIES#123' &&
+      command.input.ExpressionAttributeValues[':pk'] === 'REF#SPECIES_ANIMAL_BREED' &&
       command.input.ExclusiveStartKey
     )
     expect(breedPageCall[0].input.ExclusiveStartKey).toEqual({
-      PK: 'REF#SPECIES_ANIMAL_BREEDS#SPECIES#123',
-      SK: 'next'
+      PK: 'REF#SPECIES_ANIMAL_BREED',
+      SK: 'ORDER#0002#456#OTHER-BREED'
     })
-    expect(docClient.pages.has('REF#SPECIES_ANIMAL_BREEDS')).toBe(false)
-    expect(docClient.pages.has('REF#SPECIES_ANIMAL_PURPOSES#AVIAN#1')).toBe(false)
   })
 
-  test('uses avian and generic fallback partitions when species options are absent', async () => {
+  test('filters option partitions by species and avian applicability', async () => {
     const docClient = createDocClient({
-      'REF#SPECIES': { Items: [{ code: 'CHICKEN', description: 'Chicken', isAvian: true }] },
-      'REF#SPECIES_ANIMAL_BREEDS#SPECIES#CHICKEN': { Items: [] },
-      'REF#SPECIES_ANIMAL_BREEDS': { Items: [{ code: 'BIRD-BREED', description: 'Bird breed' }] },
-      'REF#SPECIES_ANIMAL_PURPOSES#SPECIES#CHICKEN': { Items: [] },
-      'REF#SPECIES_ANIMAL_PURPOSES#AVIAN#1': { Items: [] },
-      'REF#SPECIES_ANIMAL_PURPOSES': {
+      CHICKEN: {
+        Items: [referenceItem({
+          type: 'SPECIES',
+          code: 'CHICKEN',
+          description: 'Chicken',
+          order: '0003',
+          index: 2,
+          isAvian: true,
+          isMammal: false,
+          isRuminant: false,
+          mostCommon: true
+        })]
+      },
+      'REF#SPECIES_ANIMAL_BREED': {
         Items: [
-          { code: 'AVIAN-PURPOSE', description: 'Avian purpose', forAvianSpecies: true },
-          { code: 'MAMMAL-PURPOSE', description: 'Mammal purpose', forAvianSpecies: false }
+          referenceItem({
+            type: 'SPECIES_ANIMAL_BREED',
+            speciesCode: 'CHICKEN',
+            code: 'BIRD-BREED',
+            description: 'Bird breed',
+            order: '0001',
+            index: 1
+          }),
+          referenceItem({
+            type: 'SPECIES_ANIMAL_BREED',
+            speciesCode: 'SHEEP',
+            code: 'SHEEP-BREED',
+            description: 'Sheep breed',
+            order: '0002',
+            index: 2
+          })
         ]
       },
-      'REF#SPECIES_HOUSINGS': {},
-      'REF#SEX_GROUPS': {},
-      'REF#AGE_CATEGORIES': {},
+      'REF#SPECIES_ANIMAL_PURPOSE': {
+        Items: [
+          referenceItem({
+            type: 'SPECIES_ANIMAL_PURPOSE',
+            speciesCode: 'CHICKEN',
+            code: 'AVIAN-PURPOSE',
+            description: 'Avian purpose',
+            order: '0001',
+            index: 1,
+            isAvian: true
+          }),
+          referenceItem({
+            type: 'SPECIES_ANIMAL_PURPOSE',
+            speciesCode: 'CATTLE',
+            code: 'MAMMAL-PURPOSE',
+            description: 'Mammal purpose',
+            order: '0002',
+            index: 2,
+            isAvian: false
+          })
+        ]
+      },
+      'REF#SPECIES_HOUSING': {
+        Items: [
+          referenceItem({
+            type: 'SPECIES_HOUSING',
+            code: 'BARN',
+            description: 'Pen/Barns',
+            order: '0001',
+            index: 1,
+            isAvian: true
+          }),
+          referenceItem({
+            type: 'SPECIES_HOUSING',
+            code: 'HOUSED',
+            description: 'Housed',
+            order: '0002',
+            index: 14,
+            isAvian: false
+          })
+        ]
+      },
+      'REF#SEX_GROUP': {
+        Items: [
+          referenceItem({
+            type: 'SEX_GROUP',
+            code: 'FEMALE',
+            description: 'Female',
+            order: '0002',
+            index: 1,
+            excludeAvian: true
+          }),
+          referenceItem({
+            type: 'SEX_GROUP',
+            code: 'CASTRATE',
+            description: 'Castrate',
+            order: '0001',
+            index: 0,
+            excludeAvian: false
+          })
+        ]
+      },
+      'REF#AGE_CATEGORY': {
+        Items: [
+          referenceItem({
+            type: 'AGE_CATEGORY',
+            code: '0-3',
+            description: '0-3 Days',
+            order: '0001',
+            index: 1,
+            isAvian: true
+          }),
+          referenceItem({
+            type: 'AGE_CATEGORY',
+            code: 'NEONATAL',
+            description: 'Neonatal (1 week old or less)',
+            order: '0009',
+            index: 9,
+            isAvian: false
+          })
+        ]
+      },
       'REF#ORGANIC_ENVIRONMENT': {}
     })
 
@@ -120,20 +343,36 @@ describe('getAnimalDetails', () => {
 
     expect(details).toEqual({
       speciesId: 'CHICKEN',
-      ageCategories: [],
+      ageCategories: [{ value: '0-3', label: '0-3 Days' }],
+      ageUnits: [
+        { value: 'DAYS', label: 'Days' },
+        { value: 'WEEKS', label: 'Weeks' },
+        { value: 'MONTHS', label: 'Months' },
+        { value: 'YEARS', label: 'Years' }
+      ],
       purposes: [{ value: 'AVIAN-PURPOSE', label: 'Avian purpose' }],
-      keepingTypes: [],
+      keepingTypes: [{ value: 'BARN', label: 'Pen/Barns' }],
       breeds: [{ value: 'BIRD-BREED', label: 'Bird breed' }],
-      sexes: [],
+      sexes: [{ value: 'CASTRATE', label: 'Castrate' }],
       organicAccreditationApplicable: false
     })
-    expect(docClient.pages.has('REF#SPECIES_ANIMAL_BREEDS')).toBe(true)
-    expect(docClient.pages.has('REF#SPECIES_ANIMAL_PURPOSES')).toBe(true)
   })
 
-  test('returns undefined when the species partition has no matching species', async () => {
+  test('returns undefined when the species code is not found', async () => {
     const docClient = createDocClient({
-      'REF#SPECIES': { Items: [{ code: 'COW', description: 'Cow' }] }
+      CATTLE: {
+        Items: [referenceItem({
+          type: 'SPECIES',
+          code: 'CATTLE',
+          description: 'Cattle',
+          order: '0001',
+          index: 0,
+          isAvian: false,
+          isMammal: true,
+          isRuminant: true,
+          mostCommon: true
+        })]
+      }
     })
 
     await expect(getAnimalDetails(docClient, 'UNKNOWN')).resolves.toBeUndefined()
@@ -142,20 +381,40 @@ describe('getAnimalDetails', () => {
 
   test('returns empty lists when the species has no configured reference options', async () => {
     const docClient = createDocClient({
-      'REF#SPECIES': { Items: [{ code: 'COW', description: 'Cow' }] }
+      CATTLE: {
+        Items: [referenceItem({
+          type: 'SPECIES',
+          code: 'CATTLE',
+          description: 'Cattle',
+          order: '0001',
+          index: 0,
+          isAvian: false,
+          isMammal: true,
+          isRuminant: true,
+          mostCommon: true
+        })]
+      }
     })
 
-    await expect(getAnimalDetails(docClient, 'COW')).resolves.toEqual({
-      speciesId: 'COW',
+    await expect(getAnimalDetails(docClient, 'CATTLE')).resolves.toEqual({
+      speciesId: 'CATTLE',
       ageCategories: [],
+      ageUnits: [
+        { value: 'DAYS', label: 'Days' },
+        { value: 'WEEKS', label: 'Weeks' },
+        { value: 'MONTHS', label: 'Months' },
+        { value: 'YEARS', label: 'Years' }
+      ],
       purposes: [],
       keepingTypes: [],
       breeds: [],
       sexes: [],
       organicAccreditationApplicable: false
     })
-    expect(docClient.pages.get('REF#SPECIES_ANIMAL_BREEDS')).toBe(1)
-    expect(docClient.pages.get('REF#SPECIES_ANIMAL_PURPOSES#AVIAN#0')).toBe(1)
-    expect(docClient.pages.get('REF#SPECIES_ANIMAL_PURPOSES')).toBe(1)
+    expect(docClient.pages.get('REF#SPECIES_ANIMAL_BREED')).toBe(1)
+    expect(docClient.pages.get('REF#SPECIES_ANIMAL_PURPOSE')).toBe(1)
+    expect(docClient.pages.get('REF#SPECIES_HOUSING')).toBe(1)
+    expect(docClient.pages.get('REF#SEX_GROUP')).toBe(1)
+    expect(docClient.pages.get('REF#AGE_CATEGORY')).toBe(1)
   })
 })

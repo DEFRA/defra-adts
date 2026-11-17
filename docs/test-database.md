@@ -32,7 +32,7 @@ Use one table for reference/configuration records. The partition key groups reco
 |---|---|
 | `PK` (String) | `REF#<type>` for ordinary lists; `REF#<type>#SPECIES#<speciesCode>` for species-scoped lists. |
 | `SK` (String) | `ORDER#<zero-padded-index>#<code>`; records sort in the configured order. |
-| `type`, `code`, `description`, `index` | Common attributes; keep entity-specific fields such as `isAvian`, `mostCommon`, `forAvianSpecies`, and `excludeSpeciesLimsCodes` as attributes. |
+| `type`, `code`, `description`, `index` | Common attributes; keep entity-specific fields such as boolean `isAvian`, `isMammal`, `isRuminant`, `mostCommon`, `forAvianSpecies`, and `excludeSpeciesLimsCodes` as attributes. |
 
 ### Indexes
 
@@ -40,7 +40,7 @@ Use one table for reference/configuration records. The partition key groups reco
 |---|---|---|
 | ByCode GSI | `GSI1PK=CODE#<type>`, `GSI1SK=<scope>#<code>` | Look up a species, breed, purpose, county, or clinical sign by code. Include species scope for breed/purpose codes. |
 | ByName GSI | `GSI2PK=NAME#<type>`, `GSI2SK=<normalizedName>` | County name lookup and practice name checks. |
-| ByAvian GSI | `GSI3PK=AVIAN#<type>#<0-or-1>`, `GSI3SK=ORDER#<index>#<code>` | Ordered avian/non-avian lists without reading and filtering the whole type partition. |
+| ByAvian GSI | `GSI3PK=AVIAN#<type>#<0-or-1>`, `GSI3SK=<SK>` | Ordered avian/non-avian lists without reading and filtering the whole type partition. For species, `GSI3SK` matches `SK`. |
 
 ### Example Records
 
@@ -51,7 +51,10 @@ Use one table for reference/configuration records. The partition key groups reco
   "type": "SPECIES",
   "code": "CHICKEN",
   "description": "Chicken",
-  "mostCommon": "Yes",
+  "isAvian": false,
+  "isMammal": true,
+  "isRuminant": true,
+  "mostCommon": true,
   "index": 0
 }
 ```

@@ -32,8 +32,8 @@ The page heading is “1. Client details”; its introduction says “Tell us ab
 | Field | User-facing label | Requiredness | Validation / notes | Evidence and status |
 |---|---|---|---|---|
 | `animalDetails.speciesId`, `animalDetails.species` | Species | Required to continue | Single value selected from all species returned by `GetSpecies` (`speciesId`, `name`) in a native select enhanced with accessible autocomplete. The chosen name must exist in that list; its `speciesId` and name are persisted. Changing species discards previously saved species-dependent answers. | AC1 and backend species list. Implemented. The select is usable without JavaScript. |
-| `animalDetails.ageCategory` | Age category | Required (no “optional” in the design) when the species offers options | Radios from `ageCategories` for the species (AC2), e.g. Adult, Mixed, Neonatal (1 week old or less), Post weaned, Pre weaned, Unknown, Doesn’t apply. Categories only in the current build. | Screenshot 3. Implemented. |
-| `animalDetails.ageDetail` (`value`, `unit`, `isEstimate`) | Age detail (optional), unit, estimate flag | Optional | **To do (T010a):** AC4 requires it to be persisted alongside the age category, but the screenshots show no such fields; confirm before building. | SUB-07 AC4. Not implemented. |
+| `animalDetails.ageCategory` | Age category | Required (no “optional” in the design) when the species offers options | Radios from `ageCategories` for the species (AC2), e.g. Adult, Mixed, Neonatal (1 week old or less), Post weaned, Pre weaned, Unknown, Doesn’t apply. | Screenshot 3. Implemented. |
+| `animalDetails.ageDetail` (`value`, `unit`, `isEstimate`) | Age detail (optional), age indicator, estimate flag | Optional | Shown unless the selected age category is Unknown or Doesn’t apply. Age is a non-negative number, age indicator is Days, Weeks, Months, or Years, and the estimate flag is optional. Persist alongside the age category only when both age and indicator are supplied. | User-provided screenshot and SUB-07 AC4. Implemented. |
 | `animalDetails.purpose` | Purpose | Required when the species offers options | Radios from `purposes` for the species (AC2), e.g. Beef finisher, Dairy, Calf rearer, Captive/zoo, Suckler, I don’t know, Doesn’t apply. | Screenshot 4. Implemented. |
 | `animalDetails.keepingType` | Where are they kept? (optional) | Optional | Radios from `keepingTypes` for the species (AC2), e.g. Housed, Mixed, Outdoor, I don’t know. | Screenshot 4. Implemented. |
 | `animalDetails.breed` | Breed (optional) | Optional | Type-ahead (select enhanced with accessible-autocomplete) over `breeds`; shown only when the species has breeds (AC1b-style, AC3). | Screenshot 1. Implemented. |
@@ -43,7 +43,18 @@ The page heading is “1. Client details”; its introduction says “Tell us ab
 
 Only values the user supplies are persisted; empty optional fields are omitted. A supplied value must be one of the options the backend returned for the species.
 
-Open questions: the maximum number of animals per submission and the animal ID format (assumed 10 and 50 characters); the `GetSpecies` and `GetAnimalDetails` backend endpoints do not yet exist; the UI is built to an assumed shape (see `contracts/backend-methods.md`); the single-species-per-submission rule is enforced by this step choosing one species for all animals; the Continue destination after this page (Clinical history) is not yet built, so the page redirects to itself.
+Open questions: the maximum number of animals per submission and the animal ID format (assumed 10 and 50 characters); whether the common species/age/purpose option labels come from the backend as assumed; the `GetSpecies` and `GetAnimalDetails` backend endpoints do not yet exist; the UI is built to an assumed shape (see `contracts/backend-methods.md`); the common-species list is fixed to the screenshot (matched to backend species by name); the single-species-per-submission rule is enforced by this step choosing one species for all animals.
+
+### Step 3: Clinical history
+
+**Evidence**
+
+- SUB-09 acceptance criteria AC1–AC3: accept and validate the sample date and persist a valid date when continuing. The user selected the standard GOV.UK Design System date input (day, month and year fields); no custom calendar control is used.
+- Screenshot supplied for Step 3: heading “3. Clinical history”, introduction “Tell us about the symptoms and clinical history.”, and field heading “Date the sample was taken.”
+
+| Field | User-facing label | Requiredness | Validation / notes | Evidence and status |
+|---|---|---|---|---|
+| `clinicalHistory.sampleTakenDate` | Date the sample was taken | Not specified by the ticket; blank is accepted | Use the GOV.UK date input (`govukDateInput`) with separate day, month and year fields. Blank is accepted; a partially completed date reports which parts are missing. Reject invalid or future dates server-side and store accepted values as `yyyy-mm-dd`. | SUB-09 AC1–AC3, supplied screenshot, and user decision to use the standard GOV.UK date input rather than a calendar control. Implemented. |
 
 ### Client details collection
 

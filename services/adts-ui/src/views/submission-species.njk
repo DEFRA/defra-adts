@@ -1,6 +1,7 @@
 {% extends "govuk/template.njk" %}
 
 {% from "govuk/components/header/macro.njk" import govukHeader %}
+{% from "govuk/components/back-link/macro.njk" import govukBackLink %}
 {% from "govuk/components/notification-banner/macro.njk" import govukNotificationBanner %}
 {% from "govuk/components/select/macro.njk" import govukSelect %}
 {% from "govuk/components/button/macro.njk" import govukButton %}
@@ -34,6 +35,7 @@
     </span>
   </div>
 
+  {{ govukBackLink({ text: "Back", href: "/submission-01-client-details" }) }}
   {{ submissionProgress(2) }}
   {{ clientSummaryBar(clientSummary) }}
 

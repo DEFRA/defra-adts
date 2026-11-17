@@ -75,7 +75,7 @@ The test setup also asserts that `DYNAMODB_ENDPOINT` points at `localhost` or `1
 
 **Decision**: Keep the existing 12 synthetic seed items (9 reference, 2 CI-LIMS mapping, 1 submission). They are below the 25-item `batch-write-item` limit, so no chunking is needed.
 
-**Rationale**: The clarification (Q3) requires all three tables. The existing seed covers them with synthetic data. Checked: the reference seed contains three `REF#SPECIES` records (CHICKEN, COW, SHEEP), which is what `getSpecies` reads.
+**Rationale**: The clarification (Q3) requires all three tables. The existing seed covers them with synthetic data. Checked: the reference seed contains three `REF#SPECIES` records (CHICKEN, CATTLE, SHEEP), which is what `getSpecies` reads.
 
 **Note**: `init.sh` should fail fast if a future seed file exceeds 25 items, so the limit is not hit silently. Added to the tasks rather than built now.
 

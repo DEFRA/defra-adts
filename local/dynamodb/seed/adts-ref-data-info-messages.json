@@ -1,0 +1,46 @@
+{
+  "adts-reference-data": [
+    { "PutRequest": { "Item": {
+      "PK": { "S": "REF#INFORMATION_MESSAGE" },
+      "SK": { "S": "ID#1" },
+      "type": { "S": "INFORMATION_MESSAGE" },
+      "name": { "S": "apiDown" },
+      "title": { "S": "Service unavailable" },
+      "description": { "S": "'The service is currently unavailable" },
+      "description2": { "S": "please try again later.<br><br>Please note: Scheduled service downtime is 10pm - 2am daily.'" },
+      "index": { "N": "1" },
+      "created_at": { "S": "error" },
+      "updated_at": { "S": "0000-00-00 00:00:00" },
+      "GSI2PK": { "S": "NAME#INFORMATION_MESSAGE" },
+      "GSI2SK": { "S": "apidown" }
+    } } },
+    { "PutRequest": { "Item": {
+      "PK": { "S": "REF#INFORMATION_MESSAGE" },
+      "SK": { "S": "ID#2" },
+      "type": { "S": "INFORMATION_MESSAGE" },
+      "name": { "S": "maintenance" },
+      "title": { "S": "Maintenance title" },
+      "description": { "S": "maintenance content" },
+      "description2": { "S": "error" },
+      "index": { "N": "2" },
+      "created_at": { "S": "0000-00-00 00:00:00" },
+      "updated_at": { "S": "0000-00-00 00:00:00" },
+      "GSI2PK": { "S": "NAME#INFORMATION_MESSAGE" },
+      "GSI2SK": { "S": "maintenance" }
+    } } },
+    { "PutRequest": { "Item": {
+      "PK": { "S": "REF#INFORMATION_MESSAGE" },
+      "SK": { "S": "ID#3" },
+      "type": { "S": "INFORMATION_MESSAGE" },
+      "name": { "S": "custom" },
+      "title": { "S": "System information" },
+      "description": { "S": "For any issues please contact: AnimalDiseaseTesting@apha.gov.uk" },
+      "description2": { "S": "info" },
+      "index": { "N": "3" },
+      "created_at": { "S": "0000-00-00 00:00:00" },
+      "updated_at": { "S": "2024-10-01 10:10:58" },
+      "GSI2PK": { "S": "NAME#INFORMATION_MESSAGE" },
+      "GSI2SK": { "S": "custom" }
+    } } }
+  ]
+}

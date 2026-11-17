@@ -56,6 +56,12 @@ Retrieves animal details or reference data needed for the selected report specie
   {
     "speciesId": "2",
     "ageCategories": [{ "value": "lamb", "label": "Lamb" }],
+    "ageUnits": [
+      { "value": "DAYS", "label": "Days" },
+      { "value": "WEEKS", "label": "Weeks" },
+      { "value": "MONTHS", "label": "Months" },
+      { "value": "YEARS", "label": "Years" }
+    ],
     "purposes": [{ "value": "meat", "label": "Meat" }],
     "keepingTypes": [{ "value": "outdoor", "label": "Outdoor" }],
     "breeds": [{ "value": "texel", "label": "Texel" }],

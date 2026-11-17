@@ -1,0 +1,83 @@
+{% extends "govuk/template.njk" %}
+
+{% from "govuk/components/header/macro.njk" import govukHeader %}
+{% from "govuk/components/back-link/macro.njk" import govukBackLink %}
+{% from "govuk/components/notification-banner/macro.njk" import govukNotificationBanner %}
+{% from "govuk/components/error-summary/macro.njk" import govukErrorSummary %}
+{% from "govuk/components/date-input/macro.njk" import govukDateInput %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
+{% from "macros/submissionProgress.njk" import submissionProgress %}
+{% from "macros/clientSummary.njk" import clientSummaryBar %}
+
+{% block pageTitle %}{% if clientSummaryError or errors.sampleTakenDate %}Error: {% endif %}Clinical history – ADTS{% endblock %}
+
+{% block head %}
+  <link rel="stylesheet" href="/assets/css/application.css">
+{% endblock %}
+
+{% block header %}
+  {{ govukHeader({
+    serviceName: "Animal Disease Testing Service",
+    serviceUrl: "/",
+    navigation: [
+      { text: "My Account", href: "#" },
+      { text: "Sign out", href: "#" }
+    ]
+  }) }}
+{% endblock %}
+
+{% block content %}
+  <div class="govuk-phase-banner app-phase-banner govuk-body-l">
+    <strong class="govuk-tag govuk-phase-banner__content__tag">BETA</strong>
+    <span class="govuk-phase-banner__text">
+      This is a new service – your <a class="govuk-link" href="#">feedback</a> will help us to improve it.
+    </span>
+  </div>
+
+  {{ govukBackLink({ text: "Back", href: "/submission-02-animal-details" }) }}
+  {{ submissionProgress(3) }}
+  {{ clientSummaryBar(clientSummary) }}
+
+  {% if clientSummaryError %}
+    {{ govukNotificationBanner({
+      type: "important",
+      titleText: "Important",
+      text: "Client details could not be loaded. Refresh the page to try again."
+    }) }}
+  {% endif %}
+
+  {% if errorList.length %}
+    {{ govukErrorSummary({
+      titleText: "There is a problem",
+      errorList: errorList
+    }) }}
+  {% endif %}
+
+  <h1 class="govuk-heading-l">3. Clinical history</h1>
+  <p class="govuk-body-l">Tell us about the symptoms and clinical history.</p>
+
+  <hr class="govuk-section-break govuk-section-break--visible app-client-details-divider">
+
+  <form method="post" action="/submission-03-clinical-history" novalidate>
+    {{ govukDateInput({
+      id: "sampleTakenDate",
+      namePrefix: "sampleTakenDate",
+      fieldset: {
+        legend: { text: "Date the sample was taken", classes: "govuk-fieldset__legend--m" }
+      },
+      hint: { text: "For example, 27 3 2007" },
+      items: [
+        { name: "day", value: values.day, classes: "govuk-input--width-2" },
+        { name: "month", value: values.month, classes: "govuk-input--width-2" },
+        { name: "year", value: values.year, classes: "govuk-input--width-4" }
+      ],
+      errorMessage: { text: errors.sampleTakenDate } if errors.sampleTakenDate
+    }) }}
+
+    {{ govukButton({ text: "Continue" }) }}
+  </form>
+{% endblock %}
+
+{% block bodyEnd %}
+  <script type="module" src="/assets/js/all.js"></script>
+{% endblock %}

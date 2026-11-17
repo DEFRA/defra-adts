@@ -33,11 +33,16 @@ describe('GET /GetSpecies with local DynamoDB', () => {
     const response = await server.inject({ method: 'GET', url: '/GetSpecies' })
 
     expect(response.statusCode).toBe(200)
-    expect(response.result).toEqual([
+    expect(response.result).toEqual(expect.arrayContaining([
+      { speciesId: 'CATTLE', name: 'Cattle' },
       { speciesId: 'CHICKEN', name: 'Chicken' },
-      { speciesId: 'COW', name: 'Cow' },
       { speciesId: 'SHEEP', name: 'Sheep' }
-    ])
+    ]))
+
+    const speciesIds = response.result.map(({ speciesId }) => speciesId)
+    expect(speciesIds.indexOf('CATTLE')).toBeLessThan(speciesIds.indexOf('CHICKEN'))
+    expect(speciesIds.indexOf('CATTLE')).toBeLessThan(speciesIds.indexOf('SHEEP'))
+    expect(speciesIds.indexOf('SHEEP')).toBeLessThan(speciesIds.indexOf('CHICKEN'))
   })
 
   test('reports a DynamoDB query failure instead of returning an empty result', async () => {

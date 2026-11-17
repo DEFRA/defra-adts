@@ -97,6 +97,7 @@ cphInputs.forEach((input) => {
 if (speciesSelect) {
   accessibleAutocomplete.enhanceSelectElement({
     defaultValue: speciesSelect.dataset.defaultValue,
+    inputClasses: 'govuk-!-width-one-half',
     selectElement: speciesSelect
   })
 }
@@ -191,6 +192,7 @@ const breedSelect = document.querySelector('select#breed')
 if (breedSelect) {
   accessibleAutocomplete.enhanceSelectElement({
     defaultValue: '',
+    inputClasses: 'govuk-!-width-one-half',
     selectElement: breedSelect
   })
 }

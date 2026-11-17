@@ -115,8 +115,8 @@ jobs:
                 \"run-format-check\": false, \
                 \"run-tests\": true, \
                 \"run-sonarqube-scan\": true, \
-                \"test-command\": "npm run test:coverage && npm run test:integration", \
-                \"build-command\": "npm run build" \
+                \"test-command\": \"npm run test:coverage && npm run test:integration\", \
+                \"build-command\": \"npm run build\" \
               }, \
               { \
                 \"service\": \"adts-backend\", \
@@ -130,8 +130,8 @@ jobs:
                 \"run-format-check\": false, \
                 \"run-tests\": true, \
                 \"run-sonarqube-scan\": true, \
-                \"test-command\": "npm run test:coverage && npm run test:integration && npm run test:contract && npm run test:api", \
-                \"build-command\": "npm run build" \
+                \"test-command\": \"npm run test:coverage && npm run test:integration && npm run test:contract && npm run test:api\", \
+                \"build-command\": \"npm run build\" \
               }, \
               { \
                 \"service\": \"adts-submissions-service\", \
@@ -145,8 +145,8 @@ jobs:
                 \"run-format-check\": false, \
                 \"run-tests\": true, \
                 \"run-sonarqube-scan\": true, \
-                \"test-command\": "npm run test:coverage", \
-                \"build-command\": "npm run build" \
+                \"test-command\": \"npm run test:coverage\", \
+                \"build-command\": \"npm run build\" \
               } \
             ]\ 
           }" >> $GITHUB_OUTPUT

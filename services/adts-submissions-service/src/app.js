@@ -1,4 +1,5 @@
 import path from 'node:path'
+import { constants } from 'node:http2'
 import { fileURLToPath } from 'node:url'
 import Hapi from '@hapi/hapi'
 import Inert from '@hapi/inert'

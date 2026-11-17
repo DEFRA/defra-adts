@@ -1,13 +1,17 @@
 import { afterAll, afterEach, beforeAll, describe, expect, jest, test } from '@jest/globals'
+import { constants } from 'node:http2'
 import createServer from '../../src/app.js'
 import { loadConfig } from '../../src/config.js'
 
 describe('LIMS Backend Proxy - Network Mock Tests', () => {
   let server
   let limsClient
+  let originalLimsApiUrl
+  let originalPvsId
 
   beforeAll(async () => {
-    const originalPvsId = process.env.LIMS_PVS_ID
+    originalLimsApiUrl = process.env.LIMS_API_URL
+    originalPvsId = process.env.LIMS_PVS_ID
     process.env.LIMS_API_URL = 'https://mock-lims.local'
     process.env.LIMS_PVS_ID = 'TEST-PVS-001'
     process.env.PORT = 3100
@@ -26,6 +30,11 @@ describe('LIMS Backend Proxy - Network Mock Tests', () => {
 
   afterAll(async () => {
     await server.stop()
+    if (originalLimsApiUrl === undefined) {
+      delete process.env.LIMS_API_URL
+    } else {
+      process.env.LIMS_API_URL = originalLimsApiUrl
+    }
     if (originalPvsId === undefined) {
       delete process.env.LIMS_PVS_ID
     } else {
@@ -34,6 +43,7 @@ describe('LIMS Backend Proxy - Network Mock Tests', () => {
   })
 
   afterEach(() => {
+    jest.restoreAllMocks()
     limsClient.request.mockReset()
   })
 

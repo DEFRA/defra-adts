@@ -148,7 +148,7 @@ jobs:
                 \"test-command\": \"npm run test:coverage\", \
                 \"build-command\": \"npm run build\" \
               } \
-            ]\ 
+            ] \ 
           }" >> $GITHUB_OUTPUT
 
       - name: Show Service Matrix

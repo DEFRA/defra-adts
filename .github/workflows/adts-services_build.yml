@@ -103,8 +103,7 @@ jobs:
         run: |
           echo "matrix={\"include\": \
             [ \
-            ] \ 
-          }" >> $GITHUB_OUTPUT
+            ] }" >> $GITHUB_OUTPUT
 
       - name: Show Service Matrix
         run: echo ${{ steps.set-matrix.outputs.matrix }}

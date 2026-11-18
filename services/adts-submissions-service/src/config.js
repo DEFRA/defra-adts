@@ -1,4 +1,5 @@
 import Joi from 'joi'
+import { trimSlashes } from './path-utils.js'
 
 const DEFAULT_LIMS_TIMEOUT_MS = 10000
 
@@ -33,7 +34,7 @@ export const loadConfig = (environment = process.env) => {
     throw invalidConfiguration('LIMS_ALLOW_HTTP must explicitly enable the temporary HTTP exception')
   }
 
-  const prefix = value.LIMS_PREFIX.replace(/^\/+|\/+$/g, '')
+  const prefix = trimSlashes(value.LIMS_PREFIX)
   if (prefix.split('/').some((segment) => {
     try {
       const decoded = decodeURIComponent(segment)

@@ -1,7 +1,9 @@
-const normalizePath = (value) => value.replace(/^\/+|\/+$/g, '')
+import { trimSlashes } from '../path-utils.js'
+
+const normalizePath = trimSlashes
 
 const validateRelativePath = (path) => {
-  if (typeof path !== 'string' || path.length === 0 || path.startsWith('//') || /^[a-z][a-z\d+.-]*:/i.test(path)) {
+  if (typeof path !== 'string' || path.length === 0 || path.startsWith('//') || URL.canParse(path)) {
     throw new TypeError('LIMS request path must be relative to the configured origin')
   }
 

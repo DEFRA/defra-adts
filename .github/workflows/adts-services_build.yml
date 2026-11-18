@@ -119,7 +119,7 @@ jobs:
       - detect_changes
       - get_service_matrix
 
-    if: ${{ fromJson(needs.get_service_matrix.outputs.matrix) != '{"include":[]}' }}
+    if: ${{ fromJson(needs.get_service_matrix.outputs.matrix) != '{include:[]}' }}
     strategy:
       matrix: ${{ fromJson(needs.get_service_matrix.outputs.matrix) }}
 

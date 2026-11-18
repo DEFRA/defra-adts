@@ -20,17 +20,7 @@ const validateRelativePath = (path) => {
   }
 }
 
-export const createLimsClient = ({
-  baseUrl,
-  prefix = '',
-  username,
-  password,
-  timeoutMs,
-  allowHttp = false,
-  fetchImpl = globalThis.fetch
-}) => {
-  const base = new URL(baseUrl)
-
+const validateClientOptions = ({ base, username, password, timeoutMs, allowHttp, fetchImpl }) => {
   if (!['http:', 'https:'].includes(base.protocol) || base.username || base.password || base.search || base.hash) {
     throw new TypeError('LIMS base URL must be an HTTP(S) origin without credentials, query, or fragment')
   }
@@ -50,6 +40,27 @@ export const createLimsClient = ({
   if (typeof fetchImpl !== 'function') {
     throw new TypeError('A fetch implementation is required')
   }
+}
+
+const appendQuery = (url, query) => {
+  for (const [key, value] of Object.entries(query ?? {})) {
+    if (value !== undefined && value !== null) {
+      url.searchParams.set(key, String(value))
+    }
+  }
+}
+
+export const createLimsClient = ({
+  baseUrl,
+  prefix = '',
+  username,
+  password,
+  timeoutMs,
+  allowHttp = false,
+  fetchImpl = globalThis.fetch
+}) => {
+  const base = new URL(baseUrl)
+  validateClientOptions({ base, username, password, timeoutMs, allowHttp, fetchImpl })
 
   const normalizedPrefix = normalizePath(prefix)
   if (normalizedPrefix) {
@@ -68,13 +79,7 @@ export const createLimsClient = ({
       throw new TypeError('LIMS request must remain within the configured origin')
     }
 
-    if (query) {
-      for (const [key, value] of Object.entries(query)) {
-        if (value !== undefined && value !== null) {
-          url.searchParams.set(key, String(value))
-        }
-      }
-    }
+    appendQuery(url, query)
 
     const requestHeaders = {
       accept: 'application/json',

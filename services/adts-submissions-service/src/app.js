@@ -17,11 +17,7 @@ import { createServiceError, normalizeLimsBusinessError, normalizeUpstreamStatus
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
-const createServer = async ({ config = loadConfig(), limsClient = createLimsClient(config.lims) } = {}) => {
-  const server = Hapi.server({
-    port: process.env.PORT
-  })
-
+const registerFailureLogging = (server) => {
   server.ext('onPreResponse', (request, h) => {
     const response = request.response
     const statusCode = response.isBoom ? response.output.statusCode : response.statusCode
@@ -37,6 +33,80 @@ const createServer = async ({ config = loadConfig(), limsClient = createLimsClie
 
     return h.continue
   })
+}
+
+const getClientsHandler = async (_request, h) => {
+  const { LIMS_API_URL, LIMS_PVS_ID } = process.env
+  if (!LIMS_API_URL || !LIMS_PVS_ID) {
+    console.error('LIMS_API_URL and LIMS_PVS_ID must be configured to retrieve clients')
+    return h.response({ error: 'LIMS client lookup is not configured' })
+      .code(constants.HTTP_STATUS_INTERNAL_SERVER_ERROR)
+  }
+
+  try {
+    const query = new URLSearchParams({ pvsId: LIMS_PVS_ID, filter: '' })
+    const response = await fetch(`${LIMS_API_URL}/general/getClients?${query}`)
+    if (!response.ok) {
+      return h.response({ error: 'LIMS integration error' }).code(response.status)
+    }
+
+    return await response.json()
+  } catch (error) {
+    console.error('Error retrieving clients from LIMS:', error.message)
+    return h.response({ error: 'LIMS connectivity failure' })
+      .code(constants.HTTP_STATUS_BAD_GATEWAY)
+  }
+}
+
+const createSubmissionsHandler = (limsClient) => async (request, h) => {
+  let response
+  try {
+    response = await limsClient.request('submissions', {
+      method: 'GET',
+      query: request.query
+    })
+  } catch (error) {
+    const category = error?.name === 'TimeoutError' || error?.name === 'AbortError'
+      ? 'upstream_timeout'
+      : 'upstream_transport_error'
+    const result = createServiceError({
+      category,
+      message: category === 'upstream_timeout' ? 'The LIMS request timed out.' : 'The LIMS request could not be completed.',
+      correlationId: request.info.id
+    })
+    return h.response(result.body).code(result.statusCode)
+  }
+
+  let payload
+  try {
+    payload = await response.json()
+  } catch {
+    payload = null
+  }
+
+  const businessError = normalizeLimsBusinessError(payload, request.info.id)
+  if (businessError) {
+    return h.response(businessError.body).code(businessError.statusCode)
+  }
+
+  if (!response.ok || payload === null) {
+    const result = normalizeUpstreamStatus(
+      response.status,
+      request.info.id,
+      'LIMS could not complete the submission search.'
+    )
+    return h.response(result.body).code(result.statusCode)
+  }
+
+  return h.response(payload).code(constants.HTTP_STATUS_OK)
+}
+
+const createServer = async ({ config = loadConfig(), limsClient = createLimsClient(config.lims) } = {}) => {
+  const server = Hapi.server({
+    port: process.env.PORT
+  })
+
+  registerFailureLogging(server)
 
   await server.register([Inert])
   server.route({
@@ -65,79 +135,9 @@ const createServer = async ({ config = loadConfig(), limsClient = createLimsClie
   registerDraftRoutes(server, limsClient)
   registerSubmissionActionRoutes(server, limsClient)
 
-  server.route({
-    method: 'GET',
-    path: '/GetClients',
-    handler: async (_request, h) => {
-      const { LIMS_API_URL, LIMS_PVS_ID } = process.env
-      if (!LIMS_API_URL || !LIMS_PVS_ID) {
-        console.error('LIMS_API_URL and LIMS_PVS_ID must be configured to retrieve clients')
-        return h.response({ error: 'LIMS client lookup is not configured' })
-          .code(constants.HTTP_STATUS_INTERNAL_SERVER_ERROR)
-      }
+  server.route({ method: 'GET', path: '/GetClients', handler: getClientsHandler })
+  server.route({ method: 'GET', path: '/submissions', handler: createSubmissionsHandler(limsClient) })
 
-      try {
-        const query = new URLSearchParams({ pvsId: LIMS_PVS_ID, filter: '' })
-        const response = await fetch(`${LIMS_API_URL}/general/getClients?${query}`)
-        if (!response.ok) {
-          return h.response({ error: 'LIMS integration error' }).code(response.status)
-        }
-
-        return await response.json()
-      } catch (error) {
-        console.error('Error retrieving clients from LIMS:', error.message)
-        return h.response({ error: 'LIMS connectivity failure' })
-          .code(constants.HTTP_STATUS_BAD_GATEWAY)
-      }
-    }
-  })
-
-  server.route({
-    method: 'GET',
-    path: '/submissions',
-    handler: async (request, h) => {
-      let response
-      try {
-        response = await limsClient.request('submissions', {
-          method: 'GET',
-          query: request.query
-        })
-      } catch (error) {
-        const category = error?.name === 'TimeoutError' || error?.name === 'AbortError'
-          ? 'upstream_timeout'
-          : 'upstream_transport_error'
-        const result = createServiceError({
-          category,
-          message: category === 'upstream_timeout' ? 'The LIMS request timed out.' : 'The LIMS request could not be completed.',
-          correlationId: request.info.id
-        })
-        return h.response(result.body).code(result.statusCode)
-      }
-
-      let payload
-      try {
-        payload = await response.json()
-      } catch {
-        payload = null
-      }
-
-      const businessError = normalizeLimsBusinessError(payload, request.info.id)
-      if (businessError) {
-        return h.response(businessError.body).code(businessError.statusCode)
-      }
-
-      if (!response.ok || payload === null) {
-        const result = normalizeUpstreamStatus(
-          response.status,
-          request.info.id,
-          'LIMS could not complete the submission search.'
-        )
-        return h.response(result.body).code(result.statusCode)
-      }
-
-      return h.response(payload).code(constants.HTTP_STATUS_OK)
-    }
-  })
   return server
 }
 

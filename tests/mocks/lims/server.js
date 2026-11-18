@@ -1,12 +1,8 @@
 import { createServer } from 'node:http'
-import { timingSafeEqual } from 'node:crypto'
 
 const port = Number(process.env.PORT ?? 8500)
 const host = process.env.HOST ?? '127.0.0.1'
 const configuredPrefix = (process.env.LIMS_MOCK_PREFIX ?? '/LIMSRestAPi/').replace(/^\/+|\/+$/g, '')
-const username = process.env.LIMS_MOCK_USERNAME ?? process.env.LIMS_USERNAME ?? 'e2e-user'
-const password = process.env.LIMS_MOCK_PASSWORD ?? process.env.LIMS_PASSWORD ?? 'e2e-password'
-const expectedAuthorization = `Basic ${Buffer.from(`${username}:${password}`).toString('base64')}`
 const failureEndpoint = process.env.LIMS_MOCK_FAILURE_ENDPOINT
 const failureMode = process.env.LIMS_MOCK_FAILURE_MODE
 const failureDelayMs = Number(process.env.LIMS_MOCK_DELAY_MS ?? 0)
@@ -82,13 +78,6 @@ const readJson = async (request) => {
     chunks.push(chunk)
   }
   return JSON.parse(Buffer.concat(chunks).toString('utf8'))
-}
-
-const isAuthorized = (authorization) => {
-  if (typeof authorization !== 'string' || authorization.length !== expectedAuthorization.length) {
-    return false
-  }
-  return timingSafeEqual(Buffer.from(authorization), Buffer.from(expectedAuthorization))
 }
 
 const resetState = () => {
@@ -218,10 +207,6 @@ const server = createServer(async (request, response) => {
   if (url.pathname === '/__admin/reset' && request.method === 'POST') {
     resetState()
     return sendJson(response, 200, { status: 'RESET' })
-  }
-
-  if (!isAuthorized(request.headers.authorization)) {
-    return sendJson(response, 401, { message: 'Unauthorized' })
   }
 
   const prefixPath = `/${configuredPrefix}/`

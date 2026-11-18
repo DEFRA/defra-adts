@@ -1,13 +1,9 @@
 import { afterEach, describe, expect, jest, test } from '@jest/globals'
 import { createLimsClient } from '../../src/clients/lims-client.js'
 
-const credentials = `Basic ${Buffer.from('service-user:service-password').toString('base64')}`
-
 const createClient = (fetchImpl, overrides = {}) => createLimsClient({
   baseUrl: 'https://lims.example.test',
   prefix: '/lims/api',
-  username: 'service-user',
-  password: 'service-password',
   timeoutMs: 1000,
   fetchImpl,
   ...overrides
@@ -18,7 +14,7 @@ describe('LIMS client', () => {
     jest.restoreAllMocks()
   })
 
-  test('constructs the configured URL and sends Basic Authentication without following redirects', async () => {
+  test('constructs the configured URL and sends no Authorization header without following redirects', async () => {
     const fetchImpl = jest.fn().mockResolvedValue(new Response('{"ok":true}', { status: 200 }))
     const client = createClient(fetchImpl)
 
@@ -31,7 +27,7 @@ describe('LIMS client', () => {
     expect(fetchImpl).toHaveBeenCalledTimes(1)
     const [url, options] = fetchImpl.mock.calls[0]
     expect(String(url)).toBe('https://lims.example.test/lims/api/general/getProducts?filter=mastitis&species=CATTLE')
-    expect(options.headers.authorization).toBe(credentials)
+    expect(options.headers).not.toHaveProperty('authorization')
     expect(options.redirect).toBe('manual')
     expect(options.signal).toBeInstanceOf(AbortSignal)
     expect(options).not.toHaveProperty('dispatcher')
@@ -81,11 +77,9 @@ describe('LIMS client', () => {
     expect(() => createClient(fetchImpl, { baseUrl: 'https://lims.example.test/?query=1' })).toThrow(/HTTP\(S\) origin/i)
   })
 
-  test('requires credentials, a positive integer timeout, and a fetch implementation', () => {
+  test('requires a positive integer timeout and a fetch implementation', () => {
     const fetchImpl = jest.fn()
 
-    expect(() => createClient(fetchImpl, { username: '' })).toThrow(/credentials are required/i)
-    expect(() => createClient(fetchImpl, { password: '' })).toThrow(/credentials are required/i)
     expect(() => createClient(fetchImpl, { timeoutMs: 0 })).toThrow(/positive integer/i)
     expect(() => createClient(null)).toThrow(/fetch implementation is required/i)
   })

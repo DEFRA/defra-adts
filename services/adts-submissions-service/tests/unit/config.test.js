@@ -4,8 +4,6 @@ import { loadConfig } from '../../src/config.js'
 const validEnvironment = {
   LIMS_BASE_URL: 'https://lims.example.test',
   LIMS_PREFIX: '/lims/api',
-  LIMS_USERNAME: 'service-user',
-  LIMS_PASSWORD: 'do-not-leak-this-secret',
   LIMS_TIMEOUT_MS: '10000'
 }
 
@@ -16,17 +14,16 @@ describe('service configuration', () => {
     expect(config.lims).toEqual({
       baseUrl: 'https://lims.example.test',
       prefix: 'lims/api',
-      username: 'service-user',
-      password: 'do-not-leak-this-secret',
       timeoutMs: 10000,
       allowHttp: false
     })
   })
 
-  test('requires origin and credentials', () => {
+  test('requires the LIMS origin and does not require credentials', () => {
     expect(() => loadConfig({})).toThrow(/LIMS_BASE_URL/)
-    expect(() => loadConfig({ ...validEnvironment, LIMS_USERNAME: '' })).toThrow(/LIMS_USERNAME/)
-    expect(() => loadConfig({ ...validEnvironment, LIMS_PASSWORD: '' })).toThrow(/LIMS_PASSWORD/)
+    const { lims } = loadConfig(validEnvironment)
+    expect(lims).not.toHaveProperty('username')
+    expect(lims).not.toHaveProperty('password')
   })
 
   test('rejects invalid URLs and non-positive or non-integer deadlines', () => {

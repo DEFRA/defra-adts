@@ -11,12 +11,10 @@ The service validates its LIMS settings at startup:
 | `PORT` | HTTP listener port inside the container. |
 | `LIMS_BASE_URL` | Configured LIMS origin only; credentials, query strings, and fragments are not accepted in the URL. |
 | `LIMS_PREFIX` | Environment-specific LIMS API prefix. |
-| `LIMS_USERNAME` | LIMS Basic Authentication username, injected at runtime. |
-| `LIMS_PASSWORD` | LIMS Basic Authentication password, injected at runtime. |
 | `LIMS_TIMEOUT_MS` | Per-request LIMS deadline in milliseconds; defaults to `10000`. |
 | `LIMS_ALLOW_HTTP` | Must be `true` to permit an HTTP LIMS origin under the temporary exception below. |
 
-Do not commit credential values or include them in logs, URLs, test fixtures used outside isolated local tests, or command history. The production secret store and IAM permissions for secret retrieval are deployment responsibilities and must be confirmed before release.
+The LIMS API has no username/password authentication and relies on network security only, so the service sends no credentials or `Authorization` header to LIMS and has no LIMS secrets to configure. LIMS access must be restricted by network controls, which are a deployment responsibility to confirm before release.
 
 ## Network Trust Boundary
 
@@ -24,7 +22,7 @@ Backend-to-Submission-Service traffic must use HTTPS on the approved private AWS
 
 ## Temporary LIMS HTTP Exception
 
-The current production LIMS endpoint uses HTTP. HTTP does not encrypt credentials or submission data. Set `LIMS_ALLOW_HTTP=true` only for the configured LIMS origin while this explicitly accepted temporary exception is active. The exception has no confirmed end date and must be removed when the LIMS client enables HTTPS.
+The current production LIMS endpoint uses HTTP. HTTP does not encrypt submission data. Set `LIMS_ALLOW_HTTP=true` only for the configured LIMS origin while this explicitly accepted temporary exception is active. The exception has no confirmed end date and must be removed when the LIMS client enables HTTPS.
 
 When LIMS HTTPS is enabled, set `LIMS_ALLOW_HTTP=false`; the shared client uses HTTPS with certificate and hostname validation enabled. If LIMS uses a private CA, provide it through the approved runtime trust store or `NODE_EXTRA_CA_CERTS`. Never disable certificate validation, silently downgrade HTTPS, or follow redirects to a different origin.
 

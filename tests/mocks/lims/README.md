@@ -7,10 +7,10 @@ This local-only HTTP server implements the observed legacy LIMS endpoints used b
 From the repository root, start the mock:
 
 ```sh
-LIMS_USERNAME=e2e-user LIMS_PASSWORD=e2e-password npm run mock:lims
+npm run mock:lims
 ```
 
-Defaults: bind `127.0.0.1:8500`, LIMS prefix `/LIMSRestAPi/`, Basic Authentication username/password `e2e-user` / `e2e-password`.
+Defaults: bind `127.0.0.1:8500`, LIMS prefix `/LIMSRestAPi/`. The mock performs no authentication, matching the LIMS API (network security only).
 
 In another terminal, start the Submission Service against it:
 
@@ -18,8 +18,6 @@ In another terminal, start the Submission Service against it:
 PORT=9182 \
 LIMS_BASE_URL=http://127.0.0.1:8500 \
 LIMS_PREFIX=/LIMSRestAPi/ \
-LIMS_USERNAME=e2e-user \
-LIMS_PASSWORD=e2e-password \
 LIMS_TIMEOUT_MS=2000 \
 LIMS_ALLOW_HTTP=true \
 npm start --prefix services/adts-submissions-service
@@ -31,11 +29,11 @@ The mock listens only on loopback by default. Override with `HOST` or `PORT` onl
 
 ## Verify
 
-Check mock health and an authenticated LIMS request:
+Check mock health and a LIMS request:
 
 ```sh
 curl http://127.0.0.1:8500/health
-curl -u e2e-user:e2e-password 'http://127.0.0.1:8500/LIMSRestAPi/general/getProducts?filter=mastitis'
+curl 'http://127.0.0.1:8500/LIMSRestAPi/general/getProducts?filter=mastitis'
 ```
 
 Check the service process and product route:
@@ -60,8 +58,6 @@ The reset endpoint is only exposed on the loopback-bound mock.
 | `HOST` | `127.0.0.1` | Bind address; keep loopback for local testing. |
 | `PORT` | `8500` | HTTP port. |
 | `LIMS_MOCK_PREFIX` | `/LIMSRestAPi/` | Prefix removed before matching legacy endpoint paths. |
-| `LIMS_MOCK_USERNAME` | `LIMS_USERNAME`, then `e2e-user` | Expected Basic Auth username. |
-| `LIMS_MOCK_PASSWORD` | `LIMS_PASSWORD`, then `e2e-password` | Expected Basic Auth password. |
 | `LIMS_MOCK_FAILURE_ENDPOINT` | unset | Exact relative endpoint where a failure should be injected, such as `submissions/confirmDraftSubmission`. |
 | `LIMS_MOCK_FAILURE_MODE` | unset | `http-500`, `http-503`, `invalid-json`, `business-error`, or `delay`. |
 | `LIMS_MOCK_DELAY_MS` | `3000` | Delay duration for `delay` mode; useful for timeout tests. |
@@ -71,7 +67,6 @@ Failure injection applies only when both endpoint and mode are configured. For e
 ```sh
 LIMS_MOCK_FAILURE_ENDPOINT=submissions/cancelSubmission \
 LIMS_MOCK_FAILURE_MODE=business-error \
-LIMS_USERNAME=e2e-user LIMS_PASSWORD=e2e-password \
 npm run mock:lims
 ```
 

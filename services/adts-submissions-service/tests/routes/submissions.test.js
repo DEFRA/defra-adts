@@ -20,8 +20,6 @@ describe('LIMS Backend Proxy - Network Mock Tests', () => {
       config: loadConfig({
         LIMS_BASE_URL: 'https://mock-lims.local',
         LIMS_PREFIX: 'api',
-        LIMS_USERNAME: 'test-user',
-        LIMS_PASSWORD: 'test-password',
         LIMS_TIMEOUT_MS: '1000'
       }),
       limsClient

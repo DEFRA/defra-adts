@@ -25,6 +25,9 @@
 - Q: How should the service handle the current production LIMS endpoint, which uses HTTP? → A: Treat HTTP as an explicit temporary exception until the LIMS client enables HTTPS; the schedule is unknown. Document the unencrypted transport risk and remove the exception when HTTPS is available.
 - Q: How should the Backend access the Submission Service in the initial release? → A: Use HTTPS on a private AWS network restricted to the Backend workload by network policy/security groups, with no request-level SigV4 check. IAM roles govern AWS resource access. Consider in-service request authentication in a future spec.
 
+### Session 2026-11-18
+
+- Q: How does the Submission Service authenticate to the LIMS API? → A: It does not. The LIMS API has no username/password authentication and relies on network security only. The service sends no credentials or authorization headers to LIMS and has no LIMS secrets to configure. The HTTP/HTTPS transport toggle (FR-011) is still required.
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Find and retrieve LIMS records (Priority: P1)
@@ -40,7 +43,7 @@ The Backend requests product, client, practice/PVS, submission identifier, and s
 1. **Given** LIMS is available and the Backend submits a valid product, client, PVS, submission-identifier, or submission search, **When** the Submission Service forwards the supported criteria, **Then** it returns the matching information while keeping LIMS parameter spelling differences internal.
 2. **Given** a valid PVS and submission identifier, **When** the Backend requests an editable draft or a previously submitted record, **Then** the service returns the corresponding submission information without conflating draft and submitted states.
 3. **Given** a valid draft identifier, **When** the Backend requests delivery or sample addresses, **Then** the service returns the addresses associated with that draft.
-4. **Given** the request is invalid or LIMS cannot fulfil it, **When** the Backend makes a lookup, **Then** it receives a consistent, actionable error that identifies the failure category without exposing credentials or sensitive request data.
+4. **Given** the request is invalid or LIMS cannot fulfil it, **When** the Backend makes a lookup, **Then** it receives a consistent, actionable error that identifies the failure category without exposing sensitive request data.
 5. **Given** the Backend sends a request using the agreed domain contract, **When** the Submission Service validates and maps it for LIMS, **Then** LIMS-specific endpoint names and parameter spellings are not exposed in the Backend contract.
 
 ### User Story 2 - Save, confirm, or cancel a submission (Priority: P1)
@@ -80,14 +83,14 @@ Service operators and the Backend can distinguish whether the Submission Service
 
 **Why this priority**: Independent operation and safe failure reporting are necessary for a reliable service boundary and for diagnosing LIMS outages.
 
-**Independent Test**: Test service health with LIMS both available and unavailable, and exercise validation, LIMS business-error, credential-rejection, timeout, transport-failure, and unavailable-dependency responses; inspect outputs and logs for sensitive data.
+**Independent Test**: Test service health with LIMS both available and unavailable, and exercise validation, LIMS business-error, timeout, transport-failure, and unavailable-dependency responses; inspect outputs and logs for sensitive data.
 
 **Acceptance Scenarios**:
 
 1. **Given** the Submission Service is running but LIMS is unavailable, **When** its process health is checked, **Then** process health remains distinct from the LIMS connectivity result.
 2. **Given** LIMS is reachable, **When** its connectivity health is checked, **Then** the service reports the LIMS result independently of its own process health.
-3. **Given** LIMS returns a business error, rejects credentials, times out, or cannot be reached, **When** an operation is requested, **Then** the Backend receives a predictable error category and meaningful non-secret details.
-4. **Given** requests are processed or fail, **When** operational information is recorded, **Then** credentials and sensitive request or response data are not exposed.
+3. **Given** LIMS returns a business error, times out, or cannot be reached, **When** an operation is requested, **Then** the Backend receives a predictable error category and meaningful non-secret details.
+4. **Given** requests are processed or fail, **When** operational information is recorded, **Then** sensitive request or response data are not exposed.
 5. **Given** the Submission Service is deployed, **When** a request originates outside the approved Backend private-network boundary, **Then** AWS network policy prevents the connection. The service does not establish per-request caller identity in the initial release; the Backend authorizes PVS access before making the request.
 
 ### Edge Cases
@@ -97,7 +100,7 @@ Service operators and the Backend can distinguish whether the Submission Service
 - LIMS creates a draft but its response containing the draft ID is lost; the service must not automatically repeat the initial create request.
 - LIMS returns an HTTP success response containing a business-level rejection, including cancellation errors; the service must preserve and report the rejection.
 - LIMS returns an incomplete or unexpected response, including a missing draft or submission identifier after a lifecycle action; the service must not claim success without the required evidence.
-- LIMS rejects credentials, presents an untrusted TLS certificate, times out, or is unavailable; the service must fail predictably and must not disable certificate validation.
+- LIMS presents an untrusted TLS certificate (when HTTPS is configured), times out, or is unavailable; the service must fail predictably and must not disable certificate validation.
 - The current production LIMS endpoint uses HTTP; this temporary exception is unencrypted, must be explicit and limited to the configured LIMS origin, and must be removed when the client enables HTTPS.
 - Search criteria include optional filters or endpoint-specific legacy parameter spellings; the service must preserve supported semantics without exposing those inconsistencies in its Backend contract.
 - A report or attachment is empty, unavailable, or returned in a format not yet confirmed by the Backend; the response must not misrepresent it as a valid report.
@@ -107,7 +110,7 @@ Service operators and the Backend can distinguish whether the Submission Service
 
 ### Functional Requirements
 
-- **FR-001**: The Submission Service MUST be independently deployable from the ADTS UI and Backend and MUST be the only ADTS component that communicates directly with LIMS. The Backend MUST NOT need LIMS credentials or direct LIMS access.
+- **FR-001**: The Submission Service MUST be independently deployable from the ADTS UI and Backend and MUST be the only ADTS component that communicates directly with LIMS. The Backend MUST NOT need direct LIMS access.
 - **FR-002**: The service MUST provide the Backend with a consistent, documented REST contract for the supported LIMS capabilities. LIMS-specific endpoint names and parameter spelling inconsistencies MUST remain internal to the service, while required identifiers and data semantics are preserved.
 - **FR-003**: The service MUST report LIMS connectivity separately from its own process health. Its operational health and readiness information MUST NOT make all service health checks depend on LIMS availability.
 - **FR-004**: The service MUST support searching LIMS products and clients, retrieving PVS/practice details, and searching submission identifiers and records using the supported filters.
@@ -116,9 +119,9 @@ Service operators and the Backend can distinguish whether the Submission Service
 - **FR-007**: The service MUST support confirming an existing draft and return the resulting submission identifier only when confirmation is established.
 - **FR-008**: The service MUST support requesting cancellation and accurately report the LIMS outcome, including business-level rejection details.
 - **FR-009**: The service MUST support retrieving the latest released results, charges, release summaries, and reports, preserving the content required by the current application in the agreed response representation.
-- **FR-010**: The service MUST distinguish validation errors, LIMS business-level errors, transport failures, timeouts, and unavailable dependencies. It MUST preserve meaningful LIMS error information for the Backend without exposing credentials or sensitive request data.
+- **FR-010**: The service MUST distinguish validation errors, LIMS business-level errors, transport failures, timeouts, and unavailable dependencies. It MUST preserve meaningful LIMS error information for the Backend without exposing sensitive request data.
 - **FR-011**: The service MUST use the current production LIMS HTTP endpoint only under an explicit, documented temporary security exception until the LIMS client enables HTTPS; the schedule is unknown. The exception MUST be limited to the configured LIMS origin, MUST NOT silently downgrade HTTPS or follow redirects to a different origin, and MUST have its unencrypted transport risk and mitigations accepted by an accountable risk owner before production release. When LIMS enables HTTPS, the service MUST use HTTPS and validate certificates and hostnames; it MUST NOT disable TLS verification.
-- **FR-012**: LIMS host/prefix and authentication MUST be configurable per environment. Secrets MUST NOT be embedded in source code or exposed in logs.
+- **FR-012**: LIMS host/prefix and the HTTP/HTTPS transport setting MUST be configurable per environment. The LIMS API has no username/password authentication and relies on network security only; the service MUST NOT send credentials or authorization headers to LIMS. Sensitive data MUST NOT be exposed in logs.
 - **FR-013**: The service MUST NOT automatically retry an initial draft-creation request when LIMS may have created the draft but the response containing its identifier was not received. It MUST report an indeterminate outcome and require reconciliation before a caller retries. The service MUST apply the same rule to ambiguous draft confirmation and cancellation. Timeout values and retry behaviour for other operations MUST be documented before implementation.
 - **FR-014**: Backend-to-Submission-Service traffic MUST use HTTPS over the approved private AWS network. AWS network policy/security groups MUST restrict service ingress to the Backend workload. The initial release MUST NOT claim per-request Backend identity verification; IAM roles apply to AWS resource permissions and are not an incoming HTTP auth check. The Backend MUST authorize PVS access before making a PVS-scoped request. In-service request authentication is deferred to a future spec. This network-only trust boundary MUST be documented and its residual risk accepted by an accountable risk owner before production release.
 - **FR-015**: Automated tests MUST cover successful requests, rejected inputs, LIMS business errors, transport/timeouts, and unavailable LIMS responses for the supported service behaviours.
@@ -140,9 +143,9 @@ Service operators and the Backend can distinguish whether the Submission Service
 
 - **SC-001**: In acceptance tests, 100% of supported lookup and retrieval scenarios return the expected LIMS identifiers and required application data, or the documented actionable error for the scenario.
 - **SC-002**: In acceptance tests, 100% of successful draft saves return the LIMS draft identifier, and 100% of confirmed drafts return the resulting submission identifier; failed or indeterminate actions are never reported as confirmed success.
-- **SC-003**: In the defined failure test suite, 100% of validation, business-error, transport, timeout, and unavailable-dependency cases are reported in their correct error category without credential or sensitive request data in responses or logs.
+- **SC-003**: In the defined failure test suite, 100% of validation, business-error, transport, timeout, and unavailable-dependency cases are reported in their correct error category without sensitive request data in responses or logs.
 - **SC-004**: Operators can distinguish service-process health from LIMS connectivity in all tested combinations using health results and operational monitoring; acceptance relies on the defined functional scenarios, with no feature-specific numeric availability or response-time targets.
-- **SC-005**: Reviewers can verify that the Backend uses the documented Submission Service contract for all LIMS operations and that no other ADTS component requires direct LIMS credentials or connectivity.
+- **SC-005**: Reviewers can verify that the Backend uses the documented Submission Service contract for all LIMS operations and that no other ADTS component requires direct LIMS connectivity.
 
 ## Assumptions
 

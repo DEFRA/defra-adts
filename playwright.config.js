@@ -41,9 +41,7 @@ webServer: [
     reuseExistingServer: !process.env.CI,
     timeout: 60 * 1000,
     env: {
-      PORT: '8500',
-      LIMS_USERNAME: 'e2e-user',
-      LIMS_PASSWORD: 'e2e-password'
+      PORT: '8500'
     }
   },
   {
@@ -55,8 +53,6 @@ webServer: [
       PORT: '3100',
       LIMS_BASE_URL: 'http://localhost:8500',
       LIMS_PREFIX: '/LIMSRestAPi/',
-      LIMS_USERNAME: 'e2e-user',
-      LIMS_PASSWORD: 'e2e-password',
       LIMS_TIMEOUT_MS: '1000',
       LIMS_ALLOW_HTTP: 'true',
       LIMS_API_URL: 'http://localhost:3300',

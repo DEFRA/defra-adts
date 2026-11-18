@@ -20,8 +20,6 @@ const validateRelativePath = (path) => {
   }
 }
 
-const isNonEmptyString = (value) => typeof value === 'string' && value.length > 0
-
 const isPlainOrigin = (base) =>
   ['http:', 'https:'].includes(base.protocol) && !(base.username || base.password || base.search || base.hash)
 
@@ -35,12 +33,8 @@ const validateBaseUrl = (base, allowHttp) => {
   }
 }
 
-const validateClientOptions = ({ base, username, password, timeoutMs, allowHttp, fetchImpl }) => {
+const validateClientOptions = ({ base, timeoutMs, allowHttp, fetchImpl }) => {
   validateBaseUrl(base, allowHttp)
-
-  if (!isNonEmptyString(username) || !isNonEmptyString(password)) {
-    throw new TypeError('LIMS credentials are required')
-  }
 
   if (!Number.isSafeInteger(timeoutMs) || timeoutMs <= 0) {
     throw new TypeError('LIMS timeout must be a positive integer in milliseconds')
@@ -62,21 +56,17 @@ const appendQuery = (url, query) => {
 export const createLimsClient = ({
   baseUrl,
   prefix = '',
-  username,
-  password,
   timeoutMs,
   allowHttp = false,
   fetchImpl = globalThis.fetch
 }) => {
   const base = new URL(baseUrl)
-  validateClientOptions({ base, username, password, timeoutMs, allowHttp, fetchImpl })
+  validateClientOptions({ base, timeoutMs, allowHttp, fetchImpl })
 
   const normalizedPrefix = normalizePath(prefix)
   if (normalizedPrefix) {
     validateRelativePath(normalizedPrefix)
   }
-  const fromString = Buffer.from(`${username}:${password}`).toString('base64')
-  const authorization = `Basic ${fromString}`
 
   const request = async (path, { method = 'GET', query, body, headers = {} } = {}) => {
     validateRelativePath(path)
@@ -93,8 +83,7 @@ export const createLimsClient = ({
 
     const requestHeaders = {
       accept: 'application/json',
-      ...headers,
-      authorization
+      ...headers
     }
 
     let requestBody

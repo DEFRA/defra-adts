@@ -58,15 +58,15 @@ The legacy evidence does not establish LIMS validation rules, failure status/bod
 
 **Alternatives considered**: In-service SigV4 verification (deferred to a future spec); API Gateway (explicitly out of scope per user direction); security-group/network trust alone for initial scope (selected, with residual risk documented); static shared tokens (rejected).
 
-**Release gate**: Confirm the private network route, security-group ingress restricted to the Backend workload, HTTPS termination, IAM roles for service AWS resource access, and runtime secret injection. The residual absence of per-request caller identity must be documented and accepted by an accountable risk owner before production release. In-service authentication requires a future spec.
+**Release gate**: Confirm the private network route, security-group ingress restricted to the Backend workload, HTTPS termination, and IAM roles for service AWS resource access. The residual absence of per-request caller identity must be documented and accepted by an accountable risk owner before production release. In-service authentication requires a future spec.
 
-### 5. Use configured LIMS credentials and track the HTTP exception
+### 5. Configure the LIMS origin with an HTTP/HTTPS toggle; LIMS has no authentication
 
-**Decision**: Configure the LIMS origin and prefix per environment and retrieve LIMS credentials from the approved runtime secret provider. Current production uses HTTP under the explicit temporary exception in FR-011; this transport is unencrypted, has no known HTTPS enablement date, and must be limited to the configured LIMS origin. Do not silently downgrade HTTPS or follow redirects to another origin. When the LIMS client enables HTTPS, require normal certificate and hostname verification and trust a custom CA only through approved runtime configuration. Never disable verification or log credentials, authorization headers, full request bodies, or sensitive response bodies.
+**Decision**: Configure the LIMS origin and prefix per environment. The LIMS API has no username/password authentication and relies on network security only, so the service sends no credentials or `Authorization` header to LIMS and has no LIMS secrets to configure. Current production uses HTTP under the explicit temporary exception in FR-011; this transport is unencrypted, has no known HTTPS enablement date, and must be limited to the configured LIMS origin. Do not silently downgrade HTTPS or follow redirects to another origin. When the LIMS client enables HTTPS, require normal certificate and hostname verification and trust a custom CA only through approved runtime configuration. Never disable verification or log full request bodies or sensitive response bodies.
 
-**Rationale**: The reference documents legacy Basic Authentication and explicitly identifies disabled certificate validation as a defect. The user confirmed that the current production LIMS endpoint is HTTP and that HTTPS will be enabled in the future, with no schedule currently known. No production secret-injection pattern is present in the repository.
+**Rationale**: The user clarified (2026-11-18) that the LIMS API has no username/password authentication and that access is controlled by network security only. The reference's legacy Basic Authentication does not apply. The reference also identifies disabled certificate validation as a defect. The user confirmed that the current production LIMS endpoint is HTTP and that HTTPS will be enabled in the future, with no schedule currently known, so the HTTP/HTTPS toggle remains necessary.
 
-**Alternatives considered**: Copy the legacy disabled verification (rejected); silently treat HTTP as encrypted (rejected); embed secrets or include them in URLs (rejected); invent a production secret-store mapping without runtime manifests (deferred to platform integration).
+**Alternatives considered**: Copy the legacy disabled verification (rejected); silently treat HTTP as encrypted (rejected); send Basic Authentication or any credentials to LIMS (rejected: LIMS has no authentication); rely on the network boundary alone for LIMS access (selected, with the residual risk documented).
 
 **Exception condition**: Before production release, an accountable risk owner must accept the unencrypted HTTP transport risk and record mitigations. The exception must be reviewed until HTTPS is available, then removed and replaced with verified TLS; no date is assumed.
 
@@ -100,7 +100,7 @@ The legacy evidence does not establish LIMS validation rules, failure status/bod
 
 ### 9. Separate process health, readiness, and LIMS connectivity
 
-**Decision**: Keep `/health` as a process-only probe; provide readiness that checks service configuration/startup dependencies without requiring LIMS; expose a separate LIMS connectivity check using configured host, credentials, TLS, and a bounded deadline. Return an unavailable status for failed LIMS connectivity without changing process health.
+**Decision**: Keep `/health` as a process-only probe; provide readiness that checks service configuration/startup dependencies without requiring LIMS; expose a separate LIMS connectivity check using configured host, prefix, TLS, and a bounded deadline. Return an unavailable status for failed LIMS connectivity without changing process health.
 
 **Rationale**: Existing `/health` is process-only, but `/connection_health` accepts caller-supplied protocol/host/port and returns failures with HTTP 200. The feature requires health checks not to collapse service and LIMS state.
 
@@ -123,7 +123,7 @@ The non-PVS-scoped Backend `GET /v1/products` proxy can proceed and is implement
 ## Open Release Gates
 
 1. Progressively obtain `Submission.php`, `LimsApiClient.php`, current lifecycle callers, and an authoritative LIMS contract or verified test environment; make each affected operation depend on its own verified contract task rather than gating all implementation.
-2. Confirm the private Backend-to-service route, security-group rules, Backend/service IAM roles and permissions for AWS resources, and runtime LIMS secret delivery/rotation. Record accountable risk acceptance for the network-only caller trust boundary. Configure trusted CA material only when the LIMS endpoint enables HTTPS.
+2. Confirm the private Backend-to-service route, security-group rules, Backend/service IAM roles and permissions for AWS resources, and network controls restricting LIMS access to the service. Record accountable risk acceptance for the network-only caller trust boundary. Configure trusted CA material only when the LIMS endpoint enables HTTPS.
 3. Before production release, record accountable risk acceptance and mitigations for the current unencrypted HTTP endpoint; remove this exception when the LIMS client enables HTTPS.
 4. Confirm LIMS reconciliation/idempotency support for a lost first-draft-create response and agree the operational reconciliation procedure.
 5. Confirm the hosting team's approved availability/latency objectives and request/payload limits; the feature defines no new numeric SLO.

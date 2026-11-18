@@ -14,8 +14,6 @@ describe('Submissions-service LIMS integration', () => {
     process.env.PORT = '3100'
     const config = loadConfig({
       LIMS_BASE_URL: 'https://mock-lims.local',
-      LIMS_USERNAME: 'test-user',
-      LIMS_PASSWORD: 'test-password',
       LIMS_TIMEOUT_MS: '1000'
     })
     fetch = jest.fn()

@@ -22,17 +22,17 @@ description: "Implementation tasks for the ADTS Submission Service"
 
 ## Phase 2: Foundational
 
-**Purpose**: Establish shared configuration, authentication, transport, error handling, and test utilities. These capabilities are needed by protected user-story routes.
+**Purpose**: Establish shared configuration, transport, error handling, and test utilities. These capabilities are needed by protected user-story routes.
 
-- [ ] T002 Confirm the private Backend-to-service HTTPS route, security-group/network policy restricted to the Backend workload, workload IAM roles for AWS resource permissions, LIMS secret injection/rotation, and health-probe policy. Record that no request-level SigV4 check or API Gateway is used in this release in `specs/003-submission-service/research.md` and `services/adts-submissions-service/README.md`. Record accountable risk acceptance and mitigations for both network-only caller trust and current production LIMS HTTP before release; no CA configuration is needed until LIMS enables HTTPS.
+- [ ] T002 Confirm the private Backend-to-service HTTPS route, security-group/network policy restricted to the Backend workload, workload IAM roles for AWS resource permissions, network controls restricting LIMS access (the LIMS API has no username/password authentication), and health-probe policy. Record that no request-level SigV4 check or API Gateway is used in this release in `specs/003-submission-service/research.md` and `services/adts-submissions-service/README.md`. Record accountable risk acceptance and mitigations for both network-only caller trust and current production LIMS HTTP before release; no CA configuration is needed until LIMS enables HTTPS.
 - [X] T003 Create reusable mocked-LIMS request/response and attempt-count helpers in `services/adts-submissions-service/tests/test-utils/lims.js`.
-- [X] T004 [P] Add environment configuration tests for missing/invalid LIMS origin, prefix, timeout, credentials, and explicit HTTP-exception settings in `services/adts-submissions-service/tests/unit/config.test.js`.
-- [X] T005 Implement validated environment configuration for LIMS origin/prefix, credentials, request deadline, and the explicit HTTP-exception flag in `services/adts-submissions-service/src/config.js`; leave platform identity configuration to T002/T007 once the hosting decision is supplied.
+- [X] T004 [P] Add environment configuration tests for missing/invalid LIMS origin, prefix, timeout, and explicit HTTP-exception settings (no LIMS username/password settings) in `services/adts-submissions-service/tests/unit/config.test.js`.
+- [X] T005 Implement validated environment configuration for LIMS origin/prefix, request deadline, and the explicit HTTP-exception flag in `services/adts-submissions-service/src/config.js`; leave platform identity configuration to T002/T007 once the hosting decision is supplied.
 - [X] T006 [P] Superseded for initial scope: record that no per-request SigV4 check is performed and that network policy/security groups are the Backend access boundary in `specs/003-submission-service/spec.md`.
 - [X] T007 Deferred to a future spec: do not add in-service SigV4 middleware in this release; record the possible future authentication extension in `specs/003-submission-service/research.md`.
-- [X] T008 [P] Add LIMS transport tests for URL/prefix construction, authentication, timeout abort, explicit HTTP exception scoping, HTTPS certificate/hostname validation, redirect rejection, and single-attempt behavior in `services/adts-submissions-service/tests/unit/lims-client.test.js`.
-- [X] T009 Implement the bounded, authenticated, single-attempt LIMS transport in `services/adts-submissions-service/src/clients/lims-client.js`; permit HTTP only for the configured LIMS origin while the FR-011 exception is active, and validate TLS whenever HTTPS is configured.
-- [X] T010 [P] Add normalized-error and redaction tests for validation, authentication, business, upstream HTTP, timeout, transport, unavailable, and outcome-unknown categories in `services/adts-submissions-service/tests/unit/errors.test.js`.
+- [X] T008 [P] Add LIMS transport tests for URL/prefix construction, absence of any `Authorization` header, timeout abort, explicit HTTP exception scoping, HTTPS certificate/hostname validation, redirect rejection, and single-attempt behavior in `services/adts-submissions-service/tests/unit/lims-client.test.js`.
+- [X] T009 Implement the bounded, unauthenticated, single-attempt LIMS transport that sends no credentials or `Authorization` header in `services/adts-submissions-service/src/clients/lims-client.js`; permit HTTP only for the configured LIMS origin while the FR-011 exception is active, and validate TLS whenever HTTPS is configured.
+- [X] T010 [P] Add normalized-error and redaction tests for validation, business, upstream HTTP, timeout, transport, unavailable, and outcome-unknown categories in `services/adts-submissions-service/tests/unit/errors.test.js`.
 - [X] T011 Implement stable error envelopes, safe allowlisted LIMS details, correlation IDs, and sensitive-data redaction in `services/adts-submissions-service/src/errors.js`.
 - [X] T012 Register domain routes, health routes, configuration, and shared error handling in `services/adts-submissions-service/src/app.js` without forwarding arbitrary caller-supplied LIMS paths or health-check destinations; do not add request-level SigV4 checks in this release.
 
@@ -92,14 +92,14 @@ description: "Implementation tasks for the ADTS Submission Service"
 
 **Goal**: Keep process health, readiness, LIMS connectivity, and safe diagnostics independently observable.
 
-**Independent Test**: Run the service with LIMS available and unavailable; verify process health/readiness separately, LIMS probe status, error categories, and that logs/response bodies contain no credentials or sensitive payloads.
+**Independent Test**: Run the service with LIMS available and unavailable; verify process health/readiness separately, LIMS probe status, error categories, and that logs/response bodies contain no sensitive payloads and that no `Authorization` header is sent to LIMS.
 
 - [X] T031 [P] [US4] Add health/readiness tests proving `/health` is process-only, `/ready` does not depend on LIMS, and the configured LIMS probe reports dependency failure separately in `services/adts-submissions-service/tests/routes/health.test.js`.
 - [X] T032 [US4] Implement process health, configuration readiness, and configured LIMS connectivity routes with bounded timeout and no caller-supplied destination in `services/adts-submissions-service/src/routes/health.js` and `services/adts-submissions-service/src/app.js`.
-- [X] T033 [P] [US4] Add route tests for invalid input, LIMS credential rejection, upstream HTTP errors, timeouts, transport failures, and unavailable LIMS in `services/adts-submissions-service/tests/routes/upstream-errors.test.js`; request-level Backend authentication is outside this release.
-- [X] T034 [US4] Add structured correlation-aware operational logging that excludes credentials, authorization headers, and sensitive request/response bodies in `services/adts-submissions-service/src/observability.js` and `services/adts-submissions-service/tests/unit/observability.test.js`.
-- [X] T035 [US4] Document the private HTTPS route and security-group boundary, the absence of request-level authentication in this release, IAM roles for AWS resource permissions, LIMS secret injection/rotation, the temporary production HTTP exception and risk acceptance, HTTPS CA trust when enabled, health probes, configuration, and reconciliation operations in `services/adts-submissions-service/README.md`.
-- [X] T036 [US4] Add cross-service integration coverage proving the Backend calls only the configured Submission Service URL, sends no LIMS credentials, and the service alone invokes the LIMS client in `services/adts-backend/tests/integration/submissions-service.integration.test.js`; local tests use loopback HTTP, while production must use the private HTTPS route.
+- [X] T033 [P] [US4] Add route tests for invalid input, upstream HTTP errors, timeouts, transport failures, and unavailable LIMS in `services/adts-submissions-service/tests/routes/upstream-errors.test.js`; request-level Backend authentication is outside this release.
+- [X] T034 [US4] Add structured correlation-aware operational logging that excludes authorization headers and sensitive request/response bodies in `services/adts-submissions-service/src/observability.js` and `services/adts-submissions-service/tests/unit/observability.test.js`.
+- [X] T035 [US4] Document the private HTTPS route and security-group boundary, the absence of request-level authentication in this release, IAM roles for AWS resource permissions, LIMS network-only access (no LIMS authentication), the temporary production HTTP exception and risk acceptance, HTTPS CA trust when enabled, health probes, configuration, and reconciliation operations in `services/adts-submissions-service/README.md`.
+- [X] T036 [US4] Add cross-service integration coverage proving the Backend calls only the configured Submission Service URL, sends no LIMS credentials or `Authorization` header, and the service alone invokes the LIMS client in `services/adts-backend/tests/integration/submissions-service.integration.test.js`; local tests use loopback HTTP, while production must use the private HTTPS route.
 
 **Checkpoint**: Operators can distinguish service and dependency health; Backend identity and safe failure diagnostics are verified end to end.
 
@@ -127,15 +127,18 @@ description: "Implementation tasks for the ADTS Submission Service"
 **Purpose**: Complete cross-story quality gates and verify the documented validation workflow.
 
 - [X] T043 [P] Update `services/adts-submissions-service/README.md` and `specs/003-submission-service/quickstart.md` with source-derived operation schemas, configuration names, test commands, and remaining LIMS/platform release gates.
-- [ ] T044 Run service lint, unit, integration, contract, and affected E2E tests in constitution order; achieve at least 90% coverage for new code and record results in `specs/003-submission-service/quickstart.md`.
-- [ ] T045 Run the completed quickstart from a clean local environment and record expected outcomes and any platform-only validation that remains in `specs/003-submission-service/quickstart.md`.
+- [X] T046 Remove LIMS username/password handling while keeping the HTTP/HTTPS toggle and HTTPS certificate/hostname validation: delete `LIMS_USERNAME`/`LIMS_PASSWORD` and the `auth` config block in `services/adts-submissions-service/src/config.js`, and the Basic `authorization` header in `services/adts-submissions-service/src/clients/lims-client.js`.
+- [X] T047 [P] Update service tests to drop LIMS credentials and assert no `Authorization` header is sent in `services/adts-submissions-service/tests/unit/config.test.js`, `services/adts-submissions-service/tests/unit/lims-client.test.js`, `services/adts-submissions-service/tests/contract/`, `services/adts-submissions-service/tests/routes/`, and `services/adts-submissions-service/tests/integration/lims.integration.test.js`.
+- [X] T048 [P] Remove LIMS credential checks from the mock and its env wiring in `tests/mocks/lims/server.js`, `tests/mocks/lims/README.md`, `playwright.config.js`, and `tests/api/specs/healthcheck.api.test.js`; remove credential wording from `services/adts-submissions-service/README.md`, `services/adts-backend/README.md`, `tests/e2e/README.md`, and `docs/submission-service-lims-api-reference.md` where it describes LIMS authentication as required by this service.
+- [ ] T049 Run service lint, unit, integration, contract, and affected E2E tests in constitution order; achieve at least 90% coverage for new code and record results in `specs/003-submission-service/quickstart.md`.
+- [ ] T050 Run the completed quickstart from a clean local environment and record expected outcomes and any platform-only validation that remains in `specs/003-submission-service/quickstart.md`.
 
 ## Dependencies and Execution Order
 
 ### Phase Dependencies
 
 - **Setup (Phase 1)**: No dependencies; update service test/coverage discovery.
-- **Foundational (Phase 2)**: Depends on Setup. Auth, configuration, outbound transport, errors, and test helpers block protected user-story routes.
+- **Foundational (Phase 2)**: Depends on Setup. Configuration, outbound transport, errors, and test helpers block protected user-story routes.
 - **User stories (Phases 3-6)**: Depend on shared foundation. For each operation, its contract-discovery task must complete before its contract tests and implementation. Other operations with verified contracts can proceed independently.
 - **Polish (Phase 7)**: Depends on all selected stories and platform release gates being assessed.
 
@@ -143,7 +146,7 @@ description: "Implementation tasks for the ADTS Submission Service"
 
 - **US1 (P1)**: Starts after Phase 2; read-operation contract discovery and implementation are grouped into independently verifiable product/client/PVS and submission/read/address slices.
 - **US2 (P1)**: Starts after Phase 2; draft schema discovery precedes draft mutation, while confirmation/cancellation contract discovery precedes their implementation. Backend-local drafts remain distinct.
-- **US4 (P1)**: Starts after Phase 2; health and operational checks can be validated independently of domain operations, while cross-service auth verification uses the Backend adapters from US1/US2/US3 when available.
+- **US4 (P1)**: Starts after Phase 2; health and operational checks can be validated independently of domain operations, while cross-service verification uses the Backend adapters from US1/US2/US3 when available.
 - **US3 (P2)**: Starts after Phase 2; results and report schemas are confirmed incrementally before their respective implementations. Backend adapters can follow service routes.
 - Stories may be staffed in parallel after Phase 2, subject to each operation's schema task and shared-file conflicts.
 
@@ -160,7 +163,7 @@ description: "Implementation tasks for the ADTS Submission Service"
 - In Phase 2, configuration, transport, and error tests can be prepared in parallel after the common test helper. No application-level SigV4 middleware is part of this release.
 - In US1, product/client/PVS/submission contract tests (T014, T017, T020) can be authored in parallel after their respective discovery tasks. Product and client/PVS implementation share `reference-data.js` and should be serialized; submission reads use a separate route module.
 - In US2, draft and confirmation/cancellation tests (T024, T027) can be authored in parallel after both discovery tasks; implementation should be coordinated where routes share files.
-- In US4, health tests (T031) and auth/error tests (T033) can be prepared in parallel after the shared middleware exists.
+- In US4, health tests (T031) and error tests (T033) can be prepared in parallel after the shared middleware exists.
 - In US3, result/charge tests (T038) and report/media tests (T040) can be authored in parallel after T037; implementation integration is coordinated where shared LIMS response helpers are changed.
 - Different user stories can proceed in parallel after foundational tasks if each operation's contract is verified and shared-file changes are coordinated.
 

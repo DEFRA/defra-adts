@@ -8,7 +8,7 @@ The current application constructs LIMS URLs as:
 
 `lims-api-url` + `lims-prefix` + relative endpoint path
 
-The host and prefix are environment-configured, so full URLs are not available from the tracked code. Requests use HTTP Basic Authentication with credentials from environment variables. **Security defect to correct:** the legacy shared client disables TLS certificate verification. The replacement must verify server certificates and configure the appropriate trusted CA chain if required.
+The host and prefix are environment-configured, so full URLs are not available from the tracked code. Requests have no authentication: the LIMS API relies on network security only, so the replacement sends no credentials. (The legacy PHP client used HTTP Basic Authentication; that is not carried over.) **Security defect to correct:** the legacy shared client disables TLS certificate verification. The replacement must verify server certificates and configure the appropriate trusted CA chain if required.
 
 The new ADTS architecture has UI, Backend and Submission Service containers. The Backend will call Submission Service REST endpoints; only the Submission Service may contact LIMS directly. The Backend-facing REST API has **not yet been designed** and should not be confused with the LIMS endpoint list below.
 

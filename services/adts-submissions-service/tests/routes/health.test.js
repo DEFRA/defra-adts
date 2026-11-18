@@ -19,8 +19,6 @@ describe('health endpoints', () => {
         PORT: '3000',
         LIMS_BASE_URL: 'https://lims.example.test',
         LIMS_PREFIX: 'api',
-        LIMS_USERNAME: 'service-user',
-        LIMS_PASSWORD: 'test-password',
         LIMS_TIMEOUT_MS: '1000'
       }),
       limsClient

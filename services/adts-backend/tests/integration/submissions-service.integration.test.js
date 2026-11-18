@@ -19,8 +19,6 @@ describe('Backend to Submission Service integration', () => {
     const config = loadConfig({
       LIMS_BASE_URL: 'https://lims.example.test',
       LIMS_PREFIX: 'api',
-      LIMS_USERNAME: 'service-user',
-      LIMS_PASSWORD: 'test-password',
       LIMS_TIMEOUT_MS: '1000'
     })
     const products = [{ productId: 'PC0203', name: 'Synthetic product', price: 1 }]

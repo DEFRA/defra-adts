@@ -118,7 +118,7 @@ jobs:
             MATRIX=$MATRIX"\"run-tests\": true,"
             MATRIX=$MATRIX"\"run-sonarqube-scan\": true,"
             MATRIX=$MATRIX"\"test-command\": \"npm run test:coverage && npm run test:integration\","
-            MATRIX=$MATRIX"\"build-command\": \"npm run build\""
+            MATRIX=$MATRIX"\"build-command\": \"npm run build\","
             MATRIX=$MATRIX"\"sonar-token\": \"SONAR_TOKEN\""
             MATRIX=$MATRIX"},"
           fi
@@ -134,7 +134,7 @@ jobs:
             MATRIX=$MATRIX"\"run-tests\": true,"
             MATRIX=$MATRIX"\"run-sonarqube-scan\": true,"
             MATRIX=$MATRIX"\"test-command\": \"npm run test:coverage && npm run test:integration && npm run test:contract && npm run test:api\","
-            MATRIX=$MATRIX"\"build-command\": \"npm run build\""
+            MATRIX=$MATRIX"\"build-command\": \"npm run build\","
             MATRIX=$MATRIX"\"sonar-token\": \"BACKEND_SONAR_TOKEN\""
             MATRIX=$MATRIX"},"
           fi
@@ -150,7 +150,7 @@ jobs:
             MATRIX=$MATRIX"\"run-tests\": true,"
             MATRIX=$MATRIX"\"run-sonarqube-scan\": true,"
             MATRIX=$MATRIX"\"test-command\": \"npm run test:coverage\","
-            MATRIX=$MATRIX"\"build-command\": \"npm run build\""
+            MATRIX=$MATRIX"\"build-command\": \"npm run build\","
             MATRIX=$MATRIX"\"sonar-token\": \"SUBMISSIONS_SONAR_TOKEN\""
             MATRIX=$MATRIX"}"
           fi

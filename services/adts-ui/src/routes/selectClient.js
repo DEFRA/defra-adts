@@ -1,5 +1,6 @@
 import Joi from 'joi'
-import { BAD_REQUEST_STATUS } from './submissionViewHelpers.js'
+import { BAD_GATEWAY_STATUS, BAD_REQUEST_STATUS } from './submissionViewHelpers.js'
+import { DRAFT_SAVE_ERROR, persistSubmissionDraft } from './submissionDrafts.js'
 import {
   animalAddressFieldNames,
   animalAddressPageName,
@@ -400,14 +401,27 @@ const createPostHandler = (submissionFormStateKey) => async (request, h) => {
     return renderClientSelectionError(h, submissionFormState, clients, counties, payload, selectedClient)
   }
 
-  request.yar.set(submissionFormStateKey, {
-    ...submissionFormState,
-    formData: {
-      ...formData,
-      clientDetails: buildClientDetails(payload, selectedClient, selectedAnimalAddress, savedClientDetails)
-    }
-  })
-  request.yar.touch()
+  const updatedFormData = {
+    ...formData,
+    clientDetails: buildClientDetails(payload, selectedClient, selectedAnimalAddress, savedClientDetails)
+  }
+  const saved = await persistSubmissionDraft(
+    request,
+    submissionFormStateKey,
+    'clientDetails',
+    updatedFormData
+  )
+
+  if (!saved) {
+    const view = renderClientDetailsPage(
+      h,
+      { ...submissionFormState, formData: updatedFormData },
+      clients,
+      counties,
+      { saveError: DRAFT_SAVE_ERROR }
+    )
+    return view.code(BAD_GATEWAY_STATUS)
+  }
 
   return h.redirect(`/${nextPageName}`)
 }
@@ -416,7 +430,8 @@ const getStartRoute = (submissionFormStateKey) => ({
   method: 'GET',
   path: `/${pageName}/start`,
   handler: (request, h) => {
-    request.yar.set(submissionFormStateKey, {})
+    const submissionType = request.query.type === 'healthy' ? 'healthy' : 'sick'
+    request.yar.set(submissionFormStateKey, { formData: { submissionType } })
     request.yar.touch()
     return h.redirect(`/${pageName}`)
   }

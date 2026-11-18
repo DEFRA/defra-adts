@@ -11,11 +11,13 @@ jest.unstable_mockModule('@aws-sdk/lib-dynamodb', () => ({
   DynamoDBDocumentClient: { from: documentClientFromMock }
 }))
 
-const { createDocumentClient, referenceDataTable } = await import('../../src/data/dynamo.js')
+const { createDocumentClient, referenceDataTable, submissionsTable } =
+  await import('../../src/data/dynamo.js')
 const originalEnvironment = {
   AWS_REGION: process.env.AWS_REGION,
   DYNAMODB_ENDPOINT: process.env.DYNAMODB_ENDPOINT,
-  REFERENCE_DATA_TABLE: process.env.REFERENCE_DATA_TABLE
+  REFERENCE_DATA_TABLE: process.env.REFERENCE_DATA_TABLE,
+  SUBMISSIONS_TABLE: process.env.SUBMISSIONS_TABLE
 }
 
 describe('DynamoDB client configuration', () => {
@@ -57,5 +59,13 @@ describe('DynamoDB client configuration', () => {
 
     process.env.REFERENCE_DATA_TABLE = 'custom-reference-data'
     expect(referenceDataTable()).toBe('custom-reference-data')
+  })
+
+  test('uses the default submissions table unless overridden', () => {
+    delete process.env.SUBMISSIONS_TABLE
+    expect(submissionsTable()).toBe('adts-submissions')
+
+    process.env.SUBMISSIONS_TABLE = 'custom-submissions-table'
+    expect(submissionsTable()).toBe('custom-submissions-table')
   })
 })

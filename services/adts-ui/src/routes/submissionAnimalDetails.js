@@ -5,6 +5,7 @@ import {
   loadClientSummary,
   safeLoad
 } from './submissionViewHelpers.js'
+import { DRAFT_SAVE_ERROR, persistSubmissionDraft } from './submissionDrafts.js'
 
 const pageName = 'submission-02-animal-details'
 const speciesPageName = 'submission-02-species'
@@ -191,7 +192,8 @@ const renderAnimalDetails = async (h, submissionFormState, {
   details,
   values,
   errors = {},
-  detailsError
+  detailsError,
+  saveError
 }) => {
   const clientSummaryResult = await loadClientSummary(submissionFormState)
   const { species } = submissionFormState.formData.animalDetails
@@ -205,6 +207,7 @@ const renderAnimalDetails = async (h, submissionFormState, {
     animalDetailsUnavailable: Boolean(detailsError),
     values,
     errors,
+    saveError,
     ...(details ? buildFields(details, values, errors) : {})
   })
 
@@ -214,6 +217,10 @@ const renderAnimalDetails = async (h, submissionFormState, {
 
   if (Object.keys(errors).length > 0) {
     return view.code(BAD_REQUEST_STATUS)
+  }
+
+  if (saveError) {
+    return view.code(BAD_GATEWAY_STATUS)
   }
 
   return view
@@ -303,11 +310,24 @@ const postAnimalDetails = async (request, h, submissionFormStateKey) => {
   }
 
   const animalDetails = buildAnimalDetails(submissionFormState, submittedValues)
-  request.yar.set(submissionFormStateKey, {
-    ...submissionFormState,
-    formData: { ...submissionFormState.formData, animalDetails }
-  })
-  request.yar.touch()
+  const updatedFormData = { ...submissionFormState.formData, animalDetails }
+  const saved = await persistSubmissionDraft(
+    request,
+    submissionFormStateKey,
+    'animalDetails',
+    updatedFormData
+  )
+
+  if (!saved) {
+    return renderAnimalDetails(h, {
+      ...submissionFormState,
+      formData: updatedFormData
+    }, {
+      details: result.data,
+      values: submittedValues,
+      saveError: DRAFT_SAVE_ERROR
+    })
+  }
 
   return h.redirect(`/${nextPageName}`)
 }

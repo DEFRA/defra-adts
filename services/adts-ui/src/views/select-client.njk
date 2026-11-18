@@ -6,9 +6,10 @@
 {% from "govuk/components/input/macro.njk" import govukInput %}
 {% from "govuk/components/button/macro.njk" import govukButton %}
 {% from "govuk/components/error-summary/macro.njk" import govukErrorSummary %}
+{% from "govuk/components/notification-banner/macro.njk" import govukNotificationBanner %}
 {% from "macros/submissionProgress.njk" import submissionProgress %}
 
-{% block pageTitle %}{% if selectionError or errorList.length %}Error: {% endif %}Client details – ADTS{% endblock %}
+{% block pageTitle %}{% if selectionError or errorList.length or saveError %}Error: {% endif %}Client details – ADTS{% endblock %}
 
 {% block head %}
   <link rel="stylesheet" href="/assets/css/application.css">
@@ -35,6 +36,14 @@
   </div>
 
   {{ submissionProgress(1) }}
+
+  {% if saveError %}
+    {{ govukNotificationBanner({
+      type: "important",
+      titleText: "Important",
+      text: saveError
+    }) }}
+  {% endif %}
 
   {% if errorList.length %}
     {{ govukErrorSummary({

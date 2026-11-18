@@ -19,7 +19,7 @@
 **Purpose**: Implement shared prerequisites used by the submission and draft journeys. User-story implementation depends on these owner-safe backend and UI-to-backend boundaries.
 
 - [ ] T004 Implement trusted-principal extraction and reject draft requests without an authenticated principal in `services/adts-backend/src/app.js` and `services/adts-backend/src/routes/drafts.js`; cover the guard in `services/adts-backend/tests/routes/drafts.test.js`.
-- [ ] T005 [P] Implement backend-owned draft persistence for backend-generated `draftId`, trusted `ownerId`, allowlisted `lastSavedPage`, complete `formData`, lifecycle status, timestamps, and monotonic revision/conditional writes in `services/adts-backend/src/client/drafts.js`; cover ownership, revision conflicts, and storage errors in `services/adts-backend/tests/unit/drafts.test.js`.
+- [X] T005 [P] Implement backend-owned draft persistence for backend-generated `draftId`, trusted `ownerId`, allowlisted `lastSavedPage`, complete `formData`, lifecycle status, timestamps, and monotonic revision/conditional writes in `services/adts-backend/src/client/drafts.js`; cover ownership, revision conflicts, and storage errors in `services/adts-backend/tests/unit/drafts.test.js`.
 - [ ] T006 Expose create/update, list, and owner-scoped get-draft operations through `services/adts-backend/src/routes/drafts.js` and register the routes in `services/adts-backend/src/app.js`; cover authorization, validation, not-found, and dependency failures in `services/adts-backend/tests/routes/drafts.test.js`.
 - [ ] T007 [P] Implement typed UI wrappers for the documented draft and lookup backend methods in `services/adts-ui/src/client/all.js`; propagate non-success responses instead of returning empty success-shaped data and cover responses/errors in `services/adts-ui/tests/unit/client-all.test.js`.
 - [ ] T008 Add shared submission page keys, complete-snapshot validation boundary, and stage ordering support in `services/adts-ui/src/routes/submission.js` and `services/adts-ui/src/app.js`; verify route registration and allowlisted page keys in `services/adts-ui/tests/unit/app.test.js`.
@@ -61,7 +61,7 @@
 
 ### Implementation
 
-- [ ] T019 Add an explicit save-draft action that persists an incomplete full snapshot without enforcing submit-only required fields in `services/adts-ui/src/routes/submission.js` and the submission stage Nunjucks views; update Yar only after backend confirmation and cover save success/failure in `services/adts-ui/tests/routes/submission-drafts.test.js`.
+- [X] T019 Persist the complete validated snapshot on every successful Continue in the implemented submission stage routes, without requiring later-stage answers; update Yar only after backend confirmation, block progression on save failure, and cover save success/failure in `services/adts-ui/tests/routes/`.
 - [ ] T020 [P] Implement a user's draft-list page and navigation entry in `services/adts-ui/src/routes/drafts.js` and `services/adts-ui/src/views/drafts.njk`; show actionable service errors rather than an empty list on lookup failure and cover the page in `services/adts-ui/tests/routes/drafts.test.js`.
 - [ ] T021 Implement draft loading into a new UI session and redirect to the backend-provided allowlisted saved page in `services/adts-ui/src/routes/drafts.js`; restore the full snapshot/revision, prevent cross-owner access, and cover resume behavior in `services/adts-ui/tests/routes/drafts.test.js`.
 

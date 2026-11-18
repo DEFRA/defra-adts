@@ -24,6 +24,12 @@ const jsonResponse = (body) => new Response(JSON.stringify(body), {
 })
 
 const routeBackend = ({ clients = DEFAULT_CLIENTS, counties = DEFAULT_COUNTIES } = {}) => async (requestUrl) => {
+  if (requestUrl === 'http://localhost:3200/drafts') {
+    return jsonResponse({
+      draftId: '123e4567-e89b-12d3-a456-426614174000',
+      revision: 1
+    })
+  }
   if (requestUrl === 'http://localhost:3200/GetClients') return jsonResponse(clients)
   if (requestUrl === 'http://localhost:3200/GetCounties') return jsonResponse(counties)
   throw new Error(`Unexpected backend request: ${requestUrl}`)
@@ -112,9 +118,69 @@ describe('Submission client details page', () => {
       county: '',
       postcode: ''
     })
+    expect(revisitResponse.request.response.source.context.submissionFormState).toMatchObject({
+      draftId: '123e4567-e89b-12d3-a456-426614174000',
+      draftRevision: 1
+    })
+    const saveRequest = globalThis.fetch.mock.calls.find(([requestUrl]) =>
+      requestUrl === 'http://localhost:3200/drafts'
+    )
+    expect(JSON.parse(saveRequest[1].body)).toMatchObject({
+      lastSavedPage: 'clientDetails',
+      formData: {
+        clientDetails: {
+          clientId: '101',
+          name: 'Acme Farm'
+        }
+      }
+    })
     expect(revisitResponse.payload).toContain('<option value="101" selected>Acme Farm</option>')
     expect(revisitResponse.payload).toContain('data-default-value="Acme Farm"')
     expect(revisitResponse.payload).toMatch(/data-client-edit-button\s*>Edit<\/button>/)
+  })
+
+  test.each([
+    ['/start', 'sick'],
+    ['/start?type=sick', 'sick'],
+    ['/start?type=healthy', 'healthy'],
+    ['/start?type=other', 'sick']
+  ])('starting via %s saves the draft with submission type %s', async (path, expectedType) => {
+    const started = await server.inject({ method: 'GET', url: `${url}${path}` })
+    expect(started.statusCode).toBe(302)
+    expect(globalThis.fetch).not.toHaveBeenCalledWith('http://localhost:3200/drafts', expect.anything())
+
+    await server.inject({
+      method: 'POST',
+      url,
+      headers: { cookie: getCookieHeader(started) },
+      payload: { clientId: '101', animalsAtClientAddress: 'yes' }
+    })
+
+    const saveRequest = globalThis.fetch.mock.calls.find(([requestUrl]) =>
+      requestUrl === 'http://localhost:3200/drafts'
+    )
+    expect(JSON.parse(saveRequest[1].body).formData.submissionType).toBe(expectedType)
+  })
+
+  test('does not advance when the backend cannot save the draft', async () => {
+    jest.spyOn(console, 'error').mockImplementation(() => {})
+    globalThis.fetch.mockImplementation(async (requestUrl) => {
+      if (requestUrl === 'http://localhost:3200/drafts') {
+        return new Response('Unavailable', { status: 502 })
+      }
+      return routeBackend()(requestUrl)
+    })
+
+    const response = await server.inject({
+      method: 'POST',
+      url,
+      payload: { clientId: '101' }
+    })
+
+    expect(response.statusCode).toBe(502)
+    expect(response.headers.location).toBeUndefined()
+    expect(response.payload).toContain('We could not save your draft')
+    expect(response.request.response.source.context.submissionFormState.draftId).toBeUndefined()
   })
 
   test('renders the animal location question with a separate create-address link', async () => {

@@ -54,6 +54,12 @@ describe('Submission animal details page', () => {
   beforeEach(() => {
     detailsResponses = { 2: sheepDetails, 4: goatDetails }
     jest.spyOn(globalThis, 'fetch').mockImplementation(async (requestUrl) => {
+      if (requestUrl === 'http://localhost:3200/drafts') {
+        return new Response(JSON.stringify({
+          draftId: '123e4567-e89b-12d3-a456-426614174000',
+          revision: 1
+        }), { status: 201 })
+      }
       if (requestUrl === 'http://localhost:3200/GetSpecies') {
         return new Response(JSON.stringify([
           { speciesId: 2, name: 'Sheep' },
@@ -198,6 +204,21 @@ describe('Submission animal details page', () => {
       numberOfAnimals: 1,
       ageCategory: 'lamb',
       purpose: 'meat'
+    })
+    const saveRequest = globalThis.fetch.mock.calls
+      .filter(([requestUrl]) => requestUrl === 'http://localhost:3200/drafts')
+      .at(-1)
+    expect(JSON.parse(saveRequest[1].body)).toMatchObject({
+      lastSavedPage: 'animalDetails',
+      formData: {
+        animalDetails: {
+          speciesId: '2',
+          species: 'Sheep',
+          numberOfAnimals: 1,
+          ageCategory: 'lamb',
+          purpose: 'meat'
+        }
+      }
     })
   })
 

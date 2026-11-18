@@ -5,6 +5,7 @@ import {
   loadClientSummary,
   safeLoad
 } from './submissionViewHelpers.js'
+import { DRAFT_SAVE_ERROR, persistSubmissionDraft } from './submissionDrafts.js'
 
 const pageName = 'submission-02-species'
 const nextPageName = 'submission-02-animal-details'
@@ -35,7 +36,11 @@ const findSelectedSpecies = async (speciesName, errors) => {
   return matchedSpecies
 }
 
-const buildViewContext = async (submissionFormState, { selection, errors = {} } = {}) => {
+const buildViewContext = async (submissionFormState, {
+  selection,
+  errors = {},
+  saveError
+} = {}) => {
   const [speciesResult, clientSummaryResult] = await Promise.all([
     safeLoad(getSpecies),
     loadClientSummary(submissionFormState)
@@ -57,6 +62,7 @@ const buildViewContext = async (submissionFormState, { selection, errors = {} } 
     ],
     selectedSpecies: currentSelection,
     errors,
+    saveError,
     speciesListUnavailable: Boolean(speciesResult.error)
   }
 }
@@ -97,18 +103,28 @@ const submissionSpecies = (server, submissionFormStateKey) => {
         // Changing species invalidates answers that depend on the previous species.
         const retained = previous?.speciesId === matchedSpecies.speciesId ? previous : {}
 
-        request.yar.set(submissionFormStateKey, {
-          ...submissionFormState,
-          formData: {
-            ...formData,
-            animalDetails: {
-              ...retained,
-              speciesId: matchedSpecies.speciesId,
-              species: matchedSpecies.name
-            }
+        const updatedFormData = {
+          ...formData,
+          animalDetails: {
+            ...retained,
+            speciesId: matchedSpecies.speciesId,
+            species: matchedSpecies.name
           }
-        })
-        request.yar.touch()
+        }
+        const saved = await persistSubmissionDraft(
+          request,
+          submissionFormStateKey,
+          'animalDetails',
+          updatedFormData
+        )
+
+        if (!saved) {
+          const context = await buildViewContext(
+            { ...submissionFormState, formData: updatedFormData },
+            { selection, saveError: DRAFT_SAVE_ERROR }
+          )
+          return h.view('submission-species.njk', context).code(BAD_GATEWAY_STATUS)
+        }
 
         return h.redirect(`/${nextPageName}`)
       }

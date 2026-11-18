@@ -4,6 +4,7 @@ import {
   BAD_GATEWAY_STATUS,
   loadClientSummary
 } from './submissionViewHelpers.js'
+import { DRAFT_SAVE_ERROR, persistSubmissionDraft } from './submissionDrafts.js'
 
 const pageName = 'submission-03-clinical-history'
 const nextPageName = 'submission-04-tests'
@@ -65,7 +66,7 @@ const validate = (values, maxDate) => {
   return { values, sampleTakenDate, errors }
 }
 
-const renderPage = async (h, submissionFormState, values, errors = {}) => {
+const renderPage = async (h, submissionFormState, values, errors = {}, saveError) => {
   const clientSummaryResult = await loadClientSummary(submissionFormState)
   const errorList = errors.sampleTakenDate
     ? [{ text: errors.sampleTakenDate, href: '#sampleTakenDate-day' }]
@@ -76,6 +77,7 @@ const renderPage = async (h, submissionFormState, values, errors = {}) => {
     ...clientSummaryResult,
     values,
     errors,
+    saveError,
     errorList
   })
 
@@ -85,6 +87,10 @@ const renderPage = async (h, submissionFormState, values, errors = {}) => {
 
   if (Object.keys(errors).length) {
     return view.code(BAD_REQUEST_STATUS)
+  }
+
+  if (saveError) {
+    return view.code(BAD_GATEWAY_STATUS)
   }
 
   return view
@@ -140,11 +146,21 @@ const submissionClinicalHistory = (server, submissionFormStateKey) => {
           delete updatedFormData.clinicalHistory
         }
 
-        request.yar.set(submissionFormStateKey, {
-          ...submissionFormState,
-          formData: updatedFormData
-        })
-        request.yar.touch()
+        const saved = await persistSubmissionDraft(
+          request,
+          submissionFormStateKey,
+          'clinicalHistory',
+          updatedFormData
+        )
+        if (!saved) {
+          return renderPage(
+            h,
+            { ...submissionFormState, formData: updatedFormData },
+            values,
+            {},
+            DRAFT_SAVE_ERROR
+          )
+        }
 
         return h.redirect(`/${nextPageName}`)
       }

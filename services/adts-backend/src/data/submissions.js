@@ -1,11 +1,10 @@
 import { ScanCommand } from '@aws-sdk/lib-dynamodb'
+import { submissionsTable } from './dynamo.js'
 
 const DAYS_IN_WEEK = 7
 const DAYS_IN_FORTNIGHT = 14
 const MONTHS_IN_HALF_YEAR = 6
 const MONTHS_IN_EIGHTEEN_MONTHS = 18
-
-const tableName = () => process.env.SUBMISSIONS_TABLE || 'adts-submissions'
 
 const dateCutoff = (period, now = new Date()) => {
   if (!period) {
@@ -60,7 +59,7 @@ const toSearchResult = (item) => ({
 
 const getSubmissionItems = async (docClient, exclusiveStartKey) => {
   const result = await docClient.send(new ScanCommand({
-    TableName: tableName(),
+    TableName: submissionsTable(),
     FilterExpression: '#status = :draft',
     ExpressionAttributeNames: { '#status': 'status' },
     ExpressionAttributeValues: { ':draft': 'Draft' },

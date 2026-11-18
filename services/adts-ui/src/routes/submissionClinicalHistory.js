@@ -14,14 +14,27 @@ const FUTURE_DATE_ERROR = 'The sample date must be today or in the past'
 const today = () => new Date().toISOString().slice(0, 10)
 
 const savedValues = (submissionFormState) => {
-  const [year = '', month = '', day = ''] = (submissionFormState.formData?.clinicalHistory?.sampleTakenDate || '').split('-')
-  return { day, month, year }
+  const clinicalHistory = submissionFormState.formData?.clinicalHistory || {}
+  const [year = '', month = '', day = ''] = (clinicalHistory.sampleTakenDate || '').split('-')
+  return {
+    day,
+    month,
+    year,
+    contactedAboutSameCase: clinicalHistory.contactedAboutSameCase || '',
+    previousSubmissionReference: clinicalHistory.previousSubmissionReference || '',
+    contactMethod: clinicalHistory.contactMethod || ''
+  }
 }
 
 const submittedValues = (payload) => ({
   day: text(payload['sampleTakenDate-day']),
   month: text(payload['sampleTakenDate-month']),
-  year: text(payload['sampleTakenDate-year'])
+  year: text(payload['sampleTakenDate-year']),
+  contactedAboutSameCase: ['yes', 'no'].includes(payload.contactedAboutSameCase)
+    ? payload.contactedAboutSameCase
+    : '',
+  previousSubmissionReference: text(payload.previousSubmissionReference),
+  contactMethod: ['phone', 'farmVisit'].includes(payload.contactMethod) ? payload.contactMethod : ''
 })
 
 const validate = (values, maxDate) => {
@@ -99,6 +112,20 @@ const submissionClinicalHistory = (server, submissionFormStateKey) => {
           clinicalHistory.sampleTakenDate = sampleTakenDate
         } else {
           delete clinicalHistory.sampleTakenDate
+        }
+
+        if (values.contactedAboutSameCase === 'yes') {
+          clinicalHistory.contactedAboutSameCase = 'yes'
+          clinicalHistory.previousSubmissionReference = values.previousSubmissionReference
+          clinicalHistory.contactMethod = values.contactMethod
+        } else if (values.contactedAboutSameCase === 'no') {
+          clinicalHistory.contactedAboutSameCase = 'no'
+          delete clinicalHistory.previousSubmissionReference
+          delete clinicalHistory.contactMethod
+        } else {
+          delete clinicalHistory.contactedAboutSameCase
+          delete clinicalHistory.previousSubmissionReference
+          delete clinicalHistory.contactMethod
         }
 
         const updatedFormData = { ...formData }

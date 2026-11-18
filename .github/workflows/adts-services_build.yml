@@ -112,6 +112,9 @@ jobs:
     name: Validate
     needs:
       - detect_changes
+      - get_service_matix
+
+    if: ${{ needs.get_service_matrix.outputs.matrix != '[]' }}
     strategy:
       matrix: ${{ fromJSON(needs.get_service_matrix.outputs.matrix) }}
 

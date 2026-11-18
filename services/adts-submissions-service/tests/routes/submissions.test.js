@@ -1,20 +1,38 @@
 import { afterAll, afterEach, beforeAll, describe, expect, jest, test } from '@jest/globals'
 import { constants } from 'node:http2'
 import createServer from '../../src/app.js'
+import { loadConfig } from '../../src/config.js'
 
 describe('LIMS Backend Proxy - Network Mock Tests', () => {
   let server
-  const originalPvsId = process.env.LIMS_PVS_ID
+  let limsClient
+  let originalLimsApiUrl
+  let originalPvsId
 
   beforeAll(async () => {
+    originalLimsApiUrl = process.env.LIMS_API_URL
+    originalPvsId = process.env.LIMS_PVS_ID
     process.env.LIMS_API_URL = 'https://mock-lims.local'
     process.env.LIMS_PVS_ID = 'TEST-PVS-001'
     process.env.PORT = 3100
-    server = await createServer()
+    limsClient = { request: jest.fn() }
+    server = await createServer({
+      config: loadConfig({
+        LIMS_BASE_URL: 'https://mock-lims.local',
+        LIMS_PREFIX: 'api',
+        LIMS_TIMEOUT_MS: '1000'
+      }),
+      limsClient
+    })
   })
 
   afterAll(async () => {
     await server.stop()
+    if (originalLimsApiUrl === undefined) {
+      delete process.env.LIMS_API_URL
+    } else {
+      process.env.LIMS_API_URL = originalLimsApiUrl
+    }
     if (originalPvsId === undefined) {
       delete process.env.LIMS_PVS_ID
     } else {
@@ -24,6 +42,7 @@ describe('LIMS Backend Proxy - Network Mock Tests', () => {
 
   afterEach(() => {
     jest.restoreAllMocks()
+    limsClient.request.mockReset()
   })
 
   test('should return the landing page message', async () => {
@@ -130,16 +149,14 @@ describe('LIMS Backend Proxy - Network Mock Tests', () => {
       }
     ]
 
-    jest.spyOn(globalThis, 'fetch').mockImplementation(async (url) => {
-      expect(url).toMatch(/^https:\/\/mock-lims\.local/)
-      return new Response(JSON.stringify({
-        results: testSubmissionsMock,
-        totalCount: testSubmissionsMock.length
-      }), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' }
-      })
-    })
+    const payload = {
+      results: testSubmissionsMock,
+      totalCount: testSubmissionsMock.length
+    }
+    limsClient.request.mockResolvedValue(new Response(JSON.stringify(payload), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' }
+    }))
 
     const res = await server.inject({
       method: 'GET',
@@ -152,34 +169,36 @@ describe('LIMS Backend Proxy - Network Mock Tests', () => {
     expect(data.totalCount).toBe(1)
     expect(data.results[0].id).toBe('TEST-1234')
     expect(data.results[0].client).toBe('TESTING CLIENT')
+    expect(limsClient.request).toHaveBeenCalledWith('submissions', {
+      method: 'GET',
+      query: { client: 'TESTING' }
+    })
   })
 
-  test('should gracefully handle 500 downstream outages from LIMS platform', async () => {
-    jest.spyOn(globalThis, 'fetch').mockImplementation(async () => {
-      return new Response(JSON.stringify({ message: 'Internal Server Error' }), {
-        status: 500
-      })
-    })
+  test('normalizes upstream HTTP failures without returning the raw body', async () => {
+    limsClient.request.mockResolvedValue(new Response(JSON.stringify({ secret: 'upstream detail' }), {
+      status: 500
+    }))
 
     const res = await server.inject({
       method: 'GET',
       url: '/submissions'
     })
-    expect(res.statusCode).toBe(500)
-    const data = JSON.parse(res.payload)
-    expect(data.error).toBe('LIMS integration error')
+    expect(res.statusCode).toBe(502)
+    expect(res.result.category).toBe('upstream_http_error')
+    expect(JSON.stringify(res.result)).not.toContain('upstream detail')
   })
 
-  test('should return a bad gateway response when LIMS is unreachable', async () => {
-    jest.spyOn(globalThis, 'fetch').mockRejectedValue(new Error('LIMS connection failed'))
+  test('normalizes an unavailable LIMS response', async () => {
+    limsClient.request.mockRejectedValue(new Error('LIMS connection failed'))
 
     const res = await server.inject({
       method: 'GET',
       url: '/submissions'
     })
 
-    expect(res.statusCode).toBe(constants.HTTP_STATUS_BAD_GATEWAY)
-    const data = JSON.parse(res.payload)
-    expect(data.error).toBe('LIMS connectivity failure')
+    expect(res.statusCode).toBe(502)
+    expect(res.result.category).toBe('upstream_transport_error')
+    expect(JSON.stringify(res.result)).not.toContain('LIMS connection failed')
   })
 })

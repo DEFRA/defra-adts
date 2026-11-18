@@ -102,7 +102,7 @@ jobs:
         id: set-matrix
         run: |
           echo "matrix={\"include\": [ " >> $GITHUB_OUTPUT
-          if [[ ${{ needs.detect_changes.outputs.ui_service }} || ${{ needs.detect_changes.outputs.e2e_tests }} ]]; then
+          if [[ "${{ needs.detect_changes.outputs.ui_service }}" == 'true' || "${{ needs.detect_changes.outputs.e2e_tests }}" == 'true' ]]; then
             echo "{ \
                 \"service\": \"adts-ui\", \
                 \"path\": \"services/adts-ui\", \
@@ -117,7 +117,7 @@ jobs:
                 \"test-command\": \"npm run test:coverage && npm run test:integration\", \
                 \"build-command\": \"npm run build\" \
               }," >> $GITHUB_OUTPUT
-          if [[ ${{ needs.detect_changes.outputs.backend_service }} || ${{ needs.detect_changes.outputs.e2e_tests }} ]]; then
+          if [[ "${{ needs.detect_changes.outputs.backend_service }}" == 'true' || "${{ needs.detect_changes.outputs.e2e_tests }}" == 'true' ]]; then
             echo "{ \
                 \"service\": \"adts-backend\", \
                 \"path\": \"services/adts-backend\", \
@@ -132,7 +132,7 @@ jobs:
                 \"test-command\": \"npm run test:coverage && npm run test:integration && npm run test:contract && npm run test:api\", \
                 \"build-command\": \"npm run build\" \
               }, >> $GITHUB_OUTPUT
-          if [[ ${{ needs.detect_changes.outputs.submissions_service }} || ${{ needs.detect_changes.outputs.e2e_tests }} ]]; then
+          if [[ "${{ needs.detect_changes.outputs.submissions_service }}" == 'true' || "${{ needs.detect_changes.outputs.e2e_tests }}" == 'true' ]]; then
             echo "{ \
                 \"service\": \"adts-submissions-service\", \
                 \"path\": \"services/adts-submissions-service\", \

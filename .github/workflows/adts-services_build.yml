@@ -101,7 +101,7 @@ jobs:
       - name: Get Service Matrix
         id: set-matrix
         run: |
-          MATRIX="matrix={\"include\": [ "
+          MATRIX="matrix={\"include\": ["
           MATRIX=$MATRIX"]}"
           echo $MATRIX >> $GITHUB_OUTPUT
 

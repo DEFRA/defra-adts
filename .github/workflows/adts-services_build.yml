@@ -91,7 +91,7 @@ jobs:
           echo "ADTS Backend changed: ${BACKEND_CHANGED}"
           echo "ADTS Submissions service changed: ${SUBMISSIONS_CHANGED}"
 
-  get_service_matix:
+  get_service_matrix:
     runs-on: ubuntu-latest
     needs:
       - detect_changes
@@ -128,7 +128,7 @@ jobs:
     name: Validate
     needs:
       - detect_changes
-      - get_service_matix
+      - get_service_matrix
 
     if: ${{ needs.get_service_matrix.outputs.matrix != '[]' }}
     strategy:

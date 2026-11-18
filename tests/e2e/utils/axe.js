@@ -15,9 +15,14 @@ export async function checkAccessibility (page) {
     .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'])
     .analyze()
 
+  const conditionalRadios = [
+    { target: '#animalsAtClientAddress-2', name: 'animalsAtClientAddress' },
+    { target: '#contactedAboutSameCase-2', name: 'contactedAboutSameCase' }
+  ]
+
   const isKnownConditionalRadioViolation = (node) =>
-    node.target.includes('#animalsAtClientAddress-2') &&
-    node.html.includes('name="animalsAtClientAddress"') &&
+    conditionalRadios.some(({ target, name }) =>
+      node.target.includes(target) && node.html.includes(`name="${name}"`)) &&
     node.all.length === 1 &&
     node.all[0].id === 'aria-allowed-attr' &&
     node.all[0].data?.length === 1 &&

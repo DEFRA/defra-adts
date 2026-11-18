@@ -236,3 +236,17 @@ if (ageCategoryRadios.length && ageDetail) {
   ageCategoryRadios.forEach((radio) => radio.addEventListener('change', syncAgeDetail))
   syncAgeDetail()
 }
+
+// Without JavaScript the contact method is always shown; it is only saved when the answer is Yes.
+const sameCaseRadios = document.querySelectorAll('input[name="contactedAboutSameCase"]')
+const contactMethod = document.querySelector('#contact-method')
+
+if (sameCaseRadios.length && contactMethod) {
+  const syncContactMethod = () => {
+    const selected = Array.from(sameCaseRadios).find((radio) => radio.checked)
+    contactMethod.hidden = selected?.value !== 'yes'
+  }
+
+  sameCaseRadios.forEach((radio) => radio.addEventListener('change', syncContactMethod))
+  syncContactMethod()
+}

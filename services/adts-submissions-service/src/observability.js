@@ -12,6 +12,8 @@ const errorCategories = new Set([
   'dependency_unavailable',
   'outcome_unknown'
 ])
+const MIN_HTTP_STATUS = 100
+const MAX_HTTP_STATUS = 599
 const uuidPattern = /^[\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12}$/i
 
 export const logDiagnosticEvent = (logger, {
@@ -37,7 +39,7 @@ export const logDiagnosticEvent = (logger, {
     record.correlationId = correlationId
   }
 
-  if (Number.isInteger(statusCode) && statusCode >= 100 && statusCode <= 599) {
+  if (Number.isInteger(statusCode) && statusCode >= MIN_HTTP_STATUS && statusCode <= MAX_HTTP_STATUS) {
     record.statusCode = statusCode
   }
 

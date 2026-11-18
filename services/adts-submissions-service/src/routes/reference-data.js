@@ -1,4 +1,5 @@
 import Joi from 'joi'
+import { constants } from 'node:http2'
 import { createServiceError, normalizeLimsBusinessError, normalizeUpstreamStatus } from '../errors.js'
 
 const mapTransportError = (error, correlationId) => {
@@ -38,7 +39,7 @@ export const forwardJsonRequest = async (limsClient, request, path, query, opera
     )
   }
 
-  return { statusCode: 200, body: payload }
+  return { statusCode: constants.HTTP_STATUS_OK, body: payload }
 }
 
 export const sendResult = (h, result) => h.response(result.body).code(result.statusCode)

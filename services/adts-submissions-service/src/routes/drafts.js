@@ -1,5 +1,8 @@
 import Joi from 'joi'
+import { constants } from 'node:http2'
 import { createServiceError, normalizeLimsBusinessError, normalizeUpstreamStatus } from '../errors.js'
+
+const MAX_CLINICIAN_LENGTH = 1000
 
 const legacyString = Joi.string().allow('')
 const nullableLegacyString = legacyString.allow(null)
@@ -48,7 +51,7 @@ export const draftBody = Joi.object({
   clientCounty: legacyString.required(),
   clientSubCounty: nullableLegacyString.required(),
   clientCPHH: legacyString.required(),
-  clinician: legacyString.max(1000).required(),
+  clinician: legacyString.max(MAX_CLINICIAN_LENGTH).required(),
   resultsReadyConfirmationEmail: legacyString.required(),
   resultsReadyConfirmationPhoneNumber: legacyString.required(),
   areAnimalsAtFarmAddress: Joi.boolean().required(),
@@ -93,7 +96,7 @@ export const draftBody = Joi.object({
 }).unknown(false)
 
 const outcomeUnknown = (request) => ({
-  statusCode: 504,
+  statusCode: constants.HTTP_STATUS_GATEWAY_TIMEOUT,
   body: createServiceError({
     category: 'outcome_unknown',
     message: 'The LIMS draft save outcome is unknown. Reconcile the draft with LIMS before retrying.',
@@ -160,7 +163,7 @@ export const registerDraftRoutes = (server, limsClient) => {
       method: 'POST',
       path: '/v1/drafts',
       options: { validate: { payload: draftBody } },
-      handler: (request, h) => saveDraft(request, h, limsClient, 201)
+      handler: (request, h) => saveDraft(request, h, limsClient, constants.HTTP_STATUS_CREATED)
     },
     {
       method: 'PUT',
@@ -171,7 +174,7 @@ export const registerDraftRoutes = (server, limsClient) => {
           payload: draftBody
         }
       },
-      handler: (request, h) => saveDraft(request, h, limsClient, 200)
+      handler: (request, h) => saveDraft(request, h, limsClient, constants.HTTP_STATUS_OK)
     }
   ])
 }

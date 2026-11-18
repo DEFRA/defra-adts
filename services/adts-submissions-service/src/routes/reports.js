@@ -1,4 +1,5 @@
 import Joi from 'joi'
+import { constants } from 'node:http2'
 import { createServiceError } from '../errors.js'
 import { forwardJsonRequest, sendResult } from './reference-data.js'
 
@@ -41,7 +42,7 @@ export const registerReportRoutes = (server, limsClient) => {
           'report retrieval'
         )
 
-        if (result.statusCode !== 200) {
+        if (result.statusCode !== constants.HTTP_STATUS_OK) {
           return sendResult(h, result)
         }
 
@@ -54,7 +55,7 @@ export const registerReportRoutes = (server, limsClient) => {
           }))
         }
 
-        return h.response(Buffer.from(encodedPdf, 'base64')).type('application/pdf').code(200)
+        return h.response(Buffer.from(encodedPdf, 'base64')).type('application/pdf').code(constants.HTTP_STATUS_OK)
       }
     }
   ])

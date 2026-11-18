@@ -32,7 +32,9 @@ describe('API healthcheck contract', () => {
 
   beforeAll(async () => {
     process.env.SUBMISSIONS_SERVICE_URL = 'http://localhost:3100'
-    process.env.LIMS_API_URL = 'http://localhost:8500'
+    process.env.LIMS_BASE_URL = 'https://mock-lims.local'
+    process.env.LIMS_USERNAME = 'test-user'
+    process.env.LIMS_PASSWORD = 'test-password'
 
     process.env.PORT = '3200'
     backendServer = await createBackendServer()

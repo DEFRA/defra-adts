@@ -1,21 +1,28 @@
 import { randomUUID } from 'node:crypto'
+import { constants } from 'node:http2'
+
+const MAX_UPSTREAM_CODE_LENGTH = 64
+const MAX_BUSINESS_MESSAGES = 10
+const MAX_BUSINESS_MESSAGE_LENGTH = 500
+
+const upstreamCodePattern = new RegExp(`^[A-Z0-9][A-Z0-9._-]{0,${MAX_UPSTREAM_CODE_LENGTH - 1}}$`, 'i')
 
 const statusByCategory = {
-  validation_error: 400,
-  unauthenticated: 401,
-  forbidden: 403,
-  not_found: 404,
-  business_error: 422,
-  upstream_http_error: 502,
-  upstream_timeout: 504,
-  upstream_transport_error: 502,
-  dependency_unavailable: 503,
-  outcome_unknown: 504
+  validation_error: constants.HTTP_STATUS_BAD_REQUEST,
+  unauthenticated: constants.HTTP_STATUS_UNAUTHORIZED,
+  forbidden: constants.HTTP_STATUS_FORBIDDEN,
+  not_found: constants.HTTP_STATUS_NOT_FOUND,
+  business_error: constants.HTTP_STATUS_UNPROCESSABLE_ENTITY,
+  upstream_http_error: constants.HTTP_STATUS_BAD_GATEWAY,
+  upstream_timeout: constants.HTTP_STATUS_GATEWAY_TIMEOUT,
+  upstream_transport_error: constants.HTTP_STATUS_BAD_GATEWAY,
+  dependency_unavailable: constants.HTTP_STATUS_SERVICE_UNAVAILABLE,
+  outcome_unknown: constants.HTTP_STATUS_GATEWAY_TIMEOUT
 }
 
 const isSafeUpstreamCode = (code) =>
   typeof code === 'string' &&
-  /^[A-Z0-9][A-Z0-9._-]{0,63}$/i.test(code) &&
+  upstreamCodePattern.test(code) &&
   !/(secret|token|password|credential|authorization)/i.test(code)
 
 const safeBusinessMessages = (messages) => {
@@ -25,9 +32,9 @@ const safeBusinessMessages = (messages) => {
 
   return messages
     .filter((message) => typeof message === 'string')
-    .slice(0, 10)
+    .slice(0, MAX_BUSINESS_MESSAGES)
     .map((message) => {
-      const trimmed = message.trim().slice(0, 500)
+      const trimmed = message.trim().slice(0, MAX_BUSINESS_MESSAGE_LENGTH)
       if (/(authorization|password|secret|token|credential|api[_ -]?key)\s*[:=]|\b(?:Bearer|Basic)\s+\S+/i.test(trimmed)) {
         return '[REDACTED]'
       }
@@ -76,9 +83,9 @@ export const normalizeLimsBusinessError = (payload, correlationId) => {
 }
 
 export const normalizeUpstreamStatus = (statusCode, correlationId, message) => {
-  const category = statusCode === 503
+  const category = statusCode === constants.HTTP_STATUS_SERVICE_UNAVAILABLE
     ? 'dependency_unavailable'
-    : statusCode === 504
+    : statusCode === constants.HTTP_STATUS_GATEWAY_TIMEOUT
       ? 'upstream_timeout'
       : 'upstream_http_error'
 

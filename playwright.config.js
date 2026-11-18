@@ -27,6 +27,15 @@ const config = {
   },
 webServer: [
   {
+    command: 'node tests/mocks/lims/lims-server.js',
+    url: 'http://localhost:3300/health',
+    reuseExistingServer: false,
+    timeout: 30 * 1000,
+    env: {
+      PORT: '3300'
+    }
+  },
+  {
     command: 'node tests/mocks/lims/server.js',
     url: 'http://localhost:8500/health',
     reuseExistingServer: !process.env.CI,
@@ -49,7 +58,9 @@ webServer: [
       LIMS_USERNAME: 'e2e-user',
       LIMS_PASSWORD: 'e2e-password',
       LIMS_TIMEOUT_MS: '1000',
-      LIMS_ALLOW_HTTP: 'true'
+      LIMS_ALLOW_HTTP: 'true',
+      LIMS_API_URL: 'http://localhost:3300',
+      LIMS_PVS_ID: 'E2E-PVS-001'
     }
   },
   {

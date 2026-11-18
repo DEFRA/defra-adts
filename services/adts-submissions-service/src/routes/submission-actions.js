@@ -1,4 +1,5 @@
 import Joi from 'joi'
+import { constants } from 'node:http2'
 import { createServiceError, normalizeLimsBusinessError, normalizeUpstreamStatus } from '../errors.js'
 
 const sendError = (h, result) => h.response(result.body).code(result.statusCode)
@@ -49,7 +50,7 @@ const confirmDraft = async (request, h, limsClient) => {
     return sendError(h, unknownOutcome(request, 'confirmation'))
   }
 
-  return h.response({ submissionId: payload.submissionId }).code(200)
+  return h.response({ submissionId: payload.submissionId }).code(constants.HTTP_STATUS_OK)
 }
 
 const cancelSubmission = async (request, h, limsClient) => {
@@ -89,7 +90,7 @@ const cancelSubmission = async (request, h, limsClient) => {
   return h.response({
     hasErrors: payload.hasErrors,
     errorMessages: payload.errorMessages
-  }).code(200)
+  }).code(constants.HTTP_STATUS_OK)
 }
 
 export const registerSubmissionActionRoutes = (server, limsClient) => {

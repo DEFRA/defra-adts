@@ -1,11 +1,13 @@
 import Joi from 'joi'
 
+const DEFAULT_LIMS_TIMEOUT_MS = 10000
+
 const schema = Joi.object({
   LIMS_BASE_URL: Joi.string().uri({ scheme: ['http', 'https'] }).required(),
   LIMS_PREFIX: Joi.string().allow('').default(''),
   LIMS_USERNAME: Joi.string().min(1).required(),
   LIMS_PASSWORD: Joi.string().min(1).required(),
-  LIMS_TIMEOUT_MS: Joi.number().integer().positive().default(10000),
+  LIMS_TIMEOUT_MS: Joi.number().integer().positive().default(DEFAULT_LIMS_TIMEOUT_MS),
   LIMS_ALLOW_HTTP: Joi.boolean().truthy('true').falsy('false').default(false)
 }).unknown(true)
 

@@ -1,3 +1,5 @@
+import { constants } from 'node:http2'
+
 export const registerHealthRoutes = (server, limsClient) => {
   server.route([
     {
@@ -17,12 +19,12 @@ export const registerHealthRoutes = (server, limsClient) => {
         try {
           const response = await limsClient.request('general/getpingOK')
           if (!response.ok) {
-            return h.response({ status: 'DOWN', dependency: 'lims' }).code(503)
+            return h.response({ status: 'DOWN', dependency: 'lims' }).code(constants.HTTP_STATUS_SERVICE_UNAVAILABLE)
           }
 
           return { status: 'UP' }
         } catch {
-          return h.response({ status: 'DOWN', dependency: 'lims' }).code(503)
+          return h.response({ status: 'DOWN', dependency: 'lims' }).code(constants.HTTP_STATUS_SERVICE_UNAVAILABLE)
         }
       }
     }

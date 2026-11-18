@@ -26,9 +26,9 @@ const createServer = async ({ config = loadConfig(), limsClient = createLimsClie
     const response = request.response
     const statusCode = response.isBoom ? response.output.statusCode : response.statusCode
 
-    if (statusCode >= 400) {
+    if (statusCode >= constants.HTTP_STATUS_BAD_REQUEST) {
       logDiagnosticEvent(console, {
-        level: statusCode >= 500 ? 'error' : 'warn',
+        level: statusCode >= constants.HTTP_STATUS_INTERNAL_SERVER_ERROR ? 'error' : 'warn',
         event: 'request.failed',
         correlationId: request.info.id,
         statusCode
@@ -135,7 +135,7 @@ const createServer = async ({ config = loadConfig(), limsClient = createLimsClie
         return h.response(result.body).code(result.statusCode)
       }
 
-      return h.response(payload).code(200)
+      return h.response(payload).code(constants.HTTP_STATUS_OK)
     }
   })
   return server

@@ -152,6 +152,7 @@ jobs:
               }" >> $tmp_file
           fi
           echo "] }" >> $tmp_file
+          cat $tmp_file
           cat $tmp_file >> $GITHUB_OUTPUT
 
       - name: Show Service Matrix

@@ -115,7 +115,7 @@ jobs:
             MATRIX=$MATRIX"\"run-sonarqube-scan\": true,"
             MATRIX=$MATRIX"\"test-command\": \"npm run test:coverage && npm run test:integration\","
             MATRIX=$MATRIX"\"build-command\": \"npm run build\""
-            MATRIX=$MATRIX"},"
+            MATRIX=$MATRIX"}"
           fi
           MATRIX=$MATRIX"]}"
           echo $MATRIX

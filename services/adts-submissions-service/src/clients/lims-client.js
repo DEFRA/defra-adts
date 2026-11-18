@@ -20,16 +20,25 @@ const validateRelativePath = (path) => {
   }
 }
 
-const validateClientOptions = ({ base, username, password, timeoutMs, allowHttp, fetchImpl }) => {
-  if (!['http:', 'https:'].includes(base.protocol) || base.username || base.password || base.search || base.hash) {
+const isNonEmptyString = (value) => typeof value === 'string' && value.length > 0
+
+const isPlainOrigin = (base) =>
+  ['http:', 'https:'].includes(base.protocol) && !(base.username || base.password || base.search || base.hash)
+
+const validateBaseUrl = (base, allowHttp) => {
+  if (!isPlainOrigin(base)) {
     throw new TypeError('LIMS base URL must be an HTTP(S) origin without credentials, query, or fragment')
   }
 
   if (base.protocol === 'http:' && allowHttp !== true) {
     throw new Error('LIMS HTTP requires the explicit temporary HTTP exception')
   }
+}
 
-  if (typeof username !== 'string' || username.length === 0 || typeof password !== 'string' || password.length === 0) {
+const validateClientOptions = ({ base, username, password, timeoutMs, allowHttp, fetchImpl }) => {
+  validateBaseUrl(base, allowHttp)
+
+  if (!isNonEmptyString(username) || !isNonEmptyString(password)) {
     throw new TypeError('LIMS credentials are required')
   }
 
@@ -66,7 +75,8 @@ export const createLimsClient = ({
   if (normalizedPrefix) {
     validateRelativePath(normalizedPrefix)
   }
-  const authorization = `Basic ${Buffer.from(`${username}:${password}`).toString('base64')}`
+  const fromString = Buffer.from(`${username}:${password}`).toString('base64')
+  const authorization = `Basic ${fromString}`
 
   const request = async (path, { method = 'GET', query, body, headers = {} } = {}) => {
     validateRelativePath(path)

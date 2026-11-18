@@ -82,12 +82,13 @@ export const normalizeLimsBusinessError = (payload, correlationId) => {
   return result
 }
 
+const upstreamCategoryByStatus = new Map([
+  [constants.HTTP_STATUS_SERVICE_UNAVAILABLE, 'dependency_unavailable'],
+  [constants.HTTP_STATUS_GATEWAY_TIMEOUT, 'upstream_timeout']
+])
+
 export const normalizeUpstreamStatus = (statusCode, correlationId, message) => {
-  const category = statusCode === constants.HTTP_STATUS_SERVICE_UNAVAILABLE
-    ? 'dependency_unavailable'
-    : statusCode === constants.HTTP_STATUS_GATEWAY_TIMEOUT
-      ? 'upstream_timeout'
-      : 'upstream_http_error'
+  const category = upstreamCategoryByStatus.get(statusCode) ?? 'upstream_http_error'
 
   return createServiceError({ category, message, correlationId })
 }

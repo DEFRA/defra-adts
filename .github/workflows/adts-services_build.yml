@@ -132,7 +132,7 @@ jobs:
 
     if: ${{ needs.get_service_matrix.outputs.matrix != '[]' }}
     strategy:
-      matrix: ${{ fromJSON(needs.get_service_matrix.outputs.matrix) }}
+      matrix: ${{ fromJson(needs.get_service_matrix.outputs.matrix) }}
 
     permissions:
       contents: read

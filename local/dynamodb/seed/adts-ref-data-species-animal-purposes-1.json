@@ -76,13 +76,13 @@
       "type": { "S": "SPECIES_ANIMAL_PURPOSE" },
       "speciesCode": { "S": "CATTLE" },
       "code": { "S": "UNKNOWN" },
-      "description": { "S": "I don\\'t know" },
+      "description": { "S": "I don't know" },
       "isAvian": { "BOOL": false },
       "index": { "N": "6" },
       "GSI1PK": { "S": "CODE#SPECIES_ANIMAL_PURPOSE" },
       "GSI1SK": { "S": "UNKNOWN" },
       "GSI2PK": { "S": "NAME#SPECIES_ANIMAL_PURPOSE" },
-      "GSI2SK": { "S": "i don\\'t know" }
+      "GSI2SK": { "S": "i don't know" }
     } } },
     { "PutRequest": { "Item": {
       "PK": { "S": "REF#SPECIES_ANIMAL_PURPOSE" },
@@ -188,13 +188,13 @@
       "type": { "S": "SPECIES_ANIMAL_PURPOSE" },
       "speciesCode": { "S": "SHEEP" },
       "code": { "S": "UNKNOWN" },
-      "description": { "S": "I don\\'t know" },
+      "description": { "S": "I don't know" },
       "isAvian": { "BOOL": false },
       "index": { "N": "14" },
       "GSI1PK": { "S": "CODE#SPECIES_ANIMAL_PURPOSE" },
       "GSI1SK": { "S": "UNKNOWN" },
       "GSI2PK": { "S": "NAME#SPECIES_ANIMAL_PURPOSE" },
-      "GSI2SK": { "S": "i don\\'t know" }
+      "GSI2SK": { "S": "i don't know" }
     } } },
     { "PutRequest": { "Item": {
       "PK": { "S": "REF#SPECIES_ANIMAL_PURPOSE" },
@@ -300,13 +300,13 @@
       "type": { "S": "SPECIES_ANIMAL_PURPOSE" },
       "speciesCode": { "S": "GOAT" },
       "code": { "S": "UNKNOWN" },
-      "description": { "S": "I don\\'t know" },
+      "description": { "S": "I don't know" },
       "isAvian": { "BOOL": false },
       "index": { "N": "22" },
       "GSI1PK": { "S": "CODE#SPECIES_ANIMAL_PURPOSE" },
       "GSI1SK": { "S": "UNKNOWN" },
       "GSI2PK": { "S": "NAME#SPECIES_ANIMAL_PURPOSE" },
-      "GSI2SK": { "S": "i don\\'t know" }
+      "GSI2SK": { "S": "i don't know" }
     } } },
     { "PutRequest": { "Item": {
       "PK": { "S": "REF#SPECIES_ANIMAL_PURPOSE" },

@@ -6,7 +6,7 @@
       "type": { "S": "INFORMATION_MESSAGE" },
       "name": { "S": "apiDown" },
       "title": { "S": "Service unavailable" },
-      "description": { "S": "'The service is currently unavailable" },
+      "description": { "S": "The service is currently unavailable" },
       "description2": { "S": "please try again later.<br><br>Please note: Scheduled service downtime is 10pm - 2am daily.'" },
       "index": { "N": "1" },
       "created_at": { "S": "error" },

@@ -76,13 +76,13 @@
       "type": { "S": "SPECIES_ANIMAL_PURPOSE" },
       "speciesCode": { "NULL": true },
       "code": { "S": "OTHERFARM" },
-      "description": { "S": "'Other farmed (e.g. deer" },
+      "description": { "S": "Other farmed (e.g. deer" },
       "isAvian": { "BOOL": false },
       "index": { "N": "32" },
       "GSI1PK": { "S": "CODE#SPECIES_ANIMAL_PURPOSE" },
       "GSI1SK": { "S": "OTHERFARM" },
       "GSI2PK": { "S": "NAME#SPECIES_ANIMAL_PURPOSE" },
-      "GSI2SK": { "S": "'other farmed (e.g. deer" }
+      "GSI2SK": { "S": "other farmed (e.g. deer" }
     } } },
     { "PutRequest": { "Item": {
       "PK": { "S": "REF#SPECIES_ANIMAL_PURPOSE" },
@@ -216,13 +216,13 @@
       "type": { "S": "SPECIES_ANIMAL_PURPOSE" },
       "speciesCode": { "NULL": true },
       "code": { "S": "UNKNOWN" },
-      "description": { "S": "I don\\'t know" },
+      "description": { "S": "I don't know" },
       "isAvian": { "BOOL": true },
       "index": { "N": "46" },
       "GSI1PK": { "S": "CODE#SPECIES_ANIMAL_PURPOSE" },
       "GSI1SK": { "S": "UNKNOWN" },
       "GSI2PK": { "S": "NAME#SPECIES_ANIMAL_PURPOSE" },
-      "GSI2SK": { "S": "i don\\'t know" }
+      "GSI2SK": { "S": "i don't know" }
     } } },
     { "PutRequest": { "Item": {
       "PK": { "S": "REF#SPECIES_ANIMAL_PURPOSE" },

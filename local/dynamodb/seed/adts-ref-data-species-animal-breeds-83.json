@@ -214,12 +214,12 @@
       "type": { "S": "SPECIES_ANIMAL_BREED" },
       "speciesCode": { "S": "SHEEP" },
       "code": { "S": "BLUE_HD_MUTT_BL_DE_MAINE" },
-      "description": { "S": "'Blue Headed Mutton" },
+      "description": { "S": "Blue Headed Mutton" },
       "index": { "N": "2068" },
       "GSI1PK": { "S": "CODE#SPECIES_ANIMAL_BREED" },
       "GSI1SK": { "S": "BLUE_HD_MUTT_BL_DE_MAINE" },
       "GSI2PK": { "S": "NAME#SPECIES_ANIMAL_BREED" },
-      "GSI2SK": { "S": "'blue headed mutton" }
+      "GSI2SK": { "S": "blue headed mutton" }
     } } },
     { "PutRequest": { "Item": {
       "PK": { "S": "REF#SPECIES_ANIMAL_BREED" },
@@ -227,12 +227,12 @@
       "type": { "S": "SPECIES_ANIMAL_BREED" },
       "speciesCode": { "S": "SHEEP" },
       "code": { "S": "BLUE_HD_MUTT_BL_DE_MAINE_X" },
-      "description": { "S": "'Blue Headed Mutton" },
+      "description": { "S": "Blue Headed Mutton" },
       "index": { "N": "2069" },
       "GSI1PK": { "S": "CODE#SPECIES_ANIMAL_BREED" },
       "GSI1SK": { "S": "BLUE_HD_MUTT_BL_DE_MAINE_X" },
       "GSI2PK": { "S": "NAME#SPECIES_ANIMAL_BREED" },
-      "GSI2SK": { "S": "'blue headed mutton" }
+      "GSI2SK": { "S": "blue headed mutton" }
     } } },
     { "PutRequest": { "Item": {
       "PK": { "S": "REF#SPECIES_ANIMAL_BREED" },

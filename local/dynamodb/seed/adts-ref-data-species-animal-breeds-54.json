@@ -2,9 +2,9 @@
   "adts-reference-data": [
     { "PutRequest": { "Item": {
       "PK": { "S": "REF#SPECIES_ANIMAL_BREED" },
-      "SK": { "S": "ORDER#1327#MULE#EQ_MULE" },
+      "SK": { "S": "ORDER#1327#EQ_MULE#EQ_MULE" },
       "type": { "S": "SPECIES_ANIMAL_BREED" },
-      "speciesCode": { "S": "MULE" },
+      "speciesCode": { "S": "EQ_MULE" },
       "code": { "S": "EQ_MULE" },
       "description": { "S": "Mule" },
       "index": { "N": "1327" },

@@ -84,12 +84,12 @@
       "type": { "S": "SPECIES_ANIMAL_BREED" },
       "speciesCode": { "S": "DOG" },
       "code": { "S": "CAUCASIAN_SHEPHERD_DOG" },
-      "description": { "S": "'Caucasian Shepherd Dog (Kovkazskaia Ovtcharka" },
+      "description": { "S": "Caucasian Shepherd Dog (Kovkazskaia Ovtcharka" },
       "index": { "N": "483" },
       "GSI1PK": { "S": "CODE#SPECIES_ANIMAL_BREED" },
       "GSI1SK": { "S": "CAUCASIAN_SHEPHERD_DOG" },
       "GSI2PK": { "S": "NAME#SPECIES_ANIMAL_BREED" },
-      "GSI2SK": { "S": "'caucasian shepherd dog (kovkazskaia ovtcharka" }
+      "GSI2SK": { "S": "caucasian shepherd dog (kovkazskaia ovtcharka" }
     } } },
     { "PutRequest": { "Item": {
       "PK": { "S": "REF#SPECIES_ANIMAL_BREED" },

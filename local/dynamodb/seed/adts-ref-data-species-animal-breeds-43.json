@@ -67,9 +67,9 @@
     } } },
     { "PutRequest": { "Item": {
       "PK": { "S": "REF#SPECIES_ANIMAL_BREED" },
-      "SK": { "S": "ORDER#1057#GREATER_BIRD_OF_PARADISE#GREATER_BIRD_PARADISE" },
+      "SK": { "S": "ORDER#1057#GREATER_BIRD_PARADIS#GREATER_BIRD_PARADISE" },
       "type": { "S": "SPECIES_ANIMAL_BREED" },
-      "speciesCode": { "S": "GREATER_BIRD_OF_PARADISE" },
+      "speciesCode": { "S": "GREATER_BIRD_PARADIS" },
       "code": { "S": "GREATER_BIRD_PARADISE" },
       "description": { "S": "Greater Bird of Paradise" },
       "index": { "N": "1057" },

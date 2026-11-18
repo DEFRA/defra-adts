@@ -70,13 +70,13 @@
       "SK": { "S": "ORDER#0007#UNKNOWN" },
       "type": { "S": "SPECIES_HOUSING" },
       "code": { "S": "UNKNOWN" },
-      "description": { "S": "I don\\'t know" },
+      "description": { "S": "I don't know" },
       "isAvian": { "BOOL": true },
       "index": { "N": "7" },
       "GSI1PK": { "S": "CODE#SPECIES_HOUSING" },
       "GSI1SK": { "S": "UNKNOWN" },
       "GSI2PK": { "S": "NAME#SPECIES_HOUSING" },
-      "GSI2SK": { "S": "i don\\'t know" }
+      "GSI2SK": { "S": "i don't know" }
     } } },
     { "PutRequest": { "Item": {
       "PK": { "S": "REF#SPECIES_HOUSING" },
@@ -122,13 +122,13 @@
       "SK": { "S": "ORDER#0017#UNKNOWN" },
       "type": { "S": "SPECIES_HOUSING" },
       "code": { "S": "UNKNOWN" },
-      "description": { "S": "I don\\'t know" },
+      "description": { "S": "I don't know" },
       "isAvian": { "BOOL": false },
       "index": { "N": "17" },
       "GSI1PK": { "S": "CODE#SPECIES_HOUSING" },
       "GSI1SK": { "S": "UNKNOWN" },
       "GSI2PK": { "S": "NAME#SPECIES_HOUSING" },
-      "GSI2SK": { "S": "i don\\'t know" }
+      "GSI2SK": { "S": "i don't know" }
     } } }
   ]
 }

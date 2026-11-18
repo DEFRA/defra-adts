@@ -149,6 +149,8 @@ describe('Submission animal details page', () => {
     expect(response.payload).toContain('Jane Smith')
     expect(response.payload).toContain('1 Farm Lane, Village, Northshire, AB1 2CD')
     expect(response.payload).toContain('48/234/2348')
+    expect(response.payload).not.toContain('Green Farm')
+    expect(response.payload).not.toContain('Farm name')
     expect(globalThis.fetch).not.toHaveBeenCalledWith('http://localhost:3200/GetClients')
   })
 
@@ -163,6 +165,9 @@ describe('Submission animal details page', () => {
     expect(response.payload).toContain('href="/submission-02-species"')
     expect(response.payload).toContain('href="/assets/css/accessible-autocomplete.min.css"')
     expect(response.payload).toContain('<script type="module" src="/assets/js/all.js"></script>')
+    expect(response.payload).toContain('class="govuk-section-break govuk-section-break--m govuk-section-break--visible"')
+    expect(response.payload).toContain('<h2 class="govuk-heading-m">Please note</h2>')
+    expect(response.payload).toContain('class="govuk-body-l">If you don’t enter any information for more than 2 hours')
     for (const label of ['Lamb', 'Adult', 'Meat', 'Wool', 'Outdoor', 'Texel', 'Ewe', 'Ram', 'accredited organic', 'In transition', 'Number of animals']) {
       expect(response.payload).toContain(label)
     }

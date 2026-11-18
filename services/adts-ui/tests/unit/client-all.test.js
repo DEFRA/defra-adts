@@ -86,6 +86,7 @@ describe('client initialization', () => {
     })
     expect(enhanceSelectElement).toHaveBeenCalledWith({
       defaultValue: 'Sheep',
+      inputClasses: 'govuk-!-width-one-half',
       selectElement: speciesSelect
     })
     expect(editButton.hidden).toBe(true)
@@ -386,6 +387,22 @@ describe('client initialization', () => {
     })
   })
 
+  test('enhances the species select at half width without a default value', async () => {
+    const speciesSelect = { dataset: { defaultValue: '' } }
+    globalThis.document = {
+      querySelector: jest.fn((selector) => selector === 'select#species' ? speciesSelect : null),
+      querySelectorAll: jest.fn().mockReturnValue([])
+    }
+
+    await import('../../src/client/all.js')
+
+    expect(enhanceSelectElement).toHaveBeenCalledWith({
+      defaultValue: '',
+      inputClasses: 'govuk-!-width-one-half',
+      selectElement: speciesSelect
+    })
+  })
+
   test('enhances the breed select without a default value', async () => {
     const breedSelect = { dataset: {} }
     globalThis.document = {
@@ -397,6 +414,7 @@ describe('client initialization', () => {
 
     expect(enhanceSelectElement).toHaveBeenCalledWith({
       defaultValue: '',
+      inputClasses: 'govuk-!-width-one-half',
       selectElement: breedSelect
     })
   })

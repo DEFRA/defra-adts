@@ -119,38 +119,41 @@ jobs:
             MATRIX=$MATRIX"\"run-sonarqube-scan\": true,"
             MATRIX=$MATRIX"\"test-command\": \"npm run test:coverage && npm run test:integration\","
             MATRIX=$MATRIX"\"build-command\": \"npm run build\""
+            MATRIX=$MATRIX"\"sonar-token\": \"${{ secrets.SONAR_TOKEN }}\""
             MATRIX=$MATRIX"},"
           fi
-          #if [[ "${{ needs.detect_changes.outputs.backend_service }}" == 'true' || "${{ needs.detect_changes.outputs.e2e_tests }}" == 'true' ]]; then
-          #  MATRIX=$MATRIX"{\"service\": \"adts-backend\","
-          #  MATRIX=$MATRIX"\"path\": \"services/adts-backend\","
-          #  MATRIX=$MATRIX"\"dockerfile\": \"services/adts-backend/Dockerfile\","
-          #  MATRIX=$MATRIX"\"repository\": \"${{ vars.ADTS_BACKEND_ECR }}\","
-          #  MATRIX=$MATRIX"\"node-version\": \"24\","
-          #  MATRIX=$MATRIX"\"run-audit\": false,"
-          #  MATRIX=$MATRIX"\"run-lint\": true,"
-          #  MATRIX=$MATRIX"\"run-format-check\": false,"
-          #  MATRIX=$MATRIX"\"run-tests\": true,"
-          #  MATRIX=$MATRIX"\"run-sonarqube-scan\": true,"
-          #  MATRIX=$MATRIX"\"test-command\": \"npm run test:coverage && npm run test:integration && npm run test:contract && npm run test:api\","
-          #  MATRIX=$MATRIX"\"build-command\": \"npm run build\""
-          #  MATRIX=$MATRIX"},"
-          #fi
-          #if [[ "${{ needs.detect_changes.outputs.submissions_service }}" == 'true' || "${{ needs.detect_changes.outputs.e2e_tests }}" == 'true' ]]; then
-          #  MATRIX=$MATRIX"{\"service\": \"adts-submissions-service\","
-          #  MATRIX=$MATRIX"\"path\": \"services/adts-submissions-service\","
-          #  MATRIX=$MATRIX"\"dockerfile\": \"services/adts-submissions-service/Dockerfile\","
-          #  MATRIX=$MATRIX"\"repository\": \"${{ vars.ADTS_SUBMISSIONS_ECR }}\","
-          #  MATRIX=$MATRIX"\"node-version\": \"24\","
-          #  MATRIX=$MATRIX"\"run-audit\": false,"
-          #  MATRIX=$MATRIX"\"run-lint\": true,"
-          #  MATRIX=$MATRIX"\"run-format-check\": false,"
-          #  MATRIX=$MATRIX"\"run-tests\": true,"
-          #  MATRIX=$MATRIX"\"run-sonarqube-scan\": true,"
-          #  MATRIX=$MATRIX"\"test-command\": \"npm run test:coverage\","
-          #  MATRIX=$MATRIX"\"build-command\": \"npm run build\""
-          #  MATRIX=$MATRIX"}"
-          #fi
+          if [[ "${{ needs.detect_changes.outputs.backend_service }}" == 'true' || "${{ needs.detect_changes.outputs.e2e_tests }}" == 'true' ]]; then
+            MATRIX=$MATRIX"{\"service\": \"adts-backend\","
+            MATRIX=$MATRIX"\"path\": \"services/adts-backend\","
+            MATRIX=$MATRIX"\"dockerfile\": \"services/adts-backend/Dockerfile\","
+            MATRIX=$MATRIX"\"repository\": \"${{ vars.ADTS_BACKEND_ECR }}\","
+            MATRIX=$MATRIX"\"node-version\": \"24\","
+            MATRIX=$MATRIX"\"run-audit\": false,"
+            MATRIX=$MATRIX"\"run-lint\": true,"
+            MATRIX=$MATRIX"\"run-format-check\": false,"
+            MATRIX=$MATRIX"\"run-tests\": true,"
+            MATRIX=$MATRIX"\"run-sonarqube-scan\": true,"
+            MATRIX=$MATRIX"\"test-command\": \"npm run test:coverage && npm run test:integration && npm run test:contract && npm run test:api\","
+            MATRIX=$MATRIX"\"build-command\": \"npm run build\""
+            MATRIX=$MATRIX"\"sonar-token\": \"${{ secrets.BACKEND_SONAR_TOKEN }}\""
+            MATRIX=$MATRIX"},"
+          fi
+          if [[ "${{ needs.detect_changes.outputs.submissions_service }}" == 'true' || "${{ needs.detect_changes.outputs.e2e_tests }}" == 'true' ]]; then
+            MATRIX=$MATRIX"{\"service\": \"adts-submissions-service\","
+            MATRIX=$MATRIX"\"path\": \"services/adts-submissions-service\","
+            MATRIX=$MATRIX"\"dockerfile\": \"services/adts-submissions-service/Dockerfile\","
+            MATRIX=$MATRIX"\"repository\": \"${{ vars.ADTS_SUBMISSIONS_ECR }}\","
+            MATRIX=$MATRIX"\"node-version\": \"24\","
+            MATRIX=$MATRIX"\"run-audit\": false,"
+            MATRIX=$MATRIX"\"run-lint\": true,"
+            MATRIX=$MATRIX"\"run-format-check\": false,"
+            MATRIX=$MATRIX"\"run-tests\": true,"
+            MATRIX=$MATRIX"\"run-sonarqube-scan\": true,"
+            MATRIX=$MATRIX"\"test-command\": \"npm run test:coverage\","
+            MATRIX=$MATRIX"\"build-command\": \"npm run build\""
+            MATRIX=$MATRIX"\"sonar-token\": \"${{ secrets.SUBMISSIONS_SONAR_TOKEN }}\""
+            MATRIX=$MATRIX"}"
+          fi
           MATRIX=$MATRIX"]}"
           echo $MATRIX
           echo $MATRIX >> $GITHUB_OUTPUT
@@ -189,7 +192,7 @@ jobs:
       test-command: ${{ matrix.test-command }}
       build-command: ${{ matrix.build-command }}
     secrets:
-      SQ_ACCESS_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      SQ_ACCESS_TOKEN: ${{ matrix.sonar-token }}
 
   e2e_testing:
     name: End to End Tests

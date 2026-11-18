@@ -119,9 +119,9 @@
     } } },
     { "PutRequest": { "Item": {
       "PK": { "S": "REF#SPECIES_ANIMAL_BREED" },
-      "SK": { "S": "ORDER#1386#OTHER_VEGETABLE/MINERAL#OTHER_VEG_MINERAL" },
+      "SK": { "S": "ORDER#1386#OTHER_VEG_MINERAL#OTHER_VEG_MINERAL" },
       "type": { "S": "SPECIES_ANIMAL_BREED" },
-      "speciesCode": { "S": "OTHER_VEGETABLE/MINERAL" },
+      "speciesCode": { "S": "OTHER_VEG_MINERAL" },
       "code": { "S": "OTHER_VEG_MINERAL" },
       "description": { "S": "Other Vegetable/Mineral" },
       "index": { "N": "1386" },
@@ -288,9 +288,9 @@
     } } },
     { "PutRequest": { "Item": {
       "PK": { "S": "REF#SPECIES_ANIMAL_BREED" },
-      "SK": { "S": "ORDER#1399#OYSTER_CATCHER#OYSTERCATCHER" },
+      "SK": { "S": "ORDER#1399#OYSTERCATCHER#OYSTERCATCHER" },
       "type": { "S": "SPECIES_ANIMAL_BREED" },
-      "speciesCode": { "S": "OYSTER_CATCHER" },
+      "speciesCode": { "S": "OYSTERCATCHER" },
       "code": { "S": "OYSTERCATCHER" },
       "description": { "S": "Oystercatcher" },
       "index": { "N": "1399" },

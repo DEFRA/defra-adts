@@ -171,9 +171,9 @@
     } } },
     { "PutRequest": { "Item": {
       "PK": { "S": "REF#SPECIES_ANIMAL_BREED" },
-      "SK": { "S": "ORDER#0865#ENVIRONMENTAL_ABBATTOIR#ENVIRONMENTAL_ABATT" },
+      "SK": { "S": "ORDER#0865#ENVIRONMENTAL_ABATT#ENVIRONMENTAL_ABATT" },
       "type": { "S": "SPECIES_ANIMAL_BREED" },
-      "speciesCode": { "S": "ENVIRONMENTAL_ABBATTOIR" },
+      "speciesCode": { "S": "ENVIRONMENTAL_ABATT" },
       "code": { "S": "ENVIRONMENTAL_ABATT" },
       "description": { "S": "Environmental Abbattoir" },
       "index": { "N": "865" },

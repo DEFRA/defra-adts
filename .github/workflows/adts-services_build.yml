@@ -115,7 +115,7 @@ jobs:
     needs: get_service_matrix
     steps:
       - name: SHow
-        run: echo ${{ fromJson(needs.get_service_matrix.outputs.matrix) }}
+        run: echo ${{ needs.get_service_matrix.outputs.matrix }}
 
   validate_services:
     name: Validate

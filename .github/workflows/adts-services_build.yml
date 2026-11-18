@@ -101,11 +101,9 @@ jobs:
       - name: Get Service Matrix
         id: set-matrix
         run: |
-          tmp_file=$(mktemp)
-          echo "matrix={\"include\": [ " >> $tmp_file
-          echo "] }" >> $tmp_file
-          cat $tmp_file
-          cat $tmp_file >> $GITHUB_OUTPUT
+          MATRIX="matrix={\"include\": [ "
+          MATRIX=$MATRIX"]}"
+          echo $MATRIX >> $GITHUB_OUTPUT
 
       - name: Show Service Matrix
         run: echo ${{ steps.set-matrix.outputs.matrix }}

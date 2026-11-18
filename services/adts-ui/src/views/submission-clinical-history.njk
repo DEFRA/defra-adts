@@ -6,6 +6,7 @@
 {% from "govuk/components/error-summary/macro.njk" import govukErrorSummary %}
 {% from "govuk/components/date-input/macro.njk" import govukDateInput %}
 {% from "govuk/components/radios/macro.njk" import govukRadios %}
+{% from "govuk/components/checkboxes/macro.njk" import govukCheckboxes %}
 {% from "govuk/components/input/macro.njk" import govukInput %}
 {% from "govuk/components/button/macro.njk" import govukButton %}
 {% from "macros/submissionProgress.njk" import submissionProgress %}
@@ -108,13 +109,14 @@
     <div id="contact-method">
       <hr class="govuk-section-break govuk-section-break--l govuk-section-break--visible">
 
-      {{ govukRadios({
+      {{ govukCheckboxes({
         idPrefix: "contactMethod",
-        name: "contactMethod",
+        name: "contactMethods",
+        classes: "govuk-checkboxes--inline",
         fieldset: { legend: { text: "How did you get in touch?", classes: "govuk-fieldset__legend--m" } },
         items: [
-          { value: "phone", text: "By phone", checked: values.contactMethod == "phone" },
-          { value: "farmVisit", text: "During an APHA farm visit", checked: values.contactMethod == "farmVisit" }
+          { value: "phone", text: "By phone", checked: "phone" in values.contactMethods },
+          { value: "farmVisit", text: "During an APHA farm visit", checked: "farmVisit" in values.contactMethods }
         ]
       }) }}
     </div>

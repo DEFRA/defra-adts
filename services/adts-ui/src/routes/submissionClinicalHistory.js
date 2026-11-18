@@ -22,9 +22,11 @@ const savedValues = (submissionFormState) => {
     year,
     contactedAboutSameCase: clinicalHistory.contactedAboutSameCase || '',
     previousSubmissionReference: clinicalHistory.previousSubmissionReference || '',
-    contactMethod: clinicalHistory.contactMethod || ''
+    contactMethods: clinicalHistory.contactMethods || []
   }
 }
+
+const contactMethodOptions = ['phone', 'farmVisit']
 
 const submittedValues = (payload) => ({
   day: text(payload['sampleTakenDate-day']),
@@ -34,7 +36,10 @@ const submittedValues = (payload) => ({
     ? payload.contactedAboutSameCase
     : '',
   previousSubmissionReference: text(payload.previousSubmissionReference),
-  contactMethod: ['phone', 'farmVisit'].includes(payload.contactMethod) ? payload.contactMethod : ''
+  contactMethods: (Array.isArray(payload.contactMethods)
+    ? payload.contactMethods
+    : [payload.contactMethods])
+    .filter((method) => contactMethodOptions.includes(method))
 })
 
 const validate = (values, maxDate) => {
@@ -117,15 +122,15 @@ const submissionClinicalHistory = (server, submissionFormStateKey) => {
         if (values.contactedAboutSameCase === 'yes') {
           clinicalHistory.contactedAboutSameCase = 'yes'
           clinicalHistory.previousSubmissionReference = values.previousSubmissionReference
-          clinicalHistory.contactMethod = values.contactMethod
+          clinicalHistory.contactMethods = values.contactMethods
         } else if (values.contactedAboutSameCase === 'no') {
           clinicalHistory.contactedAboutSameCase = 'no'
           delete clinicalHistory.previousSubmissionReference
-          delete clinicalHistory.contactMethod
+          delete clinicalHistory.contactMethods
         } else {
           delete clinicalHistory.contactedAboutSameCase
           delete clinicalHistory.previousSubmissionReference
-          delete clinicalHistory.contactMethod
+          delete clinicalHistory.contactMethods
         }
 
         const updatedFormData = { ...formData }

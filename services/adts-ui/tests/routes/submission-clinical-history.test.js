@@ -72,14 +72,16 @@ describe('Submission clinical history page', () => {
     expect(response.payload).toContain('How did you get in touch?')
     expect(response.payload).toContain('value="phone"')
     expect(response.payload).toContain('value="farmVisit"')
+    expect(response.payload).toContain('type="checkbox"')
+    expect(response.payload).toContain('name="contactMethods"')
   })
 
-  test('AC1: saves and restores additional contact details when Yes is selected', async () => {
+  test('AC1: saves and restores both contact methods when Yes is selected', async () => {
     const response = await post({
       ...dateFields('', '', ''),
       contactedAboutSameCase: 'yes',
       previousSubmissionReference: '  ADTS-123  ',
-      contactMethod: 'farmVisit'
+      contactMethods: ['phone', 'farmVisit']
     })
 
     expect(response.statusCode).toBe(302)
@@ -88,9 +90,10 @@ describe('Submission clinical history page', () => {
       .toEqual({
         contactedAboutSameCase: 'yes',
         previousSubmissionReference: 'ADTS-123',
-        contactMethod: 'farmVisit'
+        contactMethods: ['phone', 'farmVisit']
       })
     expect(revisit.payload).toContain('name="previousSubmissionReference" type="text" value="ADTS-123"')
+    expect(revisit.payload).toContain('value="phone" checked')
     expect(revisit.payload).toContain('value="farmVisit" checked')
     expect(revisit.payload).not.toContain('govuk-radios__conditional--hidden')
   })
@@ -100,13 +103,13 @@ describe('Submission clinical history page', () => {
       ...dateFields('', '', ''),
       contactedAboutSameCase: 'yes',
       previousSubmissionReference: 'ADTS-123',
-      contactMethod: 'phone'
+      contactMethods: ['phone', 'farmVisit']
     })
     const noResponse = await post({
       ...dateFields('', '', ''),
       contactedAboutSameCase: 'no',
       previousSubmissionReference: 'ADTS-123',
-      contactMethod: 'phone'
+      contactMethods: ['phone', 'farmVisit']
     }, { cookie: getCookieHeader(yesResponse) })
 
     expect(noResponse.statusCode).toBe(302)

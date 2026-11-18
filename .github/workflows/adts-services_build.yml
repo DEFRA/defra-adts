@@ -206,21 +206,9 @@ jobs:
     if: |
       ${{
         !cancelled() &&
-        needs.detect_changes.outputs.e2e_tests == 'true' ||
         (
-          needs.detect_changes.outputs.any_service == 'true' &&
-          (
-            needs.detect_changes.outputs.ui_service != 'true' ||
-            needs.validate_ui_service.result == 'success'
-          ) &&
-          (
-            needs.detect_changes.outputs.backend_service != 'true' ||
-            needs.validate_backend_service.result == 'success'
-          ) &&
-          (
-            needs.detect_changes.outputs.submissions_service != 'true' ||
-            needs.validate_submissions_service.result == 'success'
-          )
+          needs.detect_changes.outputs.e2e_tests == 'true' ||
+          needs.detect_changes.outputs.any_service == 'true'
         )
       }}
 

@@ -358,6 +358,93 @@ describe('getAnimalDetails', () => {
     })
   })
 
+  test('falls back to null species code purposes when the species has none of its own', async () => {
+    const purposeItems = [
+      referenceItem({
+        type: 'SPECIES_ANIMAL_PURPOSE',
+        speciesCode: null,
+        code: 'WILD',
+        description: 'Wild',
+        order: '0001',
+        index: 1,
+        isAvian: false
+      }),
+      referenceItem({
+        type: 'SPECIES_ANIMAL_PURPOSE',
+        speciesCode: null,
+        code: 'BREEDLAY',
+        description: 'Breeder/Parent - Layer',
+        order: '0002',
+        index: 2,
+        isAvian: true
+      })
+    ]
+    const docClient = createDocClient({
+      HORSE: {
+        Items: [referenceItem({
+          type: 'SPECIES',
+          code: 'HORSE',
+          description: 'Horse',
+          order: '0001',
+          index: 0,
+          isAvian: false,
+          isMammal: true,
+          isRuminant: false,
+          mostCommon: false
+        })]
+      },
+      'REF#SPECIES_ANIMAL_PURPOSE': { Items: purposeItems }
+    })
+
+    const details = await getAnimalDetails(docClient, 'HORSE')
+
+    expect(details.purposes).toEqual([{ value: 'WILD', label: 'Wild' }])
+  })
+
+  test('uses only species-specific purposes when the species has its own', async () => {
+    const docClient = createDocClient({
+      CATTLE: {
+        Items: [referenceItem({
+          type: 'SPECIES',
+          code: 'CATTLE',
+          description: 'Cattle',
+          order: '0001',
+          index: 0,
+          isAvian: false,
+          isMammal: true,
+          isRuminant: true,
+          mostCommon: true
+        })]
+      },
+      'REF#SPECIES_ANIMAL_PURPOSE': {
+        Items: [
+          referenceItem({
+            type: 'SPECIES_ANIMAL_PURPOSE',
+            speciesCode: null,
+            code: 'WILD',
+            description: 'Wild',
+            order: '0001',
+            index: 1,
+            isAvian: false
+          }),
+          referenceItem({
+            type: 'SPECIES_ANIMAL_PURPOSE',
+            speciesCode: 'CATTLE',
+            code: 'MILK',
+            description: 'Dairy',
+            order: '0002',
+            index: 2,
+            isAvian: false
+          })
+        ]
+      }
+    })
+
+    const details = await getAnimalDetails(docClient, 'CATTLE')
+
+    expect(details.purposes).toEqual([{ value: 'MILK', label: 'Dairy' }])
+  })
+
   test('returns undefined when the species code is not found', async () => {
     const docClient = createDocClient({
       CATTLE: {

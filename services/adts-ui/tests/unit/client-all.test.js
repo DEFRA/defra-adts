@@ -86,6 +86,7 @@ describe('client initialization', () => {
     })
     expect(enhanceSelectElement).toHaveBeenCalledWith({
       defaultValue: 'Sheep',
+      inputClasses: 'govuk-!-width-one-half',
       selectElement: speciesSelect
     })
     expect(editButton.hidden).toBe(true)
@@ -360,6 +361,30 @@ describe('client initialization', () => {
     expect(selection.hidden).toBe(true)
   })
 
+  test('reveals the contact method only when the same case was already reported', async () => {
+    const yesRadio = { checked: false, value: 'yes', addEventListener: jest.fn() }
+    const noRadio = { checked: false, value: 'no', addEventListener: jest.fn() }
+    const contactMethod = { hidden: false }
+    globalThis.document = {
+      querySelector: jest.fn((selector) => selector === '#contact-method' ? contactMethod : null),
+      querySelectorAll: jest.fn((selector) => selector === 'input[name="contactedAboutSameCase"]'
+        ? [noRadio, yesRadio]
+        : [])
+    }
+
+    await import('../../src/client/all.js')
+
+    expect(contactMethod.hidden).toBe(true)
+    yesRadio.checked = true
+    yesRadio.addEventListener.mock.calls[0][1]()
+    expect(contactMethod.hidden).toBe(false)
+
+    yesRadio.checked = false
+    noRadio.checked = true
+    noRadio.addEventListener.mock.calls[0][1]()
+    expect(contactMethod.hidden).toBe(true)
+  })
+
   test('enhances each county select using its own default value', async () => {
     const countySelect = { dataset: { defaultValue: 'Dorset' } }
     const animalAddressCountySelect = { dataset: { defaultValue: 'Argyll and Bute' } }
@@ -386,6 +411,22 @@ describe('client initialization', () => {
     })
   })
 
+  test('enhances the species select at half width without a default value', async () => {
+    const speciesSelect = { dataset: { defaultValue: '' } }
+    globalThis.document = {
+      querySelector: jest.fn((selector) => selector === 'select#species' ? speciesSelect : null),
+      querySelectorAll: jest.fn().mockReturnValue([])
+    }
+
+    await import('../../src/client/all.js')
+
+    expect(enhanceSelectElement).toHaveBeenCalledWith({
+      defaultValue: '',
+      inputClasses: 'govuk-!-width-one-half',
+      selectElement: speciesSelect
+    })
+  })
+
   test('enhances the breed select without a default value', async () => {
     const breedSelect = { dataset: {} }
     globalThis.document = {
@@ -397,6 +438,7 @@ describe('client initialization', () => {
 
     expect(enhanceSelectElement).toHaveBeenCalledWith({
       defaultValue: '',
+      inputClasses: 'govuk-!-width-one-half',
       selectElement: breedSelect
     })
   })

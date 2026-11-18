@@ -175,12 +175,12 @@
       "type": { "S": "SPECIES_ANIMAL_BREED" },
       "speciesCode": { "S": "DOG" },
       "code": { "S": "SOUTH_AFRICAN_BOERBOEL" },
-      "description": { "S": "'South African Boerboel (Mastiff" },
+      "description": { "S": "South African Boerboel (Mastiff" },
       "index": { "N": "715" },
       "GSI1PK": { "S": "CODE#SPECIES_ANIMAL_BREED" },
       "GSI1SK": { "S": "SOUTH_AFRICAN_BOERBOEL" },
       "GSI2PK": { "S": "NAME#SPECIES_ANIMAL_BREED" },
-      "GSI2SK": { "S": "'south african boerboel (mastiff" }
+      "GSI2SK": { "S": "south african boerboel (mastiff" }
     } } },
     { "PutRequest": { "Item": {
       "PK": { "S": "REF#SPECIES_ANIMAL_BREED" },

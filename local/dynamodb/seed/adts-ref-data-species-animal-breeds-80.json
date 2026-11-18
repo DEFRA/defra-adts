@@ -301,9 +301,9 @@
     } } },
     { "PutRequest": { "Item": {
       "PK": { "S": "REF#SPECIES_ANIMAL_BREED" },
-      "SK": { "S": "ORDER#2000#RED_BIRD_OF_PARADISE#RED_BIRD_PARADISE" },
+      "SK": { "S": "ORDER#2000#RED_BIRD_PARADISE#RED_BIRD_PARADISE" },
       "type": { "S": "SPECIES_ANIMAL_BREED" },
-      "speciesCode": { "S": "RED_BIRD_OF_PARADISE" },
+      "speciesCode": { "S": "RED_BIRD_PARADISE" },
       "code": { "S": "RED_BIRD_PARADISE" },
       "description": { "S": "Red Bird of Paradise" },
       "index": { "N": "2000" },

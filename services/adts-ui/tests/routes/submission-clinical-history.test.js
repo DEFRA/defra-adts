@@ -59,6 +59,67 @@ describe('Submission clinical history page', () => {
     expect(response.payload).not.toContain('date picker')
   })
 
+  test('renders same-case contact fields conditionally and hides them by default', async () => {
+    const response = await get()
+
+    expect(response.payload).toContain('Have you contacted us about the same case?')
+    expect(response.payload).toContain('value="no"')
+    expect(response.payload).toContain('value="yes"')
+    expect(response.payload).toContain('data-aria-controls="conditional-contactedAboutSameCase-2"')
+    expect(response.payload).toContain('id="conditional-contactedAboutSameCase-2"')
+    expect(response.payload).toContain('govuk-radios__conditional--hidden')
+    expect(response.payload).toContain('Type the previous submission reference (optional)')
+    expect(response.payload).toContain('How did you get in touch?')
+    expect(response.payload).toContain('value="phone"')
+    expect(response.payload).toContain('value="farmVisit"')
+    expect(response.payload).toContain('type="checkbox"')
+    expect(response.payload).toContain('name="contactMethods"')
+  })
+
+  test('AC1: saves and restores both contact methods when Yes is selected', async () => {
+    const response = await post({
+      ...dateFields('', '', ''),
+      contactedAboutSameCase: 'yes',
+      previousSubmissionReference: '  ADTS-123  ',
+      contactMethods: ['phone', 'farmVisit']
+    })
+
+    expect(response.statusCode).toBe(302)
+    const revisit = await getSaved(response)
+    expect(revisit.request.response.source.context.submissionFormState.formData.clinicalHistory)
+      .toEqual({
+        contactedAboutSameCase: 'yes',
+        previousSubmissionReference: 'ADTS-123',
+        contactMethods: ['phone', 'farmVisit']
+      })
+    expect(revisit.payload).toContain('name="previousSubmissionReference" type="text" value="ADTS-123"')
+    expect(revisit.payload).toContain('value="phone" checked')
+    expect(revisit.payload).toContain('value="farmVisit" checked')
+    expect(revisit.payload).not.toContain('govuk-radios__conditional--hidden')
+  })
+
+  test('AC2: selecting No hides and clears the additional contact details', async () => {
+    const yesResponse = await post({
+      ...dateFields('', '', ''),
+      contactedAboutSameCase: 'yes',
+      previousSubmissionReference: 'ADTS-123',
+      contactMethods: ['phone', 'farmVisit']
+    })
+    const noResponse = await post({
+      ...dateFields('', '', ''),
+      contactedAboutSameCase: 'no',
+      previousSubmissionReference: 'ADTS-123',
+      contactMethods: ['phone', 'farmVisit']
+    }, { cookie: getCookieHeader(yesResponse) })
+
+    expect(noResponse.statusCode).toBe(302)
+    const revisit = await getSaved(noResponse)
+    expect(revisit.request.response.source.context.submissionFormState.formData.clinicalHistory)
+      .toEqual({ contactedAboutSameCase: 'no' })
+    expect(revisit.payload).toContain('value="no" checked')
+    expect(revisit.payload).toContain('govuk-radios__conditional--hidden')
+  })
+
   test('AC1/AC3: combines the date parts and persists a valid date in ISO format', async () => {
     const response = await post(dateFields('29', '02', '2024'))
 

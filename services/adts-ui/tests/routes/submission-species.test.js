@@ -58,6 +58,8 @@ describe('Submission species page', () => {
     expect(response.payload).toContain('<option value="Llama">Llama</option>')
     expect(response.payload).toContain('href="/assets/css/accessible-autocomplete.min.css"')
     expect(response.payload).toContain('No client name set')
+    expect(response.payload).toContain('<h2 class="govuk-heading-m">Please note</h2>')
+    expect(response.payload).toContain('class="govuk-body-l">If you don’t enter any information for more than 2 hours')
   })
 
   test('persists a selected species and redirects to animal details', async () => {
@@ -141,7 +143,8 @@ describe('Submission species page', () => {
       postcode: 'AB1 2CD'
     })
     expect(revisit.payload).toContain('Updated Client Name')
-    expect(revisit.payload).toContain('Updated Farm')
+    expect(revisit.payload).not.toContain('Updated Farm')
+    expect(revisit.payload).not.toContain('Farm name')
     expect(revisit.payload).toContain('2 Farm Road, New Village, Northshire, AB1 2CD')
     expect(revisit.payload).toContain('48/234/2348')
     expect(globalThis.fetch).not.toHaveBeenCalledWith('http://localhost:3200/GetClients')
@@ -183,7 +186,8 @@ describe('Submission species page', () => {
 
     expect(response.statusCode).toBe(200)
     expect(response.payload).toContain('Jane Smith')
-    expect(response.payload).toContain('Green Farm')
+    expect(response.payload).not.toContain('Green Farm')
+    expect(response.payload).not.toContain('Farm name')
     expect(response.payload).toContain('1 Farm Lane, Village, Northshire, AB1 2CD')
     expect(response.payload).toContain('48/234/2348')
     expect(response.request.response.source.context.submissionFormState.formData.clientDetails).toEqual({
@@ -288,7 +292,8 @@ describe('Submission species page', () => {
 
     expect(animalDetails.statusCode).toBe(200)
     expect(animalDetails.payload).toContain('Jane Smith')
-    expect(animalDetails.payload).toContain('Green Farm')
+    expect(animalDetails.payload).not.toContain('Green Farm')
+    expect(animalDetails.payload).not.toContain('Farm name')
     expect(animalDetails.payload).toContain('1 Farm Lane, AB1 2CD')
     expect(animalDetails.payload).toContain('Species: <strong>Sheep</strong>')
     expect(animalDetails.payload).toContain('Sheep')

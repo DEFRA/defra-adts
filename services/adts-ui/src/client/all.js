@@ -3,6 +3,8 @@ import accessibleAutocomplete from 'accessible-autocomplete'
 
 initAll()
 
+const HALF_WIDTH_INPUT_CLASS = 'govuk-!-width-one-half'
+
 const clientSelect = document.querySelector('select#client')
 const animalAddressSelect = document.querySelector('select#animalAddress')
 const createClientAddressLink = document.querySelector('[data-create-client-address-link]')
@@ -97,6 +99,7 @@ cphInputs.forEach((input) => {
 if (speciesSelect) {
   accessibleAutocomplete.enhanceSelectElement({
     defaultValue: speciesSelect.dataset.defaultValue,
+    inputClasses: HALF_WIDTH_INPUT_CLASS,
     selectElement: speciesSelect
   })
 }
@@ -181,7 +184,7 @@ const countySelects = document.querySelectorAll('select#county, select#animalAdd
 countySelects.forEach((countySelect) => {
   accessibleAutocomplete.enhanceSelectElement({
     defaultValue: countySelect.dataset.defaultValue,
-    inputClasses: 'govuk-!-width-one-half',
+    inputClasses: HALF_WIDTH_INPUT_CLASS,
     selectElement: countySelect
   })
 })
@@ -191,6 +194,7 @@ const breedSelect = document.querySelector('select#breed')
 if (breedSelect) {
   accessibleAutocomplete.enhanceSelectElement({
     defaultValue: '',
+    inputClasses: HALF_WIDTH_INPUT_CLASS,
     selectElement: breedSelect
   })
 }
@@ -231,4 +235,18 @@ if (ageCategoryRadios.length && ageDetail) {
 
   ageCategoryRadios.forEach((radio) => radio.addEventListener('change', syncAgeDetail))
   syncAgeDetail()
+}
+
+// Without JavaScript the contact method is always shown; it is only saved when the answer is Yes.
+const sameCaseRadios = document.querySelectorAll('input[name="contactedAboutSameCase"]')
+const contactMethod = document.querySelector('#contact-method')
+
+if (sameCaseRadios.length && contactMethod) {
+  const syncContactMethod = () => {
+    const selected = Array.from(sameCaseRadios).find((radio) => radio.checked)
+    contactMethod.hidden = selected?.value !== 'yes'
+  }
+
+  sameCaseRadios.forEach((radio) => radio.addEventListener('change', syncContactMethod))
+  syncContactMethod()
 }

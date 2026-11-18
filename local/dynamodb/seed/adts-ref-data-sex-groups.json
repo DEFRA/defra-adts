@@ -49,7 +49,7 @@
       "SK": { "S": "ORDER#0005#UNKNOWN" },
       "type": { "S": "SEX_GROUP" },
       "code": { "S": "UNKNOWN" },
-      "description": { "S": "I don\\'t know" },
+      "description": { "S": "I don't know" },
       "excludeAvian": { "BOOL": true },
       "index": { "N": "4" },
       "GSI1PK": { "S": "CODE#SEX_GROUP" },

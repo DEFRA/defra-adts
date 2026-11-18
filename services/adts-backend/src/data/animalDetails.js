@@ -63,9 +63,16 @@ const appliesToSpecies = (item, speciesId, isAvian) => {
 const applicableOptions = (items, speciesId, isAvian) =>
   optionItems(items.filter((item) => appliesToSpecies(item, speciesId, isAvian)))
 
-const speciesOptions = async (docClient, type, speciesId) => {
-  const items = await queryItems(docClient, `REF#${type}`)
-  return items.filter((item) => item.speciesCode === speciesId)
+const speciesOptions = (items, speciesId) => items.filter((item) => item.speciesCode === speciesId)
+
+// Species-specific purposes take precedence. Species with none fall back to purposes with no species code.
+const purposeOptions = (items, speciesId, isAvian) => {
+  const speciesPurposes = speciesOptions(items, speciesId)
+  const purposes = speciesPurposes.length > 0
+    ? speciesPurposes
+    : items.filter((item) => item.speciesCode == null)
+
+  return applicableOptions(purposes, speciesId, isAvian)
 }
 
 export const getAnimalDetails = async (docClient, speciesId) => {
@@ -75,9 +82,9 @@ export const getAnimalDetails = async (docClient, speciesId) => {
   }
 
   const isAvian = species.isAvian === true
-  const [breeds, purposes, keepingTypes, sexes, ageCategories, organicOptions] = await Promise.all([
-    speciesOptions(docClient, 'SPECIES_ANIMAL_BREED', speciesId),
-    speciesOptions(docClient, 'SPECIES_ANIMAL_PURPOSE', speciesId),
+  const [breedItems, purposeItems, keepingTypes, sexes, ageCategories, organicOptions] = await Promise.all([
+    queryItems(docClient, 'REF#SPECIES_ANIMAL_BREED'),
+    queryItems(docClient, 'REF#SPECIES_ANIMAL_PURPOSE'),
     queryItems(docClient, 'REF#SPECIES_HOUSING'),
     queryItems(docClient, 'REF#SEX_GROUP'),
     queryItems(docClient, 'REF#AGE_CATEGORY'),
@@ -88,9 +95,9 @@ export const getAnimalDetails = async (docClient, speciesId) => {
     speciesId,
     ageCategories: applicableOptions(ageCategories, speciesId, isAvian),
     ageUnits,
-    purposes: applicableOptions(purposes, speciesId, isAvian),
+    purposes: purposeOptions(purposeItems, speciesId, isAvian),
     keepingTypes: applicableOptions(keepingTypes, speciesId, isAvian),
-    breeds: applicableOptions(breeds, speciesId, isAvian),
+    breeds: applicableOptions(speciesOptions(breedItems, speciesId), speciesId, isAvian),
     sexes: applicableOptions(sexes, speciesId, isAvian),
     organicAccreditationApplicable: applicableOptions(organicOptions, speciesId, isAvian).length > 0
   }

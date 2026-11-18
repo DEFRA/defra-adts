@@ -153,12 +153,14 @@ jobs:
       - name: Show Service Matrix
         run: echo ${{ steps.set-matrix.outputs.matrix }}
 
-  validate_ui_service:
-    name: Validate ADTS UI
+  validate_services:
+    name: Validate
     needs:
       - detect_changes
+    strategy:
+      matrix: ${{ fromJSON(needs.get_service_matrix.outputs.matrix) }}
 
-    if: ${{ needs.detect_changes.outputs.ui_service == 'true' }}
+    if: ${{ matrix.change-detected }}
 
     permissions:
       contents: read
@@ -166,79 +168,25 @@ jobs:
     uses: ./.github/workflows/_validation.yml
 
     with:
-      service-name: adts-ui
-      service-directory: services/adts-ui
-      node-version: "24"
-      run-audit: false
-      run-lint: true
-      run-format-check: false
-      run-tests: true
-      run-sonarqube-scan: true
-      test-command: npm run test:coverage && npm run test:integration
-      build-command: npm run build
+      service-name: ${{ matrix.service }}
+      service-directory: ${{ matrix.path }}
+      node-version: ${{ matrix.node-version }}
+      run-audit: ${{ matrix.change-detected }}
+      run-lint: ${{ matrix.run-lint }}
+      run-format-check: ${{ matrix.run-format-check }}
+      run-tests: ${{ matrix.run-tests }}
+      run-sonarqube-scan: ${{ matrix.run-sonarqube-scan }}
+      test-command: ${{ matrix.test-command }}
+      build-command: ${{ matrix.build-command }}
     secrets:
       SQ_ACCESS_TOKEN: ${{ secrets.SONAR_TOKEN }}
-
-  validate_backend_service:
-    name: Validate ADTS Backend
-    needs:
-      - detect_changes
-
-    if: ${{ needs.detect_changes.outputs.backend_service == 'true' }}
-
-    permissions:
-      contents: read
-
-    uses: ./.github/workflows/_validation.yml
-
-    with:
-      service-name: adts-backend
-      service-directory: services/adts-backend
-      node-version: "24"
-      run-audit: false
-      run-lint: true
-      run-format-check: false
-      run-tests: true
-      run-sonarqube-scan: true
-      test-command: npm run test:coverage && npm run test:integration && npm run test:contract && npm run test:api
-      build-command: npm run build
-    secrets:
-      SQ_ACCESS_TOKEN: ${{ secrets.BACKEND_SONAR_TOKEN }}
-
-  validate_submissions_service:
-    name: Validate ADTS Submissions
-    needs:
-      - detect_changes
-
-    if: ${{ needs.detect_changes.outputs.submissions_service == 'true' }}
-
-    permissions:
-      contents: read
-
-    uses: ./.github/workflows/_validation.yml
-
-    with:
-      service-name: adts-submissions-service
-      service-directory: services/adts-submissions-service
-      node-version: "24"
-      run-audit: false
-      run-lint: true
-      run-format-check: false
-      run-tests: true
-      run-sonarqube-scan: true
-      test-command: npm run test:coverage
-      build-command: npm run build
-    secrets:
-      SQ_ACCESS_TOKEN: ${{ secrets.SUBMISSIONS_SONAR_TOKEN }}
 
   e2e_testing:
     name: End to End Tests
 
     needs:
       - detect_changes
-      - validate_ui_service
-      - validate_backend_service
-      - validate_submissions_service
+      - validate_services
 
     # An explicit condition is required because one of the validation jobs
     # may legitimately have been skipped.
@@ -270,7 +218,7 @@ jobs:
 
     needs:
       - detect_changes
-      - validate_ui_service
+      - validate_services
       - e2e_testing
 
     if: |
@@ -306,7 +254,7 @@ jobs:
 
     needs:
       - detect_changes
-      - validate_backend_service
+      - validate_services
       - e2e_testing
 
     if: |
@@ -343,7 +291,7 @@ jobs:
 
     needs:
       - detect_changes
-      - validate_submissions_service
+      - validate_services
       - e2e_testing
 
     if: |

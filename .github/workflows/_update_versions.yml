@@ -50,7 +50,7 @@ jobs:
             head -n 1
           )"
           
-          ALL_VERSIONS_TAG="${LAST_UI_TAG}:${LAST_BACKEND_TAG}:${LAST_SUBMISSIONS_TAG}"
+          ALL_VERSIONS_TAG="${LAST_UI_TAG}/${LAST_BACKEND_TAG}/${LAST_SUBMISSIONS_TAG}"
 
           git config user.name "${{ github.actor }}"
           git config user.email \

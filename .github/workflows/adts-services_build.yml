@@ -230,6 +230,7 @@ jobs:
     name: Publish UI container image
     needs:
       - detect_changes
+      - get_service_matrix
       - validate_services
       - e2e_testing
 

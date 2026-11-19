@@ -180,7 +180,7 @@ jobs:
       - name: SHow
         run: |
           echo ${{ needs.get_service_matrix.outputs.matrix }}
-          echo AWS_REGION is ${{ vars[AWS_REGION] }}
+          echo AWS_REGION is ${{ vars['AWS_REGION'] }}
 
   # Run validation for all services in the matrix
   validate_services:

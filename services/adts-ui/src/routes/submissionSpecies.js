@@ -8,6 +8,7 @@ import {
 import { DRAFT_SAVE_ERROR, persistSubmissionDraft } from './submissionDrafts.js'
 
 const pageName = 'submission-02-species'
+const VIEW_NAME = 'submission-species.njk'
 const nextPageName = 'submission-02-animal-details'
 const getSpeciesSelection = (selection) => {
   const errors = {}
@@ -75,7 +76,7 @@ const submissionSpecies = (server, submissionFormStateKey) => {
       handler: async (request, h) => {
         const submissionFormState = request.yar.get(submissionFormStateKey) || {}
         const context = await buildViewContext(submissionFormState)
-        const view = h.view('submission-species.njk', context)
+        const view = h.view(VIEW_NAME, context)
 
         return context.clientSummaryError ? view.code(BAD_GATEWAY_STATUS) : view
       }
@@ -91,7 +92,7 @@ const submissionSpecies = (server, submissionFormStateKey) => {
 
         if (Object.keys(errors).length > 0) {
           const context = await buildViewContext(submissionFormState, { selection, errors })
-          const view = h.view('submission-species.njk', context)
+          const view = h.view(VIEW_NAME, context)
 
           return context.clientSummaryError
             ? view.code(BAD_GATEWAY_STATUS)
@@ -123,7 +124,7 @@ const submissionSpecies = (server, submissionFormStateKey) => {
             { ...submissionFormState, formData: updatedFormData },
             { selection, saveError: DRAFT_SAVE_ERROR }
           )
-          return h.view('submission-species.njk', context).code(BAD_GATEWAY_STATUS)
+          return h.view(VIEW_NAME, context).code(BAD_GATEWAY_STATUS)
         }
 
         return h.redirect(`/${nextPageName}`)

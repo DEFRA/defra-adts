@@ -22,7 +22,7 @@ export const createUpdateDraft = async ({
 
   const draft = await response.json()
   if (typeof draft.draftId !== 'string' || !Number.isSafeInteger(draft.revision)) {
-    throw new Error('Saving draft returned an invalid response')
+    throw new TypeError('Saving draft returned an invalid response')
   }
 
   return draft

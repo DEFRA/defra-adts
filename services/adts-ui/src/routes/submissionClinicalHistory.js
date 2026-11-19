@@ -66,7 +66,7 @@ const validate = (values, maxDate) => {
   return { values, sampleTakenDate, errors }
 }
 
-const renderPage = async (h, submissionFormState, values, errors = {}, saveError) => {
+const renderPage = async (h, submissionFormState, values, { errors = {}, saveError } = {}) => {
   const clientSummaryResult = await loadClientSummary(submissionFormState)
   const errorList = errors.sampleTakenDate
     ? [{ text: errors.sampleTakenDate, href: '#sampleTakenDate-day' }]
@@ -114,7 +114,7 @@ const submissionClinicalHistory = (server, submissionFormStateKey) => {
         const { values, sampleTakenDate, errors } = validate(submittedValues(request.payload || {}), today())
 
         if (Object.keys(errors).length) {
-          return renderPage(h, submissionFormState, values, errors)
+          return renderPage(h, submissionFormState, values, { errors })
         }
 
         const formData = submissionFormState.formData || {}
@@ -157,8 +157,7 @@ const submissionClinicalHistory = (server, submissionFormStateKey) => {
             h,
             { ...submissionFormState, formData: updatedFormData },
             values,
-            {},
-            DRAFT_SAVE_ERROR
+            { saveError: DRAFT_SAVE_ERROR }
           )
         }
 

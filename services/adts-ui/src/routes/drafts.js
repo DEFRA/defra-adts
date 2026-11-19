@@ -8,8 +8,36 @@ const resumePaths = {
   'submission-03-clinical-history': '/submission-03-clinical-history'
 }
 
+const NOT_FOUND = 404
+const UNPROCESSABLE = 422
+const BAD_GATEWAY = 502
+const UNAVAILABLE_MESSAGE =
+  'This draft cannot be continued because its saved progress is unavailable.'
+
 const draftError = (h, statusCode, message) =>
   h.view('draft-error.njk', { message }).code(statusCode)
+
+const isPlainObject = (value) =>
+  Boolean(value) && typeof value === 'object' && !Array.isArray(value)
+
+const isContinuableDraft = (draft, draftId) =>
+  isPlainObject(draft) &&
+  draft.draftId === draftId &&
+  typeof draft.status === 'string' &&
+  draft.status.toLowerCase() === 'draft'
+
+const hasResumableState = (draft) => {
+  if (!resumePaths[draft.lastSavedPage]) {
+    return false
+  }
+  if (
+    draft.lastSavedPage === 'submission-02-animal-details' &&
+    !draft.formData?.animalDetails?.speciesId
+  ) {
+    return false
+  }
+  return Number.isInteger(draft.revision) && isPlainObject(draft.formData)
+}
 
 const drafts = (server, submissionFormStateKey) => {
   server.route({
@@ -18,35 +46,15 @@ const drafts = (server, submissionFormStateKey) => {
     handler: async (request, h) => {
       const result = await safeLoad(() => getDraft(request.params.draftId))
       if (result.error) {
-        const statusCode = result.error.statusCode === 404 ? 404 : 502
+        const statusCode = result.error.statusCode === NOT_FOUND ? NOT_FOUND : BAD_GATEWAY
         return draftError(h, statusCode, 'We could not load this draft. Try again later.')
       }
 
       const draft = result.data
-      if (
-        !draft ||
-        typeof draft !== 'object' ||
-        Array.isArray(draft) ||
-        typeof draft.draftId !== 'string' ||
-        draft.draftId !== request.params.draftId ||
-        typeof draft.status !== 'string' ||
-        draft.status.toLowerCase() !== 'draft'
-      ) {
-        return draftError(h, 422, 'This draft cannot be continued because its saved progress is unavailable.')
+      if (!isContinuableDraft(draft, request.params.draftId) || !hasResumableState(draft)) {
+        return draftError(h, UNPROCESSABLE, UNAVAILABLE_MESSAGE)
       }
-
       const resumePath = resumePaths[draft.lastSavedPage]
-      const savedSpeciesId = draft.formData?.animalDetails?.speciesId
-      if (
-        !resumePath ||
-        (draft.lastSavedPage === 'submission-02-animal-details' && !savedSpeciesId) ||
-        !Number.isInteger(draft.revision) ||
-        !draft.formData ||
-        typeof draft.formData !== 'object' ||
-        Array.isArray(draft.formData)
-      ) {
-        return draftError(h, 422, 'This draft cannot be continued because its saved progress is unavailable.')
-      }
 
       request.yar.set(submissionFormStateKey, {
         draftId: draft.draftId,

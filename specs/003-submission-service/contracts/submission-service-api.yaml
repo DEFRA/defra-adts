@@ -1,0 +1,704 @@
+openapi: 3.0.3
+info:
+  title: ADTS Submission Service API
+  version: 1.0.0
+  description: >-
+    Proposed domain-oriented REST API between the ADTS Backend and the Submission
+    Service. LIMS-specific endpoint names and parameter spellings are internal.
+    Draft field schemas and report representations are deliberately incomplete
+    until verified against legacy callers and the authoritative LIMS contract.
+    Initial access control relies on HTTPS and private AWS network restrictions;
+    this service does not verify per-request SigV4 identity. API Gateway is not
+    part of the deployment path.
+servers:
+  - url: /
+paths:
+  /health:
+    get:
+      security: []
+      summary: Report process health
+      responses:
+        '200':
+          description: The service process is responding.
+  /ready:
+    get:
+      security: []
+      summary: Report service readiness without requiring LIMS availability
+      responses:
+        '200':
+          description: Service configuration and startup requirements are ready.
+        '503':
+          description: Service is not ready to accept requests.
+  /health/lims:
+    get:
+      security: []
+      summary: Report connectivity to the configured LIMS dependency
+      responses:
+        '200':
+          description: Configured LIMS is reachable and accepted the health check.
+        '503':
+          description: Configured LIMS is unavailable or rejected the health check.
+  /v1/products:
+    get:
+      summary: Search products
+      parameters:
+        - name: filter
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: species
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Matching products.
+          content:
+            application/json:
+              schema:
+                type: array
+                description: >-
+                  LIMS product records passed through without field transformation.
+                  Exact product fields remain unconfirmed pending authoritative LIMS evidence.
+                items:
+                  type: object
+                  additionalProperties: true
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        default:
+          $ref: '#/components/responses/ServiceError'
+  /v1/clients:
+    get:
+      summary: Search clients within a practice
+      parameters:
+        - $ref: '#/components/parameters/PvsId'
+        - $ref: '#/components/parameters/Filter'
+      responses:
+        '200':
+          description: Matching clients.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  additionalProperties: true
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        default:
+          $ref: '#/components/responses/ServiceError'
+  /v1/practices/{pvsId}:
+    get:
+      summary: Retrieve practice/PVS details
+      parameters:
+        - $ref: '#/components/parameters/PvsIdPath'
+      responses:
+        '200':
+          description: Practice details.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        default:
+          $ref: '#/components/responses/ServiceError'
+  /v1/submission-identifiers:
+    get:
+      summary: Search submission identifiers
+      parameters:
+        - $ref: '#/components/parameters/PvsId'
+        - $ref: '#/components/parameters/Filter'
+      responses:
+        '200':
+          description: Matching submission identifiers.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        default:
+          $ref: '#/components/responses/ServiceError'
+  /v1/submissions:
+    get:
+      summary: Search submitted records
+      description: >-
+        Query names map to observed LIMS filters. Response fields remain
+        pass-through and provisional until verified against authoritative LIMS
+        evidence.
+      parameters:
+        - $ref: '#/components/parameters/PvsId'
+        - $ref: '#/components/parameters/Filter'
+        - name: clientId
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+        - name: clinician
+          in: query
+          schema:
+            type: string
+        - name: submittedDateBegin
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: submittedDateEnd
+          in: query
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Matching submitted records in the verified upstream response shape.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        default:
+          $ref: '#/components/responses/ServiceError'
+  /v1/drafts/{draftId}:
+    get:
+      summary: Retrieve an editable LIMS draft
+      parameters:
+        - $ref: '#/components/parameters/DraftIdPath'
+        - $ref: '#/components/parameters/PvsId'
+      responses:
+        '200':
+          description: Editable LIMS draft.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DraftSubmission'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        default:
+          $ref: '#/components/responses/ServiceError'
+  /v1/submissions/{submissionId}:
+    get:
+      summary: View a previously submitted record
+      parameters:
+        - $ref: '#/components/parameters/SubmissionIdPath'
+        - $ref: '#/components/parameters/PvsId'
+        - name: isDraft
+          in: query
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '200':
+          description: Previously submitted record in the verified upstream response shape.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        default:
+          $ref: '#/components/responses/ServiceError'
+    put:
+      summary: Update an existing LIMS draft
+      parameters:
+        - $ref: '#/components/parameters/DraftIdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DraftSubmissionInput'
+      responses:
+        '200':
+          description: Draft updated and confirmed by LIMS.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DraftIdentifier'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        default:
+          $ref: '#/components/responses/ServiceError'
+  /v1/drafts:
+    post:
+      summary: Create a LIMS draft
+      description: >-
+        The service makes one upstream attempt. If the result is ambiguous, it
+        returns outcome_unknown; the caller must reconcile before retrying.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DraftSubmissionInput'
+      responses:
+        '201':
+          description: Draft created and identifier confirmed by LIMS.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DraftIdentifier'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        default:
+          $ref: '#/components/responses/ServiceError'
+  /v1/drafts/{draftId}/delivery-addresses:
+    get:
+      summary: Retrieve draft delivery and sample addresses
+      parameters:
+        - $ref: '#/components/parameters/DraftIdPath'
+        - $ref: '#/components/parameters/PvsId'
+      responses:
+        '200':
+          description: Address records associated with the draft.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  additionalProperties: true
+        default:
+          $ref: '#/components/responses/ServiceError'
+  /v1/drafts/{draftId}/confirmation:
+    post:
+      summary: Confirm a LIMS draft
+      description: >-
+        The service makes one upstream attempt. An ambiguous result is returned
+        as outcome_unknown and is not automatically retried.
+      parameters:
+        - $ref: '#/components/parameters/DraftIdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [pvsId]
+              properties:
+                pvsId:
+                  type: string
+      responses:
+        '200':
+          description: Confirmation established by LIMS.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [submissionId]
+                properties:
+                  submissionId:
+                    type: string
+        default:
+          $ref: '#/components/responses/ServiceError'
+  /v1/cancellation-requests:
+    post:
+      summary: Request cancellation of a LIMS draft or submission
+      description: >-
+        The service makes one upstream attempt. Business-level cancellation
+        rejections are represented as errors even if LIMS returns HTTP success.
+        An ambiguous result is not automatically retried.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [pvsId, clinician]
+              properties:
+                pvsId:
+                  type: string
+                draftId:
+                  type: string
+                submissionId:
+                  type: string
+                clinician:
+                  type: string
+              oneOf:
+                - required: [draftId]
+                - required: [submissionId]
+      responses:
+        '200':
+          description: LIMS accepted the cancellation request.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [hasErrors, errorMessages]
+                properties:
+                  hasErrors:
+                    type: boolean
+                  errorMessages:
+                    type: array
+                    items:
+                      type: string
+        '422':
+          description: LIMS returned a business-level cancellation rejection.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        default:
+          $ref: '#/components/responses/ServiceError'
+  /v1/submissions/{submissionId}/results/latest:
+    get:
+      summary: Retrieve latest released results and charges
+      parameters:
+        - $ref: '#/components/parameters/SubmissionIdPath'
+        - $ref: '#/components/parameters/PvsId'
+      responses:
+        '200':
+          description: Latest released result and charge records; fields are pass-through pending authoritative LIMS evidence.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        default:
+          $ref: '#/components/responses/ServiceError'
+  /v1/submissions/{submissionId}/release-summary:
+    get:
+      summary: Retrieve the structured released-results summary
+      description: >-
+        This view is mapped from getLatestReleasedResults. The exact upstream
+        fields are source-derived and remain open to further LIMS verification.
+      parameters:
+        - $ref: '#/components/parameters/SubmissionIdPath'
+        - $ref: '#/components/parameters/PvsId'
+      responses:
+        '200':
+          description: Structured summary in the upstream JSON representation.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        default:
+          $ref: '#/components/responses/ServiceError'
+  /v1/submissions/{submissionId}/report:
+    get:
+      summary: Retrieve the inline PDF report
+      description: >-
+        LIMS returns JSON with a base64 LastReportString. The service decodes it
+        and serves application/pdf inline, matching the legacy application; no
+        Content-Disposition filename is added.
+      parameters:
+        - $ref: '#/components/parameters/SubmissionIdPath'
+        - $ref: '#/components/parameters/PvsId'
+      responses:
+        '200':
+          description: Decoded PDF bytes served inline.
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        default:
+          $ref: '#/components/responses/ServiceError'
+components:
+  parameters:
+    PvsId:
+      name: pvsId
+      in: query
+      required: true
+      schema:
+        type: string
+    PvsIdPath:
+      name: pvsId
+      in: path
+      required: true
+      schema:
+        type: string
+    Filter:
+      name: filter
+      in: query
+      required: false
+      schema:
+        type: string
+    DraftIdPath:
+      name: draftId
+      in: path
+      required: true
+      schema:
+        type: string
+    SubmissionIdPath:
+      name: submissionId
+      in: path
+      required: true
+      schema:
+        type: string
+  schemas:
+    DraftSubmissionInput:
+      type: object
+      description: >-
+        Full draft body matching the 52 keys serialized by legacy ADTS release
+        12.1.6. This is source-derived compatibility behavior, not an
+        authoritative statement of LIMS validation rules.
+      required:
+        - draftSubmissionId
+        - submissionType
+        - pvsId
+        - clientName
+        - clientFarm
+        - clientAddress
+        - clientPostcode
+        - clientCounty
+        - clientSubCounty
+        - clientCPHH
+        - clinician
+        - resultsReadyConfirmationEmail
+        - resultsReadyConfirmationPhoneNumber
+        - areAnimalsAtFarmAddress
+        - animalCPHH
+        - animalFarm
+        - animalAddress
+        - animalPostcode
+        - animalCounty
+        - animalSubCounty
+        - animalSpeciesId
+        - animalBreedId
+        - animals
+        - animalSexId
+        - animalAgeId
+        - ageDetail
+        - ageIndicator
+        - ageIsEstimate
+        - animalOrganicId
+        - animalPurposeId
+        - animalHousingId
+        - dateSamplesTaken
+        - previousSubmissionId
+        - previousSubmissionContactByPhone
+        - previousSubmissionContactByAphaFarmVisit
+        - herdTotal
+        - herdBreedingTotal
+        - herdAffectedTotal
+        - herdAffectedIncDead
+        - herdDeadTotal
+        - clinicalSign1Id
+        - clinicalSign2Id
+        - clinicalSign3Id
+        - clinicalSignDurationId
+        - clinicalHistory
+        - products
+        - samplesWillSendToSeparateAddresses
+        - canUseSurveillance
+        - cancelSubmission
+        - masterSubmissionId
+        - linkedFirstOfPairSubmissionId
+        - sendersReference
+      properties:
+        draftSubmissionId:
+          type: string
+          nullable: true
+        submissionType:
+          type: string
+          enum: [MONI, DIAG]
+        pvsId: { type: string }
+        clientName: { type: string }
+        clientFarm: { type: string }
+        clientAddress: { type: string }
+        clientPostcode: { type: string }
+        clientCounty: { type: string }
+        clientSubCounty: { type: string, nullable: true }
+        clientCPHH: { type: string }
+        clinician:
+          type: string
+          maxLength: 1000
+        resultsReadyConfirmationEmail: { type: string }
+        resultsReadyConfirmationPhoneNumber: { type: string }
+        areAnimalsAtFarmAddress: { type: boolean }
+        animalCPHH: { type: string, nullable: true }
+        animalFarm: { type: string, nullable: true }
+        animalAddress: { type: string }
+        animalPostcode: { type: string, nullable: true }
+        animalCounty: { type: string, nullable: true }
+        animalSubCounty: { type: string, nullable: true }
+        animalSpeciesId: { type: string }
+        animalBreedId: { type: string }
+        animals:
+          type: array
+          items:
+            $ref: '#/components/schemas/DraftAnimal'
+        animalSexId: { type: string }
+        animalAgeId: { type: string }
+        ageDetail: { type: string, nullable: true }
+        ageIndicator:
+          type: string
+          nullable: true
+          enum: [NONE, DAYS, WEEKS, MONTHS, YEARS, null]
+        ageIsEstimate: { type: boolean, nullable: true }
+        animalOrganicId: { type: string }
+        animalPurposeId: { type: string }
+        animalHousingId: { type: string }
+        dateSamplesTaken:
+          type: string
+          nullable: true
+          pattern: '^\d{2}/\d{2}/\d{4}$'
+        previousSubmissionId: { type: string }
+        previousSubmissionContactByPhone: { type: boolean, nullable: true }
+        previousSubmissionContactByAphaFarmVisit: { type: boolean, nullable: true }
+        herdTotal: { type: string, nullable: true }
+        herdBreedingTotal: { type: string, nullable: true }
+        herdAffectedTotal: { type: string, nullable: true }
+        herdAffectedIncDead: { type: string, nullable: true }
+        herdDeadTotal: { type: string, nullable: true }
+        clinicalSign1Id: { type: string }
+        clinicalSign2Id: { type: string }
+        clinicalSign3Id: { type: string }
+        clinicalSignDurationId: { type: string }
+        clinicalHistory: { type: string, nullable: true }
+        products:
+          type: array
+          items:
+            $ref: '#/components/schemas/DraftProduct'
+        samplesWillSendToSeparateAddresses: { type: boolean, nullable: true }
+        canUseSurveillance: { type: boolean }
+        cancelSubmission: { type: string, nullable: true, enum: [null] }
+        masterSubmissionId: { type: string, nullable: true }
+        linkedFirstOfPairSubmissionId: { type: string, nullable: true }
+        sendersReference: { type: string, nullable: true }
+      additionalProperties: false
+    DraftSubmission:
+      type: object
+      description: >-
+        Legacy getSubmission response includes the serialized draft fields plus
+        display labels and update metadata; its exact response schema is not
+        authoritative for LIMS validation.
+      additionalProperties: true
+    DraftAnimal:
+      type: object
+      required: [id, name]
+      properties:
+        id: { type: integer, minimum: 0 }
+        name: { type: string }
+      additionalProperties: false
+    DraftProduct:
+      type: object
+      required: [productId, productType, isFOP, isSOP, animalSamples, sampleTypes, options]
+      properties:
+        productId: { type: string }
+        productType: { type: string }
+        isFOP: { type: boolean }
+        isSOP: { type: boolean }
+        animalSamples:
+          type: array
+          items:
+            $ref: '#/components/schemas/DraftAnimalSample'
+        sampleTypes:
+          type: array
+          items:
+            $ref: '#/components/schemas/DraftSampleType'
+        options:
+          type: array
+          items:
+            $ref: '#/components/schemas/DraftProductOption'
+      additionalProperties: false
+    DraftAnimalSample:
+      type: object
+      required: [animalId, animalName, sampleId, poolGroup]
+      properties:
+        animalId: { type: integer, minimum: 0 }
+        animalName: { type: string }
+        sampleId: { type: string }
+        poolGroup: { type: integer, nullable: true }
+        packageProductId: { type: string }
+      additionalProperties: false
+    DraftSampleType:
+      type: object
+      required: [packageProductId, sampleType]
+      properties:
+        packageProductId: { type: string }
+        sampleType: { type: string }
+      additionalProperties: false
+    DraftProductOption:
+      type: object
+      required: [packageProductId, option]
+      properties:
+        packageProductId: { type: string }
+        option: { type: string }
+      additionalProperties: false
+    DraftIdentifier:
+      type: object
+      required: [draftId]
+      properties:
+        draftId:
+          type: string
+    SubmissionSummary:
+      type: object
+      required: [submissionId]
+      properties:
+        submissionId:
+          type: string
+        status:
+          type: string
+        clientId:
+          type: string
+        clinician:
+          type: string
+        submittedDate:
+          type: string
+          format: date
+        additionalData:
+          type: object
+          additionalProperties: true
+    Error:
+      type: object
+      required: [category, message, correlationId]
+      properties:
+        category:
+          type: string
+          enum:
+            - validation_error
+            - unauthenticated
+            - forbidden
+            - not_found
+            - business_error
+            - upstream_http_error
+            - upstream_timeout
+            - upstream_transport_error
+            - dependency_unavailable
+            - outcome_unknown
+        message:
+          type: string
+        correlationId:
+          type: string
+        upstreamCode:
+          type: string
+          description: Allowlisted, non-sensitive LIMS code when available.
+        upstreamMessages:
+          type: array
+          description: Bounded LIMS business messages; credential-shaped text is redacted.
+          items:
+            type: string
+  responses:
+    ValidationError:
+      description: Backend request failed service-side validation.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFoundError:
+      description: Requested record does not exist or is not visible.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    ServiceError:
+      description: Normalized dependency, business, timeout, or unknown-outcome error.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

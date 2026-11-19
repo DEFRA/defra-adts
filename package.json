@@ -16,6 +16,7 @@
     "test:db:up": "local/dynamodb/test-db.sh up",
     "test:db:reset": "local/dynamodb/test-db.sh reset",
     "test:db:down": "local/dynamodb/test-db.sh down",
+    "mock:lims": "node tests/mocks/lims/server.js",
     "test:integration": "npm run test:integration --prefix services/adts-backend",
     "test:ui": "npm test --prefix services/adts-ui",
     "test:submissions": "npm test --prefix services/adts-submissions-service",

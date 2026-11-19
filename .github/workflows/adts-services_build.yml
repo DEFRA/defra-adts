@@ -170,14 +170,6 @@ jobs:
           echo $MATRIX
           echo $MATRIX >> $GITHUB_OUTPUT
 
-  show_service_matrix:
-    runs-on: ubuntu-latest
-    needs: get_service_matrix
-    steps:
-      - name: SHow
-        run: |
-          echo ${{ needs.get_service_matrix.outputs.matrix }}
-
   # Run validation for all services in the matrix
   validate_services:
     name: Validate
@@ -265,7 +257,7 @@ jobs:
     needs:
       - detect_changes
       - e2e_testing
-#      - build_containers
+      - build_containers
 
     permissions:
       contents: write

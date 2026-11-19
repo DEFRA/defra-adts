@@ -162,6 +162,21 @@ describe('Submission client details page', () => {
     expect(JSON.parse(saveRequest[1].body).formData.submissionType).toBe(expectedType)
   })
 
+  test('does not advance when the backend returns an invalid draft response', async () => {
+    jest.spyOn(console, 'error').mockImplementation(() => {})
+    globalThis.fetch.mockImplementation(async (requestUrl) => {
+      if (requestUrl === 'http://localhost:3200/drafts') {
+        return jsonResponse({ draftId: 123 })
+      }
+      return routeBackend()(requestUrl)
+    })
+
+    const response = await server.inject({ method: 'POST', url, payload: { clientId: '101' } })
+
+    expect(response.statusCode).toBe(502)
+    expect(response.payload).toContain('We could not save your draft')
+  })
+
   test('does not advance when the backend cannot save the draft', async () => {
     jest.spyOn(console, 'error').mockImplementation(() => {})
     globalThis.fetch.mockImplementation(async (requestUrl) => {

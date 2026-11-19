@@ -357,6 +357,24 @@ describe('Submission animal details page', () => {
     expect(response.statusCode).toBe(400)
   })
 
+  test('does not advance when the backend cannot save the draft', async () => {
+    const selection = await selectSpecies('Sheep')
+    jest.spyOn(console, 'error').mockImplementation(() => {})
+    const original = globalThis.fetch.getMockImplementation()
+    globalThis.fetch.mockImplementation(async (requestUrl, options) => {
+      if (requestUrl === 'http://localhost:3200/drafts') {
+        return new Response('Unavailable', { status: 502 })
+      }
+      return original(requestUrl, options)
+    })
+
+    const response = await post(selection, { ageCategory: 'lamb', purpose: 'meat' })
+
+    expect(response.statusCode).toBe(502)
+    expect(response.headers.location).toBeUndefined()
+    expect(response.payload).toContain('We could not save your draft')
+  })
+
   test('keeps submitted values and does not save when validation fails', async () => {
     const selection = await selectSpecies('Sheep')
     await post(selection, { purpose: 'meat', ageCategory: 'lamb' })

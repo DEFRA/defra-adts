@@ -20,11 +20,14 @@
       "GSI2SK": { "S": "UPDATED#2026-10-06T10:15:00Z#submission-123" }
     } } },
     { "PutRequest": { "Item": {
-      "PK": { "S": "SUBMISSION#draft-001" },
+      "PK": { "S": "DRAFT#draft-001" },
       "submissionId": { "S": "draft-001" },
       "practiceId": { "S": "practice-123" },
       "userId": { "S": "user-456" },
+      "ownerId": { "S": "user-456" },
       "status": { "S": "Draft" },
+      "revision": { "N": "2" },
+      "lastSavedPage": { "S": "submission-02-species" },
       "client": { "S": "Acme Farm" },
       "clientFarm": { "S": "North Field" },
       "species": { "S": "Cattle" },
@@ -32,18 +35,33 @@
       "submittedAt": { "S": "2026-10-20T10:00:00Z" },
       "createdAt": { "S": "2026-10-20T10:00:00Z" },
       "updatedAt": { "S": "2026-10-20T10:00:00Z" },
-      "formData": { "M": {} },
+      "formData": { "M": {
+        "clientDetails": { "M": {
+          "name": { "S": "Acme Farm" },
+          "farmName": { "S": "North Field" },
+          "addressLine1": { "S": "1 Farm Road" },
+          "county": { "S": "Test County" },
+          "postcode": { "S": "AA1 1AA" },
+          "cph": { "S": "12/345/6789" }
+        } },
+        "animalDetails": { "M": {
+          "species": { "S": "Cattle" }
+        } }
+      } },
       "GSI1PK": { "S": "USER#user-456" },
       "GSI1SK": { "S": "UPDATED#2026-10-20T10:00:00Z#draft-001" },
       "GSI2PK": { "S": "PRACTICE#practice-123" },
       "GSI2SK": { "S": "UPDATED#2026-10-20T10:00:00Z#draft-001" }
     } } },
     { "PutRequest": { "Item": {
-      "PK": { "S": "SUBMISSION#draft-002" },
+      "PK": { "S": "DRAFT#draft-002" },
       "submissionId": { "S": "draft-002" },
       "practiceId": { "S": "practice-123" },
       "userId": { "S": "user-456" },
+      "ownerId": { "S": "user-456" },
       "status": { "S": "Draft" },
+      "revision": { "N": "1" },
+      "lastSavedPage": { "S": "submission-01-client-details" },
       "client": { "S": "Acme Farm" },
       "clientFarm": { "S": "South Field" },
       "species": { "S": "Sheep" },
@@ -51,18 +69,26 @@
       "submittedAt": { "S": "2026-09-10T10:00:00Z" },
       "createdAt": { "S": "2026-09-10T10:00:00Z" },
       "updatedAt": { "S": "2026-09-10T10:00:00Z" },
-      "formData": { "M": {} },
+      "formData": { "M": {
+        "clientDetails": { "M": {
+          "name": { "S": "Acme Farm" },
+          "farmName": { "S": "South Field" }
+        } }
+      } },
       "GSI1PK": { "S": "USER#user-456" },
       "GSI1SK": { "S": "UPDATED#2026-09-10T10:00:00Z#draft-002" },
       "GSI2PK": { "S": "PRACTICE#practice-123" },
       "GSI2SK": { "S": "UPDATED#2026-09-10T10:00:00Z#draft-002" }
     } } },
     { "PutRequest": { "Item": {
-      "PK": { "S": "SUBMISSION#draft-003" },
+      "PK": { "S": "DRAFT#draft-003" },
       "submissionId": { "S": "draft-003" },
       "practiceId": { "S": "practice-123" },
       "userId": { "S": "user-456" },
+      "ownerId": { "S": "user-456" },
       "status": { "S": "Draft" },
+      "revision": { "N": "1" },
+      "lastSavedPage": { "S": "submission-03-clinical-history" },
       "client": { "S": "Beta Farm" },
       "clientFarm": { "S": "East Field" },
       "species": { "S": "Goat" },
@@ -70,7 +96,20 @@
       "submittedAt": { "S": "2025-02-01T10:00:00Z" },
       "createdAt": { "S": "2025-02-01T10:00:00Z" },
       "updatedAt": { "S": "2025-02-01T10:00:00Z" },
-      "formData": { "M": {} },
+      "formData": { "M": {
+        "clientDetails": { "M": {
+          "name": { "S": "Beta Farm" },
+          "farmName": { "S": "East Field" }
+        } },
+        "animalDetails": { "M": {
+          "species": { "S": "Goat" }
+        } },
+        "clinicalHistory": { "M": {
+          "contactedAboutSameCase": { "S": "yes" },
+          "previousSubmissionReference": { "S": "ADTS-123" },
+          "contactMethods": { "L": [{ "S": "phone" }] }
+        } }
+      } },
       "GSI1PK": { "S": "USER#user-456" },
       "GSI1SK": { "S": "UPDATED#2025-02-01T10:00:00Z#draft-003" },
       "GSI2PK": { "S": "PRACTICE#practice-123" },

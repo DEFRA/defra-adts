@@ -196,8 +196,7 @@ jobs:
       run-sonarqube-scan: ${{ matrix.run-sonarqube-scan }}
       test-command: ${{ matrix.test-command }}
       build-command: ${{ matrix.build-command }}
-    secrets:
-      SQ_ACCESS_TOKEN: ${{ matrix.sonar-token }}
+      sq-access-token: ${{ matrix.sonar-token }}
 
   e2e_testing:
     name: End to End Tests

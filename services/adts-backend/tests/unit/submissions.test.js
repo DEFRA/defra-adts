@@ -27,6 +27,32 @@ describe('getSubmissions', () => {
     }
   )
 
+  test('includes drafts saved by the submission flow', async () => {
+    const docClient = clientReturning({
+      Items: [{
+        PK: 'DRAFT#abc',
+        draftId: 'abc',
+        status: 'draft',
+        updatedAt: '2026-11-19T09:00:00.000Z',
+        formData: {
+          clientDetails: { name: 'Acme Farm', farmName: 'Home Farm' },
+          animalDetails: { species: 'Cattle' }
+        }
+      }]
+    })
+
+    const response = await getSubmissions(docClient, { client: 'acme' })
+
+    expect(response.results).toEqual([expect.objectContaining({
+      id: 'abc',
+      statuses: ['Draft'],
+      client: 'Acme Farm',
+      clientFarm: 'Home Farm',
+      species: 'Cattle',
+      orderSubmitted: '19/Nov/2026'
+    })])
+  })
+
   test('rejects unsupported submitted-date filters', async () => {
     await expect(
       getSubmissions(clientReturning({ Items: [] }), { 'submitted-date': '2_years' })

@@ -44,6 +44,22 @@ const formatDate = (value) => {
   return `${day}/${months[date.getUTCMonth()]}/${date.getUTCFullYear()}`
 }
 
+// Drafts saved by the submission flow keep their details inside formData.
+const normaliseItem = (item) => {
+  if (!item.draftId) {
+    return item
+  }
+
+  const { clientDetails, animalDetails } = item.formData || {}
+  return {
+    submissionId: item.draftId,
+    client: clientDetails?.name,
+    clientFarm: clientDetails?.farmName,
+    species: animalDetails?.species,
+    submittedAt: item.updatedAt
+  }
+}
+
 const toSearchResult = (item) => ({
   id: item.submissionId,
   statuses: ['Draft'],
@@ -60,9 +76,9 @@ const toSearchResult = (item) => ({
 const getSubmissionItems = async (docClient, exclusiveStartKey) => {
   const result = await docClient.send(new ScanCommand({
     TableName: submissionsTable(),
-    FilterExpression: '#status = :draft',
+    FilterExpression: '#status IN (:draft, :savedDraft)',
     ExpressionAttributeNames: { '#status': 'status' },
-    ExpressionAttributeValues: { ':draft': 'Draft' },
+    ExpressionAttributeValues: { ':draft': 'Draft', ':savedDraft': 'draft' },
     ExclusiveStartKey: exclusiveStartKey
   }))
 
@@ -75,7 +91,7 @@ const getSubmissionItems = async (docClient, exclusiveStartKey) => {
 }
 
 export const getSubmissions = async (docClient, filters = {}) => {
-  const items = await getSubmissionItems(docClient)
+  const items = (await getSubmissionItems(docClient)).map(normaliseItem)
   const cutoff = dateCutoff(filters['submitted-date'])
   const results = items
     .filter((item) =>

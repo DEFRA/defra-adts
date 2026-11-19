@@ -46,17 +46,19 @@ const formatDate = (value) => {
 
 // Drafts saved by the submission flow keep their details inside formData.
 const normaliseItem = (item) => {
-  if (!item.draftId) {
+  const draftId = item.draftId ?? item.submissionId
+  if (!draftId || !item.formData) {
     return item
   }
 
   const { clientDetails, animalDetails } = item.formData || {}
   return {
-    submissionId: item.draftId,
-    client: clientDetails?.name,
-    clientFarm: clientDetails?.farmName,
-    species: animalDetails?.species,
-    submittedAt: item.updatedAt
+    ...item,
+    submissionId: draftId,
+    client: clientDetails?.name ?? item.client,
+    clientFarm: clientDetails?.farmName ?? item.clientFarm,
+    species: animalDetails?.species ?? item.species,
+    submittedAt: item.updatedAt ?? item.submittedAt
   }
 }
 
@@ -73,25 +75,36 @@ const toSearchResult = (item) => ({
   tests: item.tests || []
 })
 
-const getSubmissionItems = async (docClient, exclusiveStartKey) => {
+const getSubmissionItems = async (docClient, ownerId, exclusiveStartKey) => {
   const result = await docClient.send(new ScanCommand({
     TableName: submissionsTable(),
-    FilterExpression: '#status IN (:draft, :savedDraft)',
-    ExpressionAttributeNames: { '#status': 'status' },
-    ExpressionAttributeValues: { ':draft': 'Draft', ':savedDraft': 'draft' },
+    FilterExpression: '(#status = :draft OR #status = :draftLower) AND (#ownerId = :ownerId OR #userId = :ownerId)',
+    ExpressionAttributeNames: {
+      '#status': 'status',
+      '#ownerId': 'ownerId',
+      '#userId': 'userId'
+    },
+    ExpressionAttributeValues: { ':draft': 'Draft', ':draftLower': 'draft', ':ownerId': ownerId },
     ExclusiveStartKey: exclusiveStartKey
   }))
 
   const items = result.Items ?? []
   if (!result.LastEvaluatedKey) {
-    return items
+    return items.filter((item) => (item.ownerId ?? item.userId) === ownerId)
   }
 
-  return [...items, ...await getSubmissionItems(docClient, result.LastEvaluatedKey)]
+  return [
+    ...items.filter((item) => (item.ownerId ?? item.userId) === ownerId),
+    ...await getSubmissionItems(docClient, ownerId, result.LastEvaluatedKey)
+  ]
 }
 
-export const getSubmissions = async (docClient, filters = {}) => {
-  const items = (await getSubmissionItems(docClient)).map(normaliseItem)
+export const getSubmissions = async (docClient, ownerId, filters = {}) => {
+  if (!ownerId) {
+    throw new Error('Draft owner is required')
+  }
+
+  const items = (await getSubmissionItems(docClient, ownerId)).map(normaliseItem)
   const cutoff = dateCutoff(filters['submitted-date'])
   const results = items
     .filter((item) =>

@@ -8,6 +8,7 @@ import { createDocumentClient } from './data/dynamo.js'
 import { getAnimalDetails } from './data/animalDetails.js'
 import { getCounties } from './data/counties.js'
 import { getSpecies } from './data/species.js'
+import { getDraft } from './data/drafts.js'
 import { getSubmissions } from './data/submissions.js'
 import { createClientsHandler } from './handlers/clients.js'
 import registerDraftRoutes from './routes/drafts.js'
@@ -106,7 +107,15 @@ const createSubmissionsHandler = (getDynamoClient) => {
     }
 
     try {
-      return h.response(await getSubmissions(getDynamoClient(), request.query))
+      const ownerId = process.env.NODE_ENV === 'development'
+        ? request.headers['x-local-draft-owner-id']
+        : undefined
+      if (!ownerId) {
+        return h.response({ error: 'Local draft owner is not configured' })
+          .code(constants.HTTP_STATUS_SERVICE_UNAVAILABLE)
+      }
+
+      return h.response(await getSubmissions(getDynamoClient(), ownerId, request.query))
     } catch (error) {
       console.error('Error retrieving submissions:', error.message)
       return h.response({ error: 'Unable to retrieve submissions' })
@@ -115,8 +124,36 @@ const createSubmissionsHandler = (getDynamoClient) => {
   }
 }
 
+const createDraftHandler = (getDynamoClient) => async (request, h) => {
+  const ownerId = process.env.NODE_ENV === 'development'
+    ? request.headers['x-local-draft-owner-id']
+    : undefined
+  if (!ownerId) {
+    return h.response({ error: 'Local draft owner is not configured' })
+      .code(constants.HTTP_STATUS_SERVICE_UNAVAILABLE)
+  }
+
+  try {
+    const draft = await getDraft(getDynamoClient(), request.params.draftId, ownerId)
+    if (!draft) {
+      return h.response({ error: 'Draft not found' }).code(constants.HTTP_STATUS_NOT_FOUND)
+    }
+
+    return h.response(draft)
+  } catch (error) {
+    console.error('Error retrieving draft:', error.message)
+    return h.response({ error: 'Unable to retrieve draft' })
+      .code(constants.HTTP_STATUS_BAD_GATEWAY)
+  }
+}
+
 const registerSubmissionsRoutes = (server, getDynamoClient) => {
   server.route([
+    {
+      method: 'GET',
+      path: '/v1/products',
+      handler: createProxyGet('v1/products')
+    },
     {
       method: 'GET',
       path: '/GetClients',
@@ -126,6 +163,11 @@ const registerSubmissionsRoutes = (server, getDynamoClient) => {
       method: 'GET',
       path: '/submissions',
       handler: createSubmissionsHandler(getDynamoClient)
+    },
+    {
+      method: 'GET',
+      path: '/drafts/{draftId}',
+      handler: createDraftHandler(getDynamoClient)
     }
   ])
 }

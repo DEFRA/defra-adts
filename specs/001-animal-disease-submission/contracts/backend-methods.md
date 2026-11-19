@@ -24,6 +24,10 @@ Loads one draft when a user resumes it, including from a new UI session.
 - **Output**: Complete saved form data, current revision, lifecycle status, and last saved page key.
 - **Errors**: Not found or not authorized, or unavailable backend/storage dependency.
 
+For the current UI routes, `lastSavedPage` uses one of these stable keys: `submission-01-client-details`, `submission-02-species`, `submission-02-animal-details`, or `submission-03-clinical-history`. The UI must reject an unknown key rather than restarting the journey.
+
+Authentication is not yet available. Local development temporarily supplies `LOCAL_DRAFT_OWNER_ID=user-456` to the UI, which forwards it as `x-local-draft-owner-id`; the backend honors that header only with `NODE_ENV=development`. This fixed local identity is not a production authentication mechanism. Replace it with the confirmed trusted-principal integration before enabling draft access in a deployed environment.
+
 ## `getClients`
 
 Retrieves clients available to the current user for the Client details stage.

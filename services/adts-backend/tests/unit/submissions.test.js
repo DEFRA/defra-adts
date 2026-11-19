@@ -3,6 +3,7 @@ import { getSubmissions } from '../../src/data/submissions.js'
 
 const draft = (overrides = {}) => ({
   submissionId: 'draft-001',
+  userId: 'owner-1',
   status: 'Draft',
   submittedAt: new Date().toISOString(),
   client: 'Acme Farm',
@@ -21,7 +22,7 @@ describe('getSubmissions', () => {
     async (period) => {
       const docClient = clientReturning({ Items: [draft()] })
 
-      const response = await getSubmissions(docClient, { 'submitted-date': period })
+      const response = await getSubmissions(docClient, 'owner-1', { 'submitted-date': period })
 
       expect(response.totalCount).toBe(1)
     }
@@ -32,6 +33,7 @@ describe('getSubmissions', () => {
       Items: [{
         PK: 'DRAFT#abc',
         draftId: 'abc',
+        ownerId: 'owner-1',
         status: 'draft',
         updatedAt: '2026-11-19T09:00:00.000Z',
         formData: {
@@ -41,7 +43,7 @@ describe('getSubmissions', () => {
       }]
     })
 
-    const response = await getSubmissions(docClient, { client: 'acme' })
+    const response = await getSubmissions(docClient, 'owner-1', { client: 'acme' })
 
     expect(response.results).toEqual([expect.objectContaining({
       id: 'abc',
@@ -55,7 +57,7 @@ describe('getSubmissions', () => {
 
   test('rejects unsupported submitted-date filters', async () => {
     await expect(
-      getSubmissions(clientReturning({ Items: [] }), { 'submitted-date': '2_years' })
+      getSubmissions(clientReturning({ Items: [] }), 'owner-1', { 'submitted-date': '2_years' })
     ).rejects.toThrow('Unsupported submitted-date filter: 2_years')
   })
 
@@ -72,7 +74,7 @@ describe('getSubmissions', () => {
       })]
     })
 
-    const response = await getSubmissions(docClient)
+    const response = await getSubmissions(docClient, 'owner-1', {})
 
     expect(response.results[0]).toEqual({
       id: 'draft-001',
@@ -96,7 +98,11 @@ describe('getSubmissions', () => {
       ]
     })
 
-    const response = await getSubmissions(docClient, { client: ' acme ', clinician: 'ALICE' })
+    const response = await getSubmissions(
+      docClient,
+      'owner-1',
+      { client: ' acme ', clinician: 'ALICE' }
+    )
 
     expect(response.results.map(({ id }) => id)).toEqual(['matching-draft'])
   })
@@ -116,7 +122,7 @@ describe('getSubmissions', () => {
       }
     )
 
-    const response = await getSubmissions(docClient)
+    const response = await getSubmissions(docClient, 'owner-1', {})
 
     expect(docClient.send).toHaveBeenCalledTimes(2)
     expect(docClient.send.mock.calls[1][0].input.ExclusiveStartKey).toEqual({ PK: 'next-page' })
@@ -130,7 +136,7 @@ describe('getSubmissions', () => {
     const docClient = clientReturning({ Items: [] })
 
     try {
-      await getSubmissions(docClient)
+      await getSubmissions(docClient, 'owner-1', {})
       expect(docClient.send.mock.calls[0][0].input.TableName).toBe('custom-submissions-table')
     } finally {
       if (originalTable === undefined) {
@@ -142,8 +148,30 @@ describe('getSubmissions', () => {
   })
 
   test('treats a response without Items as empty', async () => {
-    const response = await getSubmissions(clientReturning({}))
+    const response = await getSubmissions(clientReturning({}), 'owner-1', {})
 
     expect(response).toEqual({ results: [], totalCount: 0 })
+  })
+
+  test('returns only drafts belonging to the owner', async () => {
+    const docClient = clientReturning({
+      Items: [
+        draft({ submissionId: 'owned-draft' }),
+        draft({ submissionId: 'other-draft', userId: 'owner-2' })
+      ]
+    })
+
+    const response = await getSubmissions(docClient, 'owner-1', {})
+
+    expect(response.results.map(({ id }) => id)).toEqual(['owned-draft'])
+    expect(docClient.send.mock.calls[0][0].input.ExpressionAttributeValues)
+      .toEqual({ ':draft': 'Draft', ':draftLower': 'draft', ':ownerId': 'owner-1' })
+  })
+
+  test('requires a draft owner', async () => {
+    const docClient = clientReturning({ Items: [] })
+
+    await expect(getSubmissions(docClient)).rejects.toThrow('Draft owner is required')
+    expect(docClient.send).not.toHaveBeenCalled()
   })
 })

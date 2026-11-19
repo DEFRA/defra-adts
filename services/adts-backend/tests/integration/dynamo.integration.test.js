@@ -70,7 +70,9 @@ describe('GET /GetSpecies with local DynamoDB', () => {
 
 describe('GET /submissions with local DynamoDB', () => {
   let server
+  const ownerHeaders = { 'x-local-draft-owner-id': 'user-456' }
   const testEnvironment = {
+    NODE_ENV: 'development',
     DYNAMODB_ENDPOINT: 'http://localhost:8000',
     AWS_REGION: 'eu-west-2',
     AWS_ACCESS_KEY_ID: 'local',
@@ -97,7 +99,7 @@ describe('GET /submissions with local DynamoDB', () => {
   })
 
   const expectDraftResults = async (query, expectedResults) => {
-    const response = await server.inject({ method: 'GET', url: `/submissions?status=draft&${query}` })
+    const response = await server.inject({ method: 'GET', url: `/submissions?status=draft&${query}`, headers: ownerHeaders })
 
     expect(response.statusCode).toBe(200)
     expect(response.result).toEqual({
@@ -170,7 +172,7 @@ describe('GET /submissions with local DynamoDB', () => {
 
     let response
     try {
-      response = await server.inject({ method: 'GET', url: '/submissions?status=draft' })
+      response = await server.inject({ method: 'GET', url: '/submissions?status=draft', headers: ownerHeaders })
     } finally {
       if (originalTable === undefined) {
         delete process.env.SUBMISSIONS_TABLE

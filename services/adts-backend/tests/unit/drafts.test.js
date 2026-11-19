@@ -5,9 +5,10 @@ import {
   DraftConflictError,
   DraftNotFoundError,
   DraftValidationError,
-  getDraft,
+  getDraft as getClientDraft,
   updateDraft
 } from '../../src/client/drafts.js'
+import { getDraft as getStoredDraft } from '../../src/data/drafts.js'
 
 const existingDraft = (overrides = {}) => ({
   PK: 'DRAFT#draft-123',
@@ -87,9 +88,9 @@ describe('draft persistence', () => {
   test('validates draft identifiers and update revisions before accessing storage', async () => {
     const docClient = clientReturning({})
 
-    await expect(getDraft(docClient, { draftId: '', ownerId: 'user-123' }))
+    await expect(getClientDraft(docClient, { draftId: '', ownerId: 'user-123' }))
       .rejects.toBeInstanceOf(DraftValidationError)
-    await expect(getDraft(docClient, { ownerId: 'user-123' }))
+    await expect(getClientDraft(docClient, { ownerId: 'user-123' }))
       .rejects.toBeInstanceOf(DraftValidationError)
     await expect(updateDraft(docClient, {
       ...input(),
@@ -102,7 +103,7 @@ describe('draft persistence', () => {
   test('loads a draft only for its owner and conceals missing or foreign drafts', async () => {
     const docClient = clientReturning({ Item: existingDraft() })
 
-    await expect(getDraft(docClient, { draftId: 'draft-123', ownerId: 'user-999' }))
+    await expect(getClientDraft(docClient, { draftId: 'draft-123', ownerId: 'user-999' }))
       .rejects.toBeInstanceOf(DraftNotFoundError)
     expect(docClient.send.mock.calls[0][0].input).toMatchObject({
       TableName: 'adts-submissions',
@@ -110,7 +111,7 @@ describe('draft persistence', () => {
       ConsistentRead: true
     })
 
-    await expect(getDraft(clientReturning({}), { draftId: 'draft-404', ownerId: 'user-123' }))
+    await expect(getClientDraft(clientReturning({}), { draftId: 'draft-404', ownerId: 'user-123' }))
       .rejects.toBeInstanceOf(DraftNotFoundError)
   })
 
@@ -193,7 +194,7 @@ describe('draft persistence', () => {
   test('propagates DynamoDB failures instead of returning an empty draft result', async () => {
     const storageError = new Error('DynamoDB unavailable')
 
-    await expect(getDraft(clientReturning(storageError), {
+    await expect(getClientDraft(clientReturning(storageError), {
       draftId: 'draft-123',
       ownerId: 'user-123'
     })).rejects.toBe(storageError)
@@ -214,5 +215,79 @@ describe('draft persistence', () => {
       revision: 1
     })
     expect(updated.revision).toBe(2)
+  })
+})
+
+describe('getDraft', () => {
+  test('loads the complete draft state for its owner', async () => {
+    const item = {
+      submissionId: 'draft-001',
+      status: 'Draft',
+      userId: 'owner-1',
+      revision: 3,
+      lastSavedPage: 'submission-02-species',
+      formData: { animalDetails: { species: 'Sheep' } }
+    }
+    const docClient = { send: jest.fn().mockResolvedValue({ Item: item }) }
+
+    await expect(getStoredDraft(docClient, 'draft-001', 'owner-1')).resolves.toEqual({
+      draftId: 'draft-001',
+      status: 'Draft',
+      revision: 3,
+      lastSavedPage: 'submission-02-species',
+      formData: item.formData
+    })
+    expect(docClient.send.mock.calls[0][0].input).toEqual({
+      TableName: 'adts-submissions',
+      Key: { PK: 'DRAFT#draft-001' }
+    })
+  })
+
+  test('accepts the contract lowercase draft status', async () => {
+    const docClient = {
+      send: jest.fn().mockResolvedValue({
+        Item: {
+          submissionId: 'draft-001',
+          status: 'draft',
+          ownerId: 'owner-1',
+          revision: 1,
+          lastSavedPage: 'submission-01-client-details',
+          formData: {}
+        }
+      })
+    }
+
+    await expect(getStoredDraft(docClient, 'draft-001', 'owner-1'))
+      .resolves.toMatchObject({ status: 'draft' })
+  })
+
+  test('loads locally saved drafts that use draftId and ownerId fields', async () => {
+    const item = {
+      draftId: 'draft-001',
+      status: 'draft',
+      ownerId: 'owner-1',
+      revision: 1,
+      lastSavedPage: 'clientDetails',
+      formData: { clientDetails: { name: 'Acme Farm' } }
+    }
+    const docClient = { send: jest.fn().mockResolvedValue({ Item: item }) }
+
+    await expect(getStoredDraft(docClient, 'draft-001', 'owner-1')).resolves.toEqual({
+      draftId: 'draft-001',
+      status: 'draft',
+      revision: 1,
+      lastSavedPage: 'clientDetails',
+      formData: item.formData
+    })
+  })
+
+  test.each([
+    [undefined, 'draft-001', 'owner-1'],
+    [{ submissionId: 'draft-001', status: 'Submitted', userId: 'owner-1' }, 'draft-001', 'owner-1'],
+    [{ submissionId: 'draft-001', status: 'Draft', userId: 'owner-2' }, 'draft-001', 'owner-1']
+  ])('does not return an inaccessible or non-draft record', async (item, draftId, ownerId) => {
+    const docClient = { send: jest.fn().mockResolvedValue({ Item: item }) }
+
+    await expect(getStoredDraft(docClient, draftId, ownerId)).resolves.toBeUndefined()
   })
 })

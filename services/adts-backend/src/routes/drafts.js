@@ -21,9 +21,10 @@ const getOwnerId = (request) => {
     return principalId.trim()
   }
 
-  if (process.env.NODE_ENV === 'development' && process.env.LOCAL_DRAFT_OWNER_ID?.trim()) {
-    return process.env.LOCAL_DRAFT_OWNER_ID.trim()
-  }
+  const localOwnerId = process.env.NODE_ENV === 'development'
+    ? process.env.LOCAL_DRAFT_OWNER_ID?.trim()
+    : undefined
+  return localOwnerId || undefined
 }
 
 const registerDraftRoutes = (server, getDynamoClient) => {

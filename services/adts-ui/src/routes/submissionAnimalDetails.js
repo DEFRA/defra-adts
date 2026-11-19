@@ -195,7 +195,10 @@ const renderAnimalDetails = async (h, submissionFormState, {
   detailsError,
   saveError
 }) => {
-  const clientSummaryResult = await loadClientSummary(submissionFormState)
+  const clientSummaryResult = await loadClientSummary(
+    submissionFormState,
+    'Error loading client summary:'
+  )
   const { species } = submissionFormState.formData.animalDetails
 
   const view = h.view('submission-animal-details.njk', {
@@ -241,7 +244,10 @@ const getAnimalDetailsPage = async (request, h, submissionFormStateKey) => {
     return h.redirect(`/${speciesPageName}`)
   }
 
-  const result = await safeLoad(() => getAnimalDetails(speciesId))
+  const result = await safeLoad(
+    () => getAnimalDetails(speciesId),
+    'Error loading animal details:'
+  )
 
   return renderAnimalDetails(h, submissionFormState, {
     details: result.data,
@@ -289,7 +295,10 @@ const postAnimalDetails = async (request, h, submissionFormStateKey) => {
     return h.redirect(`/${speciesPageName}`)
   }
 
-  const result = await safeLoad(() => getAnimalDetails(speciesId))
+  const result = await safeLoad(
+    () => getAnimalDetails(speciesId),
+    'Error loading animal details:'
+  )
   const previousDetails = submissionFormState.formData.animalDetails
   const values = savedValues(previousDetails)
 

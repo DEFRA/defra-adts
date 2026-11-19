@@ -373,6 +373,10 @@ describe('Submission animal details page', () => {
     expect(response.statusCode).toBe(502)
     expect(response.headers.location).toBeUndefined()
     expect(response.payload).toContain('We could not save your draft')
+    expect(console.error).toHaveBeenCalledWith(
+      'Error saving submission draft:',
+      'Saving draft failed with status 502'
+    )
   })
 
   test('keeps submitted values and does not save when validation fails', async () => {
@@ -408,6 +412,10 @@ describe('Submission animal details page', () => {
     expect(page.statusCode).toBe(502)
     expect(page.payload).toContain('could not be loaded')
     expect(page.payload).not.toContain('<form')
+    expect(console.error).toHaveBeenCalledWith(
+      'Error loading animal details:',
+      'GetAnimalDetails failed with status 500'
+    )
 
     const submit = await post(selection, { purpose: 'meat' })
     expect(submit.statusCode).toBe(502)
@@ -430,6 +438,10 @@ describe('Submission animal details page', () => {
     expect(response.payload).toContain('Client details unavailable')
     expect(response.payload).not.toContain('No client name set')
     expect(response.payload).toContain('<form')
+    expect(console.error).toHaveBeenCalledWith(
+      'Error loading client summary:',
+      expect.any(String)
+    )
   })
 
   test('treats a response without option lists as having no optional fields', async () => {

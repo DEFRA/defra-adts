@@ -114,7 +114,7 @@ const createSubmissionsHandler = (getDynamoClient) => {
           .code(constants.HTTP_STATUS_SERVICE_UNAVAILABLE)
       }
 
-      return h.response(await getSubmissions(getDynamoClient(), request.query, ownerId))
+      return h.response(await getSubmissions(getDynamoClient(), ownerId, request.query))
     } catch (error) {
       console.error('Error retrieving submissions:', error.message)
       return h.response({ error: 'Unable to retrieve submissions' })

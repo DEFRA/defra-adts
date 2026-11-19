@@ -82,7 +82,7 @@ const getSubmissionItems = async (docClient, ownerId, exclusiveStartKey) => {
   ]
 }
 
-export const getSubmissions = async (docClient, filters = {}, ownerId) => {
+export const getSubmissions = async (docClient, ownerId, filters = {}) => {
   if (!ownerId) {
     throw new Error('Draft owner is required')
   }

@@ -150,6 +150,28 @@ describe('Submissions service proxy routes', () => {
     process.env.NODE_ENV = 'development'
   })
 
+  test('requires a local draft owner for Draft searches', async () => {
+    const response = await server.inject({ method: 'GET', url: '/submissions?status=draft' })
+
+    expect(response.statusCode).toBe(503)
+    expect(response.result).toEqual({ error: 'Local draft owner is not configured' })
+    expect(docClient.send).not.toHaveBeenCalled()
+  })
+
+  test('returns a gateway error when loading a draft fails in DynamoDB', async () => {
+    docClient.send.mockRejectedValue(new Error('DynamoDB unavailable'))
+    jest.spyOn(console, 'error').mockImplementation(() => {})
+
+    const response = await server.inject({
+      method: 'GET',
+      url: '/drafts/draft-001',
+      headers: { 'x-local-draft-owner-id': 'user-456' }
+    })
+
+    expect(response.statusCode).toBe(502)
+    expect(response.result).toEqual({ error: 'Unable to retrieve draft' })
+  })
+
   test('requires a local draft owner header in development', async () => {
     const response = await server.inject({ method: 'GET', url: '/drafts/draft-001' })
 

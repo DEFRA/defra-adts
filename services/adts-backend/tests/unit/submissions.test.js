@@ -22,7 +22,7 @@ describe('getSubmissions', () => {
     async (period) => {
       const docClient = clientReturning({ Items: [draft()] })
 
-      const response = await getSubmissions(docClient, { 'submitted-date': period }, 'owner-1')
+      const response = await getSubmissions(docClient, 'owner-1', { 'submitted-date': period })
 
       expect(response.totalCount).toBe(1)
     }
@@ -30,7 +30,7 @@ describe('getSubmissions', () => {
 
   test('rejects unsupported submitted-date filters', async () => {
     await expect(
-      getSubmissions(clientReturning({ Items: [] }), { 'submitted-date': '2_years' }, 'owner-1')
+      getSubmissions(clientReturning({ Items: [] }), 'owner-1', { 'submitted-date': '2_years' })
     ).rejects.toThrow('Unsupported submitted-date filter: 2_years')
   })
 
@@ -47,7 +47,7 @@ describe('getSubmissions', () => {
       })]
     })
 
-    const response = await getSubmissions(docClient, {}, 'owner-1')
+    const response = await getSubmissions(docClient, 'owner-1', {})
 
     expect(response.results[0]).toEqual({
       id: 'draft-001',
@@ -73,8 +73,8 @@ describe('getSubmissions', () => {
 
     const response = await getSubmissions(
       docClient,
-      { client: ' acme ', clinician: 'ALICE' },
-      'owner-1'
+      'owner-1',
+      { client: ' acme ', clinician: 'ALICE' }
     )
 
     expect(response.results.map(({ id }) => id)).toEqual(['matching-draft'])
@@ -95,7 +95,7 @@ describe('getSubmissions', () => {
       }
     )
 
-    const response = await getSubmissions(docClient, {}, 'owner-1')
+    const response = await getSubmissions(docClient, 'owner-1', {})
 
     expect(docClient.send).toHaveBeenCalledTimes(2)
     expect(docClient.send.mock.calls[1][0].input.ExclusiveStartKey).toEqual({ PK: 'next-page' })
@@ -109,7 +109,7 @@ describe('getSubmissions', () => {
     const docClient = clientReturning({ Items: [] })
 
     try {
-      await getSubmissions(docClient, {}, 'owner-1')
+      await getSubmissions(docClient, 'owner-1', {})
       expect(docClient.send.mock.calls[0][0].input.TableName).toBe('custom-submissions-table')
     } finally {
       if (originalTable === undefined) {
@@ -121,7 +121,7 @@ describe('getSubmissions', () => {
   })
 
   test('treats a response without Items as empty', async () => {
-    const response = await getSubmissions(clientReturning({}), {}, 'owner-1')
+    const response = await getSubmissions(clientReturning({}), 'owner-1', {})
 
     expect(response).toEqual({ results: [], totalCount: 0 })
   })
@@ -134,10 +134,17 @@ describe('getSubmissions', () => {
       ]
     })
 
-    const response = await getSubmissions(docClient, {}, 'owner-1')
+    const response = await getSubmissions(docClient, 'owner-1', {})
 
     expect(response.results.map(({ id }) => id)).toEqual(['owned-draft'])
     expect(docClient.send.mock.calls[0][0].input.ExpressionAttributeValues)
       .toEqual({ ':draft': 'Draft', ':draftLower': 'draft', ':ownerId': 'owner-1' })
+  })
+
+  test('requires a draft owner', async () => {
+    const docClient = clientReturning({ Items: [] })
+
+    await expect(getSubmissions(docClient)).rejects.toThrow('Draft owner is required')
+    expect(docClient.send).not.toHaveBeenCalled()
   })
 })

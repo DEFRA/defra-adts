@@ -109,8 +109,6 @@ jobs:
           if [[ "${{ needs.detect_changes.outputs.ui_service }}" == 'true' || "${{ needs.detect_changes.outputs.e2e_tests }}" == 'true' ]]; then
             MATRIX=$MATRIX"{\"service-name\": \"adts-ui\","
             MATRIX=$MATRIX"\"service-directory\": \"services/adts-ui\","
-            MATRIX=$MATRIX"\"dockerfile\": \"services/adts-ui/Dockerfile\","
-            MATRIX=$MATRIX"\"repository\": \"${{ vars.ADTS_UI_ECR }}\","
             MATRIX=$MATRIX"\"node-version\": \"24\","
             MATRIX=$MATRIX"\"run-audit\": false,"
             MATRIX=$MATRIX"\"run-lint\": true,"
@@ -120,18 +118,17 @@ jobs:
             MATRIX=$MATRIX"\"test-command\": \"npm run test:coverage && npm run test:integration\","
             MATRIX=$MATRIX"\"build-command\": \"npm run build\","
             MATRIX=$MATRIX"\"sonar-token\": \"SONAR_TOKEN\","
-            MATRIX=$MATRIX"\"aws-region\": \"${{ vars.AWS_REGION }}\","
-            MATRIX=$MATRIX"\"ecr-repository\": \"${{ vars.ADTS_UI_ECR }}\","
-            MATRIX=$MATRIX"\"aws-account-id\": \"${{ vars.AWS_ECR_ROLE_ACCOUNT_ID }}\","
-            MATRIX=$MATRIX"\"aws-role\": \"${{ vars.AWS_ECR_ROLE_NAME }}\","
+            MATRIX=$MATRIX"\"dockerfile\": \"services/adts-ui/Dockerfile\","
+            MATRIX=$MATRIX"\"aws-region\": \"AWS_REGION\","
+            MATRIX=$MATRIX"\"ecr-repository\": \"ADTS_UI_ECR\","
+            MATRIX=$MATRIX"\"aws-account-id\": \"AWS_ECR_ROLE_ACCOUNT_ID\","
+            MATRIX=$MATRIX"\"aws-role\": \"AWS_ECR_ROLE_NAME\","
             MATRIX=$MATRIX"\"platforms\": \"linux\""
             MATRIX=$MATRIX"},"
           fi
           if [[ "${{ needs.detect_changes.outputs.backend_service }}" == 'true' || "${{ needs.detect_changes.outputs.e2e_tests }}" == 'true' ]]; then
             MATRIX=$MATRIX"{\"service-name\": \"adts-backend\","
             MATRIX=$MATRIX"\"service-directory\": \"services/adts-backend\","
-            MATRIX=$MATRIX"\"dockerfile\": \"services/adts-backend/Dockerfile\","
-            MATRIX=$MATRIX"\"repository\": \"${{ vars.ADTS_BACKEND_ECR }}\","
             MATRIX=$MATRIX"\"node-version\": \"24\","
             MATRIX=$MATRIX"\"run-audit\": false,"
             MATRIX=$MATRIX"\"run-lint\": true,"
@@ -141,18 +138,17 @@ jobs:
             MATRIX=$MATRIX"\"test-command\": \"npm run test:coverage && npm run test:integration && npm run test:contract && npm run test:api\","
             MATRIX=$MATRIX"\"build-command\": \"npm run build\","
             MATRIX=$MATRIX"\"sonar-token\": \"BACKEND_SONAR_TOKEN\","
-            MATRIX=$MATRIX"\"aws-region\": \"${{ vars.AWS_REGION }}\","
-            MATRIX=$MATRIX"\"ecr-repository\": \"${{ vars.ADTS_BACKEND_ECR }}\","
-            MATRIX=$MATRIX"\"aws-account-id\": \"${{ vars.AWS_ECR_ROLE_ACCOUNT_ID }}\","
-            MATRIX=$MATRIX"\"aws-role\": \"${{ vars.AWS_ECR_ROLE_NAME }}\","
+            MATRIX=$MATRIX"\"dockerfile\": \"services/adts-backend/Dockerfile\","
+            MATRIX=$MATRIX"\"aws-region\": \"AWS_REGION\","
+            MATRIX=$MATRIX"\"ecr-repository\": \"ADTS_BACKEND_ECR\","
+            MATRIX=$MATRIX"\"aws-account-id\": \"AWS_ECR_ROLE_ACCOUNT_ID\","
+            MATRIX=$MATRIX"\"aws-role\": \"AWS_ECR_ROLE_NAME\","
             MATRIX=$MATRIX"\"platforms\": \"linux\""
             MATRIX=$MATRIX"},"
           fi
           if [[ "${{ needs.detect_changes.outputs.submissions_service }}" == 'true' || "${{ needs.detect_changes.outputs.e2e_tests }}" == 'true' ]]; then
             MATRIX=$MATRIX"{\"service-name\": \"adts-submissions-service\","
             MATRIX=$MATRIX"\"service-directory\": \"services/adts-submissions-service\","
-            MATRIX=$MATRIX"\"dockerfile\": \"services/adts-submissions-service/Dockerfile\","
-            MATRIX=$MATRIX"\"repository\": \"${{ vars.ADTS_SUBMISSIONS_ECR }}\","
             MATRIX=$MATRIX"\"node-version\": \"24\","
             MATRIX=$MATRIX"\"run-audit\": false,"
             MATRIX=$MATRIX"\"run-lint\": true,"
@@ -162,10 +158,11 @@ jobs:
             MATRIX=$MATRIX"\"test-command\": \"npm run test:coverage\","
             MATRIX=$MATRIX"\"build-command\": \"npm run build\","
             MATRIX=$MATRIX"\"sonar-token\": \"SUBMISSIONS_SONAR_TOKEN\","
-            MATRIX=$MATRIX"\"aws-region\": \"${{ vars.AWS_REGION }}\","
-            MATRIX=$MATRIX"\"ecr-repository\": \"${{ vars.ADTS_SUBMISSIONS_ECR }}\","
-            MATRIX=$MATRIX"\"aws-account-id\": \"${{ vars.AWS_ECR_ROLE_ACCOUNT_ID }}\","
-            MATRIX=$MATRIX"\"aws-role\": \"${{ vars.AWS_ECR_ROLE_NAME }}\","
+            MATRIX=$MATRIX"\"dockerfile\": \"services/adts-submissions-service/Dockerfile\","
+            MATRIX=$MATRIX"\"aws-region\": \"AWS_REGION\","
+            MATRIX=$MATRIX"\"ecr-repository\": \"ADTS_SUBMISSIONS_ECR\","
+            MATRIX=$MATRIX"\"aws-account-id\": \"AWS_ECR_ROLE_ACCOUNT_ID\","
+            MATRIX=$MATRIX"\"aws-role\": \"AWS_ECR_ROLE_NAME\","
             MATRIX=$MATRIX"\"platforms\": \"linux\""
             MATRIX=$MATRIX"}"
           fi
@@ -180,7 +177,6 @@ jobs:
       - name: SHow
         run: |
           echo ${{ needs.get_service_matrix.outputs.matrix }}
-          echo AWS_REGION is ${{ vars['AWS_REGION'] }}
 
   # Run validation for all services in the matrix
   validate_services:
@@ -240,7 +236,6 @@ jobs:
     if: |
       ${{
         !cancelled() &&
-        github.event_name != 'pull_request' &&
         needs.validate_services.result == 'success' &&
         needs.e2e_testing.result == 'success'
       }}
@@ -257,10 +252,10 @@ jobs:
       service-name: ${{ matrix.service-name }}
       service-directory: ${{ matrix.service-directory }}
       dockerfile: ${{ matrix.dockerfile }}
-      aws-region: ${{ matrix.aws-region }}
-      ecr-repository: ${{ matrix.ecr-repository }}
-      aws-account-id: ${{ matrix.aws-account-id }}
-      aws-role: ${{ matrix.aws-role }}
+      aws-region: ${{ vars[matrix.aws-region] }}
+      ecr-repository: ${{ vars[matrix.ecr-repository] }}
+      aws-account-id: ${{ vars[matrix.aws-account-id] }}
+      aws-role: ${{ vars[matrix.aws-role] }}
       platforms: ${{ matrix.platforms }}
 
   update_versions:

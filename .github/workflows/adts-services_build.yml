@@ -237,6 +237,7 @@ jobs:
     if: |
       ${{
         !cancelled() &&
+        github.event_name != 'pull_request' &&
         needs.validate_services.result == 'success' &&
         needs.e2e_testing.result == 'success'
       }}
@@ -264,7 +265,7 @@ jobs:
     needs:
       - detect_changes
       - e2e_testing
-      - build_containers
+#      - build_containers
 
     permissions:
       contents: write

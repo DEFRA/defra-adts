@@ -197,7 +197,7 @@ jobs:
       test-command: ${{ matrix.test-command }}
       build-command: ${{ matrix.build-command }}
     secrets:
-      SQ_ACCESS_TOKEN: ${{ secrets[matrix.sonar-token] }}
+      SQ_ACCESS_TOKEN: ${{ matrix.sonar-token }}
 
   e2e_testing:
     name: End to End Tests

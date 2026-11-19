@@ -7,6 +7,7 @@ describe('Submissions service proxy routes', () => {
 
   beforeAll(async () => {
     process.env.PORT = '3200'
+    process.env.NODE_ENV = 'development'
     process.env.SUBMISSIONS_SERVICE_URL = 'http://localhost:3100'
     server = await createServer({ docClient })
   })
@@ -55,12 +56,17 @@ describe('Submissions service proxy routes', () => {
       Items: [{
         submissionId: 'draft-001',
         status: 'Draft',
+        userId: 'user-456',
         submittedAt: '2026-10-20T00:00:00.000Z',
         client: 'Acme Farm'
       }]
     })
 
-    const response = await server.inject({ method: 'GET', url: '/submissions?status=draft' })
+    const response = await server.inject({
+      method: 'GET',
+      url: '/submissions?status=draft',
+      headers: { 'x-local-draft-owner-id': 'user-456' }
+    })
 
     expect(globalThis.fetch).not.toHaveBeenCalled()
     expect(response.statusCode).toBe(200)
@@ -77,11 +83,100 @@ describe('Submissions service proxy routes', () => {
     docClient.send.mockRejectedValue(new Error('DynamoDB unavailable'))
     jest.spyOn(console, 'error').mockImplementation(() => {})
 
-    const response = await server.inject({ method: 'GET', url: '/submissions?status=draft' })
+    const response = await server.inject({
+      method: 'GET',
+      url: '/submissions?status=draft',
+      headers: { 'x-local-draft-owner-id': 'user-456' }
+    })
 
     expect(response.statusCode).toBe(502)
     expect(response.result).toEqual({ error: 'Unable to retrieve submissions' })
     expect(console.error).toHaveBeenCalledWith('Error retrieving submissions:', 'DynamoDB unavailable')
+  })
+
+  test('loads only the requested draft for the configured local owner', async () => {
+    const draft = {
+      submissionId: 'draft-001',
+      status: 'Draft',
+      userId: 'user-456',
+      revision: 2,
+      lastSavedPage: 'submission-02-species',
+      formData: { animalDetails: { species: 'Sheep' } }
+    }
+    docClient.send.mockResolvedValue({ Item: draft })
+
+    const response = await server.inject({
+      method: 'GET',
+      url: '/drafts/draft-001',
+      headers: { 'x-local-draft-owner-id': 'user-456' }
+    })
+
+    expect(docClient.send.mock.calls[0][0].input).toEqual({
+      TableName: 'adts-submissions',
+      Key: { PK: 'DRAFT#draft-001' }
+    })
+    expect(response.statusCode).toBe(200)
+    expect(response.result).toEqual({
+      draftId: 'draft-001',
+      status: 'Draft',
+      revision: 2,
+      lastSavedPage: 'submission-02-species',
+      formData: draft.formData
+    })
+  })
+
+  test('does not reveal a draft owned by another user', async () => {
+    docClient.send.mockResolvedValue({
+      Item: { submissionId: 'draft-001', status: 'Draft', userId: 'user-789' }
+    })
+
+    const response = await server.inject({
+      method: 'GET',
+      url: '/drafts/draft-001',
+      headers: { 'x-local-draft-owner-id': 'user-456' }
+    })
+
+    expect(response.statusCode).toBe(404)
+    expect(response.result).toEqual({ error: 'Draft not found' })
+  })
+
+  test('disables local draft access outside development', async () => {
+    process.env.NODE_ENV = 'production'
+
+    const response = await server.inject({ method: 'GET', url: '/drafts/draft-001' })
+
+    expect(response.statusCode).toBe(503)
+    expect(response.result).toEqual({ error: 'Local draft owner is not configured' })
+    process.env.NODE_ENV = 'development'
+  })
+
+  test('requires a local draft owner for Draft searches', async () => {
+    const response = await server.inject({ method: 'GET', url: '/submissions?status=draft' })
+
+    expect(response.statusCode).toBe(503)
+    expect(response.result).toEqual({ error: 'Local draft owner is not configured' })
+    expect(docClient.send).not.toHaveBeenCalled()
+  })
+
+  test('returns a gateway error when loading a draft fails in DynamoDB', async () => {
+    docClient.send.mockRejectedValue(new Error('DynamoDB unavailable'))
+    jest.spyOn(console, 'error').mockImplementation(() => {})
+
+    const response = await server.inject({
+      method: 'GET',
+      url: '/drafts/draft-001',
+      headers: { 'x-local-draft-owner-id': 'user-456' }
+    })
+
+    expect(response.statusCode).toBe(502)
+    expect(response.result).toEqual({ error: 'Unable to retrieve draft' })
+  })
+
+  test('requires a local draft owner header in development', async () => {
+    const response = await server.inject({ method: 'GET', url: '/drafts/draft-001' })
+
+    expect(response.statusCode).toBe(503)
+    expect(response.result).toEqual({ error: 'Local draft owner is not configured' })
   })
 
   test('returns a gateway error when the submissions service cannot be reached', async () => {

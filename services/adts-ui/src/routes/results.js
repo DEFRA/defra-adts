@@ -23,6 +23,11 @@ const results = (server) => {
       }
       const queryParams = new URLSearchParams(searchFilters).toString()
       const backendUrl = `${process.env.BACKEND_SERVICE_URL}/submissions?${queryParams}`
+      const headers = request.query.status === 'draft' &&
+        process.env.NODE_ENV === 'development' &&
+        process.env.LOCAL_DRAFT_OWNER_ID
+        ? { 'x-local-draft-owner-id': process.env.LOCAL_DRAFT_OWNER_ID }
+        : undefined
       const viewContext = {
         filteredValues: {
           client: request.query.client,
@@ -33,7 +38,9 @@ const results = (server) => {
       }
 
       try {
-        const response = await fetch(backendUrl)
+        const response = headers
+          ? await fetch(backendUrl, { headers })
+          : await fetch(backendUrl)
 
         if (!response.ok) {
           throw new Error(`Backend responded with status: ${response.status}`)

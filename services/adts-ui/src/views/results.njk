@@ -143,7 +143,9 @@
             {% endif %}
 
             <div class="app-result-card__footer govuk-body govuk-!-margin-top-4">
-              {% if not 'Draft' in submission.statuses %}
+              {% if 'Draft' in submission.statuses %}
+                <a class="govuk-link" href="/drafts/{{ submission.id | urlencode }}/continue">Continue draft {{ submission.id }}</a>
+              {% else %}
                 <a class="govuk-link" href="/submissions/{{ submission.id | urlencode }}">View submission {{ submission.id }}</a>
               {% endif %}
             </div>

@@ -231,6 +231,7 @@ describe('UI Results Card Rendering Integration Pipeline', () => {
     expect(response.payload).toContain('Draft Id: 4457')
     expect(response.payload).toContain('govuk-tag--orange')
     expect(response.payload).toContain('Submission contains no tests.')
+    expect(response.payload).toContain('href="/drafts/4457/continue">Continue draft 4457</a>')
   })
 
   test('should render a cancelled submission with the GOV.UK grey status tag', async () => {

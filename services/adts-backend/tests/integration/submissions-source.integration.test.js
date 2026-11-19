@@ -4,8 +4,10 @@ import createServer from '../../src/app.js'
 describe('Submissions route source integration', () => {
   let server
   const docClient = { send: jest.fn() }
+  const originalNodeEnv = process.env.NODE_ENV
 
   beforeAll(async () => {
+    process.env.NODE_ENV = 'development'
     process.env.PORT = '3200'
     process.env.SUBMISSIONS_SERVICE_URL = 'http://localhost:3100'
     server = await createServer({ docClient })
@@ -13,6 +15,7 @@ describe('Submissions route source integration', () => {
 
   afterAll(async () => {
     await server.stop()
+    process.env.NODE_ENV = originalNodeEnv
   })
 
   afterEach(() => {
@@ -25,13 +28,18 @@ describe('Submissions route source integration', () => {
       Items: [{
         submissionId: 'draft-001',
         status: 'Draft',
+        userId: 'user-456',
         submittedAt: '2026-10-20T00:00:00.000Z',
         client: 'Acme Farm'
       }]
     })
     const fetchSpy = jest.spyOn(globalThis, 'fetch')
 
-    const response = await server.inject({ method: 'GET', url: '/submissions?status=draft' })
+    const response = await server.inject({
+      method: 'GET',
+      url: '/submissions?status=draft',
+      headers: { 'x-local-draft-owner-id': 'user-456' }
+    })
 
     expect(response.statusCode).toBe(200)
     expect(fetchSpy).not.toHaveBeenCalled()

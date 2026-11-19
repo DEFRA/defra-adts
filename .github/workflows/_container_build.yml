@@ -284,8 +284,8 @@ jobs:
         run: |
           docker images
           echo "Image destination is ${{ fromJson(steps.metadata.outputs.json).tags[0] }}"
-          docker push ${{ fromJson(steps.metadata.outputs.json).tags[0] }}
-          docker push --all-tags ${{ steps.ecr-login.outputs.registry }}/${{ inputs.ecr-repository }}
+          #docker push ${{ fromJson(steps.metadata.outputs.json).tags[0] }}
+          #docker push --all-tags ${{ steps.ecr-login.outputs.registry }}/${{ inputs.ecr-repository }}
 
       - name: Set immutable image reference
         id: result
@@ -322,11 +322,11 @@ jobs:
           git config user.email \
             "${{ github.actor_id }}+${{ github.actor }}@users.noreply.github.com"
 
-          git tag \
-            --annotate "${VERSION_TAG}" \
-            --message "${SERVICE} ${VERSION} (${BUMP_TYPE} release)"
+          #git tag \
+          #  --annotate "${VERSION_TAG}" \
+          #  --message "${SERVICE} ${VERSION} (${BUMP_TYPE} release)"
 
-          git push origin "${VERSION_TAG}"
+          #git push origin "${VERSION_TAG}"
 
       - name: Write container build summary
         if: always()

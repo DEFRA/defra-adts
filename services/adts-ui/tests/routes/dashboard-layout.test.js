@@ -112,7 +112,7 @@ describe('Dashboard Layout', () => {
         { loadPaths: [path.join(process.cwd(), 'node_modules')], style: 'compressed', quietDeps: true, silenceDeprecations: ['import', 'global-builtin', 'color-functions'] }
       )
 
-      expect(css).toMatch(/\.app-button--healthy,.app-button--sick\{background-color:var\(--govuk-brand-colour,\s*#1d70b8\);color:#fff/)
+      expect(css).toMatch(/\.app-button--healthy,.app-button--sick\{background-color:#1d70b8;color:#fff/)
     })
 
     test('stacks the submission buttons vertically', () => {

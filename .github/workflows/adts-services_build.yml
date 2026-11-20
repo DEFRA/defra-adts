@@ -34,7 +34,7 @@ jobs:
 
     steps:
       - name: Check out repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Detect changed services
         id: filter
@@ -196,8 +196,8 @@ jobs:
       run-sonarqube-scan: ${{ matrix.run-sonarqube-scan }}
       test-command: ${{ matrix.test-command }}
       build-command: ${{ matrix.build-command }}
-    secrets:
-      SQ_ACCESS_TOKEN: ${{ secrets[matrix.sonar-token] }}
+#    secrets:
+#      SQ_ACCESS_TOKEN: ${{ secrets[matrix.sonar-token] }}
 
   e2e_testing:
     name: End to End Tests

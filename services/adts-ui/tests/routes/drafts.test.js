@@ -35,7 +35,7 @@ describe('Continue draft route', () => {
           draftId: 'draft-001',
           status: 'Draft',
           revision: 3,
-          lastSavedPage: 'submission-02-species',
+          lastSavedPage: 'species',
           formData
         }), { status: 200, headers: { 'Content-Type': 'application/json' } })
       }
@@ -67,7 +67,7 @@ describe('Continue draft route', () => {
     expect(resumedPage.request.response.source.context.submissionFormState).toEqual({
       draftId: 'draft-001',
       revision: 3,
-      lastSavedPage: 'submission-02-species',
+      lastSavedPage: 'species',
       formData
     })
   })
@@ -95,7 +95,7 @@ describe('Continue draft route', () => {
       draftId: 'draft-001',
       status: 'Draft',
       revision: 1,
-      lastSavedPage: 'submission-02-animal-details',
+      lastSavedPage: 'animalDetails',
       formData: { animalDetails: {} }
     }), { status: 200, headers: { 'Content-Type': 'application/json' } }))
 

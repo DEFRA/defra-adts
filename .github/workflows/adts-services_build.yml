@@ -232,12 +232,7 @@ jobs:
       - validate_services
       - e2e_testing
 
-    if: |
-      ${{
-        github.event_name != 'pull_request' &&
-        needs.validate_services.result == 'success' &&
-        needs.e2e_testing.result == 'success'
-      }}
+    if: ${{ github.event_name != 'pull_request' }}
     strategy:
       matrix: ${{ fromJson(needs.get_service_matrix.outputs.matrix) }}
 

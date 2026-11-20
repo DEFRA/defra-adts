@@ -4,8 +4,6 @@ on:
   push:
     branches:
       - main
-    paths-ignore:
-      - VERSIONS.txt
 
   pull_request:
     branches:
@@ -34,7 +32,7 @@ jobs:
 
     steps:
       - name: Check out repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Detect changed services
         id: filter
@@ -84,180 +82,159 @@ jobs:
           UI_CHANGED: ${{ steps.filter.outputs.ui_service }}
           BACKEND_CHANGED: ${{ steps.filter.outputs.backend_service }}
           SUBMISSIONS_CHANGED: ${{ steps.filter.outputs.submissions_service }}
+          ANY_CHANGED: ${{ steps.filter.outputs.any_service }}
+          E2E_CHANGED: ${{ steps.filter.outputs.e2e_tests }}
         run: |
           set -euo pipefail
 
           echo "ADTS UI changed: ${UI_CHANGED}"
           echo "ADTS Backend changed: ${BACKEND_CHANGED}"
           echo "ADTS Submissions service changed: ${SUBMISSIONS_CHANGED}"
+          echo "ADTS Any service changed: ${ANY_CHANGED}"
+          echo "ADTS e2e service changes: ${E2E_CHANGED}"
 
-  validate_ui_service:
-    name: Validate ADTS UI
+  get_service_matrix:
+    runs-on: ubuntu-latest
     needs:
       - detect_changes
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - name: Get Service Matrix
+        id: set-matrix
+        run: |
+          MATRIX="matrix={\"include\":["
+          if [[ "${{ needs.detect_changes.outputs.ui_service }}" == 'true' || "${{ needs.detect_changes.outputs.e2e_tests }}" == 'true' ]]; then
+            MATRIX=$MATRIX"{\"service-name\": \"adts-ui\","
+            MATRIX=$MATRIX"\"service-directory\": \"services/adts-ui\","
+            MATRIX=$MATRIX"\"node-version\": \"24\","
+            MATRIX=$MATRIX"\"run-audit\": false,"
+            MATRIX=$MATRIX"\"run-lint\": true,"
+            MATRIX=$MATRIX"\"run-format-check\": false,"
+            MATRIX=$MATRIX"\"run-tests\": true,"
+            MATRIX=$MATRIX"\"run-sonarqube-scan\": true,"
+            MATRIX=$MATRIX"\"test-command\": \"npm run test:coverage && npm run test:integration\","
+            MATRIX=$MATRIX"\"build-command\": \"npm run build\","
+            MATRIX=$MATRIX"\"sonar-token\": \"SONAR_TOKEN\","
+            MATRIX=$MATRIX"\"dockerfile\": \"services/adts-ui/Dockerfile\","
+            MATRIX=$MATRIX"\"aws-region\": \"AWS_REGION\","
+            MATRIX=$MATRIX"\"ecr-repository\": \"ADTS_UI_ECR\","
+            MATRIX=$MATRIX"\"aws-account-id\": \"AWS_ECR_ROLE_ACCOUNT_ID\","
+            MATRIX=$MATRIX"\"aws-role\": \"AWS_ECR_ROLE_NAME\","
+            MATRIX=$MATRIX"\"platforms\": \"linux\""
+            MATRIX=$MATRIX"},"
+          fi
+          if [[ "${{ needs.detect_changes.outputs.backend_service }}" == 'true' || "${{ needs.detect_changes.outputs.e2e_tests }}" == 'true' ]]; then
+            MATRIX=$MATRIX"{\"service-name\": \"adts-backend\","
+            MATRIX=$MATRIX"\"service-directory\": \"services/adts-backend\","
+            MATRIX=$MATRIX"\"node-version\": \"24\","
+            MATRIX=$MATRIX"\"run-audit\": false,"
+            MATRIX=$MATRIX"\"run-lint\": true,"
+            MATRIX=$MATRIX"\"run-format-check\": false,"
+            MATRIX=$MATRIX"\"run-tests\": true,"
+            MATRIX=$MATRIX"\"run-sonarqube-scan\": true,"
+            MATRIX=$MATRIX"\"test-command\": \"npm run test:coverage && npm run test:integration && npm run test:contract && npm run test:api\","
+            MATRIX=$MATRIX"\"build-command\": \"npm run build\","
+            MATRIX=$MATRIX"\"sonar-token\": \"BACKEND_SONAR_TOKEN\","
+            MATRIX=$MATRIX"\"dockerfile\": \"services/adts-backend/Dockerfile\","
+            MATRIX=$MATRIX"\"aws-region\": \"AWS_REGION\","
+            MATRIX=$MATRIX"\"ecr-repository\": \"ADTS_BACKEND_ECR\","
+            MATRIX=$MATRIX"\"aws-account-id\": \"AWS_ECR_ROLE_ACCOUNT_ID\","
+            MATRIX=$MATRIX"\"aws-role\": \"AWS_ECR_ROLE_NAME\","
+            MATRIX=$MATRIX"\"platforms\": \"linux\""
+            MATRIX=$MATRIX"},"
+          fi
+          if [[ "${{ needs.detect_changes.outputs.submissions_service }}" == 'true' || "${{ needs.detect_changes.outputs.e2e_tests }}" == 'true' ]]; then
+            MATRIX=$MATRIX"{\"service-name\": \"adts-submissions-service\","
+            MATRIX=$MATRIX"\"service-directory\": \"services/adts-submissions-service\","
+            MATRIX=$MATRIX"\"node-version\": \"24\","
+            MATRIX=$MATRIX"\"run-audit\": false,"
+            MATRIX=$MATRIX"\"run-lint\": true,"
+            MATRIX=$MATRIX"\"run-format-check\": false,"
+            MATRIX=$MATRIX"\"run-tests\": true,"
+            MATRIX=$MATRIX"\"run-sonarqube-scan\": true,"
+            MATRIX=$MATRIX"\"test-command\": \"npm run test:coverage\","
+            MATRIX=$MATRIX"\"build-command\": \"npm run build\","
+            MATRIX=$MATRIX"\"sonar-token\": \"SUBMISSIONS_SONAR_TOKEN\","
+            MATRIX=$MATRIX"\"dockerfile\": \"services/adts-submissions-service/Dockerfile\","
+            MATRIX=$MATRIX"\"aws-region\": \"AWS_REGION\","
+            MATRIX=$MATRIX"\"ecr-repository\": \"ADTS_SUBMISSIONS_ECR\","
+            MATRIX=$MATRIX"\"aws-account-id\": \"AWS_ECR_ROLE_ACCOUNT_ID\","
+            MATRIX=$MATRIX"\"aws-role\": \"AWS_ECR_ROLE_NAME\","
+            MATRIX=$MATRIX"\"platforms\": \"linux\""
+            MATRIX=$MATRIX"}"
+          fi
+          MATRIX=$MATRIX"]}"
+          echo $MATRIX
+          echo $MATRIX >> $GITHUB_OUTPUT
 
-    if: ${{ needs.detect_changes.outputs.ui_service == 'true' }}
+  # Run validation for all services in the matrix
+  validate_services:
+    name: Validate
+    needs:
+      - detect_changes
+      - get_service_matrix
+
+    if: ${{ needs.get_service_matrix.outputs.matrix != '{"include":[]}' }}
+    strategy:
+      matrix: ${{ fromJson(needs.get_service_matrix.outputs.matrix) }}
 
     permissions:
       contents: read
 
     uses: ./.github/workflows/_validation.yml
-
     with:
-      service-name: adts-ui
-      service-directory: services/adts-ui
-      node-version: "24"
-      run-audit: false
-      run-lint: true
-      run-format-check: false
-      run-tests: true
-      run-sonarqube-scan: true
-      test-command: npm run test:coverage && npm run test:integration
-      build-command: npm run build
+      service-name: ${{ matrix.service-name }}
+      service-directory: ${{ matrix.service-directory }}
+      node-version: ${{ matrix.node-version }}
+      run-audit: ${{ matrix.run-audit }}
+      run-lint: ${{ matrix.run-lint }}
+      run-format-check: ${{ matrix.run-format-check }}
+      run-tests: ${{ matrix.run-tests }}
+      run-sonarqube-scan: ${{ matrix.run-sonarqube-scan }}
+      test-command: ${{ matrix.test-command }}
+      build-command: ${{ matrix.build-command }}
     secrets:
-      SQ_ACCESS_TOKEN: ${{ secrets.SONAR_TOKEN }}
-
-  validate_backend_service:
-    name: Validate ADTS Backend
-    needs:
-      - detect_changes
-
-    if: ${{ needs.detect_changes.outputs.backend_service == 'true' }}
-
-    permissions:
-      contents: read
-
-    uses: ./.github/workflows/_validation.yml
-
-    with:
-      service-name: adts-backend
-      service-directory: services/adts-backend
-      node-version: "24"
-      run-audit: false
-      run-lint: true
-      run-format-check: false
-      run-tests: true
-      run-sonarqube-scan: true
-      test-command: npm run test:coverage && npm run test:integration && npm run test:contract && npm run test:api
-      build-command: npm run build
-    secrets:
-      SQ_ACCESS_TOKEN: ${{ secrets.BACKEND_SONAR_TOKEN }}
-
-  validate_submissions_service:
-    name: Validate ADTS Submissions
-    needs:
-      - detect_changes
-
-    if: ${{ needs.detect_changes.outputs.submissions_service == 'true' }}
-
-    permissions:
-      contents: read
-
-    uses: ./.github/workflows/_validation.yml
-
-    with:
-      service-name: adts-submissions-service
-      service-directory: services/adts-submissions-service
-      node-version: "24"
-      run-audit: false
-      run-lint: true
-      run-format-check: false
-      run-tests: true
-      run-sonarqube-scan: true
-      test-command: npm run test:coverage
-      build-command: npm run build
-    secrets:
-      SQ_ACCESS_TOKEN: ${{ secrets.SUBMISSIONS_SONAR_TOKEN }}
+      SQ_ACCESS_TOKEN: >-
+        ${{ 
+          matrix.sonar-token == 'SONAR_TOKEN'
+          && secrets.SONAR_TOKEN
+          || matrix.sonar-token == 'BACKEND_SONAR_TOKEN'
+          && secrets.BACKEND_SONAR_TOKEN
+          || matrix.sonar-token == 'SUBMISSIONS_SONAR_TOKEN'
+          && secrets.SUBMISSIONS_SONAR_TOKEN
+        }}
 
   e2e_testing:
     name: End to End Tests
-
     needs:
       - detect_changes
-      - validate_ui_service
-      - validate_backend_service
-      - validate_submissions_service
+      - validate_services
 
-    # An explicit condition is required because one of the validation jobs
-    # may legitimately have been skipped.
+    # Run e2e testing if any service or the e2e test assets have been changed
     if: |
       ${{
-        !cancelled() &&
-        needs.detect_changes.outputs.e2e_tests == 'true' ||
+        always() &&
         (
-          needs.detect_changes.outputs.any_service == 'true' &&
-          (
-            needs.detect_changes.outputs.ui_service != 'true' ||
-            needs.validate_ui_service.result == 'success'
-          ) &&
-          (
-            needs.detect_changes.outputs.backend_service != 'true' ||
-            needs.validate_backend_service.result == 'success'
-          ) &&
-          (
-            needs.detect_changes.outputs.submissions_service != 'true' ||
-            needs.validate_submissions_service.result == 'success'
-          )
+          needs.detect_changes.outputs.e2e_tests == 'true' ||
+          needs.detect_changes.outputs.any_service == 'true'
         )
-      }}
+       }}
 
     uses: ./.github/workflows/_e2e-tests.yml
 
-  build_ui_container:
+  # Run container build for all services in the matrix
+  build_containers:
     name: Publish UI container image
-
     needs:
       - detect_changes
-      - validate_ui_service
+      - get_service_matrix
+      - validate_services
       - e2e_testing
 
-    if: |
-      ${{
-        !cancelled() &&
-        needs.detect_changes.outputs.e2e_tests == 'true' ||
-        (
-          needs.detect_changes.outputs.ui_service == 'true' &&
-          needs.validate_ui_service.result == 'success' &&
-          needs.e2e_testing.result == 'success' &&
-          github.event_name != 'pull_request'
-        )
-      }}
-    permissions:
-      contents: write
-      id-token: write
-      security-events: write
-
-    uses: ./.github/workflows/_container_build.yml
-
-    with:
-      service-name: adts-ui
-      service-directory: services/adts-ui
-      dockerfile: services/adts-ui/Dockerfile
-      aws-region: ${{ vars.AWS_REGION }}
-      ecr-repository: ${{ vars.ADTS_UI_ECR }}
-      aws-account-id: ${{ vars.AWS_ECR_ROLE_ACCOUNT_ID }}
-      aws-role: ${{ vars.AWS_ECR_ROLE_NAME }}
-      platforms: linux
-
-  build_backend_container:
-    name: Publish Backend container image
-
-    needs:
-      - detect_changes
-      - validate_backend_service
-      - e2e_testing
-
-    if: |
-      ${{
-        !cancelled() &&
-        needs.detect_changes.outputs.e2e_tests == 'true' ||
-        (
-          needs.detect_changes.outputs.backend_service == 'true' &&
-          needs.validate_backend_service.result == 'success' &&
-          needs.e2e_testing.result == 'success' &&
-          github.event_name != 'pull_request'
-        )
-      }}
+    if: ${{ github.event_name != 'pull_request' }}
+    strategy:
+      matrix: ${{ fromJson(needs.get_service_matrix.outputs.matrix) }}
 
     permissions:
       contents: write
@@ -265,86 +242,34 @@ jobs:
       security-events: write
 
     uses: ./.github/workflows/_container_build.yml
-
     with:
-      service-name: adts-backend
-      service-directory: services/adts-backend
-      dockerfile: services/adts-backend/Dockerfile
-      aws-region: ${{ vars.AWS_REGION }}
-      ecr-repository: ${{ vars.ADTS_BACKEND_ECR }}
-      aws-account-id: ${{ vars.AWS_ECR_ROLE_ACCOUNT_ID }}
-      aws-role: ${{ vars.AWS_ECR_ROLE_NAME }}
-      platforms: linux
-
-  build_submissions_container:
-    name: Publish Submissions container image
-
-    needs:
-      - detect_changes
-      - validate_submissions_service
-      - e2e_testing
-
-    if: |
-      ${{
-        !cancelled() &&
-        needs.detect_changes.outputs.e2e_tests == 'true' ||
-        (
-          needs.detect_changes.outputs.submissions_service == 'true' &&
-          needs.validate_submissions_service.result == 'success' &&
-          needs.e2e_testing.result == 'success' &&
-          github.event_name != 'pull_request'
-        )
-      }}
-
-    permissions:
-      contents: write
-      id-token: write
-      security-events: write
-
-    uses: ./.github/workflows/_container_build.yml
-
-    with:
-      service-name: adts-submissions-service
-      service-directory: services/adts-submissions-service
-      dockerfile: services/adts-submissions-service/Dockerfile
-      aws-region: ${{ vars.AWS_REGION }}
-      ecr-repository: ${{ vars.ADTS_SUBMISSIONS_ECR }}
-      aws-account-id: ${{ vars.AWS_ECR_ROLE_ACCOUNT_ID }}
-      aws-role: ${{ vars.AWS_ECR_ROLE_NAME }}
-      platforms: linux
+      service-name: ${{ matrix.service-name }}
+      service-directory: ${{ matrix.service-directory }}
+      dockerfile: ${{ matrix.dockerfile }}
+      aws-region: ${{ vars[matrix.aws-region] }}
+      ecr-repository: ${{ vars[matrix.ecr-repository] }}
+      aws-account-id: ${{ vars[matrix.aws-account-id] }}
+      aws-role: ${{ vars[matrix.aws-role] }}
+      platforms: ${{ matrix.platforms }}
 
   update_versions:
     name: Versions
-
     needs:
       - detect_changes
       - e2e_testing
-      - build_ui_container
-      - build_backend_container
-      - build_submissions_container
-
+      - build_containers
 
     permissions:
       contents: write
 
     if: |
       ${{
-        !cancelled() &&
-        needs.detect_changes.outputs.e2e_tests == 'true' ||
+        always() &&
+        github.event_name != 'pull_request' &&
+        needs.e2e_testing.result == 'success' &&
         (
-          needs.detect_changes.outputs.any_service == 'true' &&
-          (
-            needs.detect_changes.outputs.ui_service != 'true' ||
-            needs.build_ui_container.result == 'success'
-          ) &&
-          (
-            needs.detect_changes.outputs.backend_service != 'true' ||
-            needs.build_backend_container.result == 'success'
-          ) &&
-          (
-            needs.detect_changes.outputs.submissions_service != 'true' ||
-            needs.build_submissions_container.result == 'success'
-          )
+          needs.build_containers.result == 'success' ||
+          needs.build_containers.result == 'skipped'
         )
       }}
 

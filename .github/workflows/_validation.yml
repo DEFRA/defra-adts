@@ -67,29 +67,6 @@ on:
         required: true
 
 jobs:
-#  get_sonarqube_token:
-#    runs-on: ubuntu-latest
-#    outputs:
-#      sonar-token: ${{ steps.get-token.outputs.sonar-token }}
-#    steps:
-#      - uses: actions/checkout@v7
-#
-#      - name:  Get Sonar Token
-#        id: get-token
-#        shell: bash
-#        run: |
-#          case "${{ inputs.service-name }}" in
-#            adts-ui)
-#              echo "sonar-token=SONAR_TOKEN" >> $GITHUB_OUTPUT
-#              ;;
-#            adts-backend)
-#              echo "sonar-token=BACKEND_SONAR_TOKEN" >> $GITHUB_OUTPUT
-#              ;;
-#            adts-submissions-service)
-#              echo "sonar-token=SUBMISSIONS_SONAR_TOKEN" >> $GITHUB_OUTPUT
-#              ;;
-#          esac
-
   validate:
     name: Validate ${{ inputs.service-name }}
 

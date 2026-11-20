@@ -181,7 +181,6 @@ jobs:
     strategy:
       matrix: ${{ fromJson(needs.get_service_matrix.outputs.matrix) }}
 
-    secrets: inherit
     permissions:
       contents: read
 
@@ -197,8 +196,16 @@ jobs:
       run-sonarqube-scan: ${{ matrix.run-sonarqube-scan }}
       test-command: ${{ matrix.test-command }}
       build-command: ${{ matrix.build-command }}
-#    secrets:
-#      SQ_ACCESS_TOKEN: ${{ secrets[matrix.sonar-token] }}
+    secrets:
+      SQ_ACCESS_TOKEN: >-
+        ${{ 
+          matrix.sonar-token == 'SONAR_TOKEN'
+          && secrets.SONAR_TOKEN
+          || matrix.sonar-token == 'BACKEND_SONAR_TOKEN'
+          && secrets.BACKEND_SONAR_TOKEN
+          || matrix.sonar-token == 'SUBMISSIONS_SONAR_TOKEN'
+          && secrets.SUBMISSIONS_SONAR_TOKEN
+        }}
 
   e2e_testing:
     name: End to End Tests

@@ -61,39 +61,37 @@ on:
         default: "npm run build"
         type: string
 
-#    secrets:
-#      SQ_ACCESS_TOKEN:
-#        description: Access token for the SonarQube project
-#        required: true
+    secrets:
+      SQ_ACCESS_TOKEN:
+        description: Access token for the SonarQube project
+        required: true
 
 jobs:
-  get_sonarqube_token:
-    runs-on: ubuntu-latest
-    outputs:
-      sonar-token: ${{ steps.get-token.outputs.sonar-token }}
-    steps:
-      - uses: actions/checkout@v7
-
-      - name:  Get Sonar Token
-        id: get-token
-        shell: bash
-        run: |
-          case "${{ inputs.service-name }}" in
-            adts-ui)
-              echo "sonar-token=SONAR_TOKEN" >> $GITHUB_OUTPUT
-              ;;
-            adts-backend)
-              echo "sonar-token=BACKEND_SONAR_TOKEN" >> $GITHUB_OUTPUT
-              ;;
-            adts-submissions-service)
-              echo "sonar-token=SUBMISSIONS_SONAR_TOKEN" >> $GITHUB_OUTPUT
-              ;;
-          esac
+#  get_sonarqube_token:
+#    runs-on: ubuntu-latest
+#    outputs:
+#      sonar-token: ${{ steps.get-token.outputs.sonar-token }}
+#    steps:
+#      - uses: actions/checkout@v7
+#
+#      - name:  Get Sonar Token
+#        id: get-token
+#        shell: bash
+#        run: |
+#          case "${{ inputs.service-name }}" in
+#            adts-ui)
+#              echo "sonar-token=SONAR_TOKEN" >> $GITHUB_OUTPUT
+#              ;;
+#            adts-backend)
+#              echo "sonar-token=BACKEND_SONAR_TOKEN" >> $GITHUB_OUTPUT
+#              ;;
+#            adts-submissions-service)
+#              echo "sonar-token=SUBMISSIONS_SONAR_TOKEN" >> $GITHUB_OUTPUT
+#              ;;
+#          esac
 
   validate:
     name: Validate ${{ inputs.service-name }}
-    needs:
-      - get_sonarqube_token
 
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -180,7 +178,7 @@ jobs:
         if: ${{ inputs.run-sonarqube-scan }}
         uses: sonarSource/sonarqube-scan-action@ba9859eae8dd6bd29e412f25ddbbef3d032000f4  # v8.2.2
         env:
-          SONAR_TOKEN: ${{ secrets[needs.get_sonarqube_token.outputs.sonar-token] }}
+          SONAR_TOKEN: ${{ secrets.SQ_ACCESS_TOKEN }}
         with:
           projectBaseDir: ${{ inputs.service-directory }}
 

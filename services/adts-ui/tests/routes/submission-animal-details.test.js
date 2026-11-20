@@ -54,6 +54,12 @@ describe('Submission animal details page', () => {
   beforeEach(() => {
     detailsResponses = { 2: sheepDetails, 4: goatDetails }
     jest.spyOn(globalThis, 'fetch').mockImplementation(async (requestUrl) => {
+      if (requestUrl === 'http://localhost:3200/drafts') {
+        return new Response(JSON.stringify({
+          draftId: '123e4567-e89b-12d3-a456-426614174000',
+          revision: 1
+        }), { status: 201 })
+      }
       if (requestUrl === 'http://localhost:3200/GetSpecies') {
         return new Response(JSON.stringify([
           { speciesId: 2, name: 'Sheep' },
@@ -199,6 +205,21 @@ describe('Submission animal details page', () => {
       ageCategory: 'lamb',
       purpose: 'meat'
     })
+    const saveRequest = globalThis.fetch.mock.calls
+      .filter(([requestUrl]) => requestUrl === 'http://localhost:3200/drafts')
+      .at(-1)
+    expect(JSON.parse(saveRequest[1].body)).toMatchObject({
+      lastSavedPage: 'animalDetails',
+      formData: {
+        animalDetails: {
+          speciesId: '2',
+          species: 'Sheep',
+          numberOfAnimals: 1,
+          ageCategory: 'lamb',
+          purpose: 'meat'
+        }
+      }
+    })
   })
 
   test('requires age category and purpose when the species offers them', async () => {
@@ -336,6 +357,28 @@ describe('Submission animal details page', () => {
     expect(response.statusCode).toBe(400)
   })
 
+  test('does not advance when the backend cannot save the draft', async () => {
+    const selection = await selectSpecies('Sheep')
+    jest.spyOn(console, 'error').mockImplementation(() => {})
+    const original = globalThis.fetch.getMockImplementation()
+    globalThis.fetch.mockImplementation(async (requestUrl, options) => {
+      if (requestUrl === 'http://localhost:3200/drafts') {
+        return new Response('Unavailable', { status: 502 })
+      }
+      return original(requestUrl, options)
+    })
+
+    const response = await post(selection, { ageCategory: 'lamb', purpose: 'meat' })
+
+    expect(response.statusCode).toBe(502)
+    expect(response.headers.location).toBeUndefined()
+    expect(response.payload).toContain('We could not save your draft')
+    expect(console.error).toHaveBeenCalledWith(
+      'Error saving submission draft:',
+      'Saving draft failed with status 502'
+    )
+  })
+
   test('keeps submitted values and does not save when validation fails', async () => {
     const selection = await selectSpecies('Sheep')
     await post(selection, { purpose: 'meat', ageCategory: 'lamb' })
@@ -369,6 +412,10 @@ describe('Submission animal details page', () => {
     expect(page.statusCode).toBe(502)
     expect(page.payload).toContain('could not be loaded')
     expect(page.payload).not.toContain('<form')
+    expect(console.error).toHaveBeenCalledWith(
+      'Error loading animal details:',
+      'GetAnimalDetails failed with status 500'
+    )
 
     const submit = await post(selection, { purpose: 'meat' })
     expect(submit.statusCode).toBe(502)
@@ -391,6 +438,10 @@ describe('Submission animal details page', () => {
     expect(response.payload).toContain('Client details unavailable')
     expect(response.payload).not.toContain('No client name set')
     expect(response.payload).toContain('<form')
+    expect(console.error).toHaveBeenCalledWith(
+      'Error loading client summary:',
+      expect.any(String)
+    )
   })
 
   test('treats a response without option lists as having no optional fields', async () => {

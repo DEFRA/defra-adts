@@ -24,7 +24,7 @@
   }) }}
 {% endset %}
 
-{% block pageTitle %}{% if clientSummaryError or errors.sampleTakenDate %}Error: {% endif %}Clinical history – ADTS{% endblock %}
+{% block pageTitle %}{% if clientSummaryError or errors.sampleTakenDate or saveError %}Error: {% endif %}Clinical history – ADTS{% endblock %}
 
 {% block head %}
   <link rel="stylesheet" href="/assets/css/application.css">
@@ -52,6 +52,14 @@
   {{ govukBackLink({ text: "Back", href: "/submission-02-animal-details" }) }}
   {{ submissionProgress(3) }}
   {{ clientSummaryBar(clientSummary) }}
+
+  {% if saveError %}
+    {{ govukNotificationBanner({
+      type: "important",
+      titleText: "Important",
+      text: saveError
+    }) }}
+  {% endif %}
 
   {% if clientSummaryError %}
     {{ govukNotificationBanner({

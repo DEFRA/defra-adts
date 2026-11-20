@@ -24,6 +24,12 @@ describe('Submission species page', () => {
 
   beforeEach(() => {
     jest.spyOn(globalThis, 'fetch').mockImplementation(async (requestUrl) => {
+      if (requestUrl === 'http://localhost:3200/drafts') {
+        return new Response(JSON.stringify({
+          draftId: '123e4567-e89b-12d3-a456-426614174000',
+          revision: 1
+        }), { status: 201 })
+      }
       if (requestUrl === 'http://localhost:3200/GetSpecies') {
         return new Response(JSON.stringify(speciesList), { status: 200 })
       }
@@ -69,6 +75,17 @@ describe('Submission species page', () => {
     expect(response.headers.location).toBe('/submission-02-animal-details')
     const revisit = await getSaved(response)
     expect(savedAnimalDetails(revisit)).toEqual({ speciesId: '2', species: 'Sheep' })
+    expect(revisit.request.response.source.context.submissionFormState).toMatchObject({
+      draftId: '123e4567-e89b-12d3-a456-426614174000',
+      draftRevision: 1
+    })
+    const saveRequest = globalThis.fetch.mock.calls.find(([requestUrl]) =>
+      requestUrl === 'http://localhost:3200/drafts'
+    )
+    expect(JSON.parse(saveRequest[1].body)).toMatchObject({
+      lastSavedPage: 'animalDetails',
+      formData: { animalDetails: { speciesId: '2', species: 'Sheep' } }
+    })
     expect(revisit.payload).toMatch(/<option value="Sheep" selected>Sheep<\/option>/)
   })
 
@@ -86,6 +103,23 @@ describe('Submission species page', () => {
 
     expect(response.statusCode).toBe(400)
     expect(response.payload).toContain('Select a species from the list')
+  })
+
+  test('does not advance when the backend cannot save the draft', async () => {
+    jest.spyOn(console, 'error').mockImplementation(() => {})
+    const original = globalThis.fetch.getMockImplementation()
+    globalThis.fetch.mockImplementation(async (requestUrl, options) => {
+      if (requestUrl === 'http://localhost:3200/drafts') {
+        return new Response('Unavailable', { status: 502 })
+      }
+      return original(requestUrl, options)
+    })
+
+    const response = await post({ species: 'Sheep' })
+
+    expect(response.statusCode).toBe(502)
+    expect(response.headers.location).toBeUndefined()
+    expect(response.payload).toContain('We could not save your draft')
   })
 
   test('requires a species selection', async () => {
@@ -130,7 +164,19 @@ describe('Submission species page', () => {
     globalThis.fetch.mockClear()
     const response = await post({ species: 'Goat' }, { cookie: getCookieHeader(client) })
     const revisit = await getSaved(response)
+    const saveRequest = globalThis.fetch.mock.calls.find(([requestUrl]) =>
+      requestUrl === 'http://localhost:3200/drafts'
+    )
 
+    expect(JSON.parse(saveRequest[1].body)).toMatchObject({
+      draftId: '123e4567-e89b-12d3-a456-426614174000',
+      revision: 1,
+      lastSavedPage: 'animalDetails',
+      formData: {
+        clientDetails: { name: 'Updated Client Name' },
+        animalDetails: { speciesId: '4', species: 'Goat' }
+      }
+    })
     expect(revisit.request.response.source.context.submissionFormState.formData.clientDetails).toEqual({
       clientId: '101',
       cph: '48/234/2348',
@@ -208,6 +254,12 @@ describe('Submission species page', () => {
   test('continues manual client entry when the client lookup is unavailable', async () => {
     jest.spyOn(console, 'error').mockImplementation(() => {})
     globalThis.fetch.mockImplementation(async (requestUrl) => {
+      if (requestUrl === 'http://localhost:3200/drafts') {
+        return new Response(JSON.stringify({
+          draftId: '123e4567-e89b-12d3-a456-426614174000',
+          revision: 1
+        }), { status: 201 })
+      }
       if (requestUrl === 'http://localhost:3200/GetClients') {
         throw new Error('Client lookup unavailable')
       }

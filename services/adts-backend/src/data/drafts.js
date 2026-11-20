@@ -8,10 +8,11 @@ export const getDraft = async (docClient, draftId, ownerId) => {
     Key: { PK: `DRAFT#${draftId}` }
   }))
   const item = result.Item
+  const storedDraftId = item?.draftId ?? item?.submissionId
 
   if (
     !item ||
-    item.submissionId !== draftId ||
+    storedDraftId !== draftId ||
     typeof item.status !== 'string' ||
     item.status.toLowerCase() !== 'draft' ||
     (item.ownerId ?? item.userId) !== ownerId
@@ -20,7 +21,7 @@ export const getDraft = async (docClient, draftId, ownerId) => {
   }
 
   return {
-    draftId: item.submissionId,
+    draftId: storedDraftId,
     status: item.status,
     revision: item.revision,
     lastSavedPage: item.lastSavedPage,

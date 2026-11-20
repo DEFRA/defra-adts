@@ -11,6 +11,7 @@ import { getSpecies } from './data/species.js'
 import { getDraft } from './data/drafts.js'
 import { getSubmissions } from './data/submissions.js'
 import { createClientsHandler } from './handlers/clients.js'
+import registerDraftRoutes from './routes/drafts.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -241,6 +242,7 @@ const createServer = async ({ docClient } = {}) => {
   registerStaticRoutes(server)
   registerConnectionHealthRoute(server)
   registerSubmissionsRoutes(server, getDynamoClient)
+  registerDraftRoutes(server, getDynamoClient)
   registerSpeciesRoute(server, getDynamoClient)
   registerCountiesRoute(server, getDynamoClient)
   registerAnimalDetailsRoute(server, getDynamoClient)

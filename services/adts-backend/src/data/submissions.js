@@ -1,11 +1,10 @@
 import { ScanCommand } from '@aws-sdk/lib-dynamodb'
+import { submissionsTable } from './dynamo.js'
 
 const DAYS_IN_WEEK = 7
 const DAYS_IN_FORTNIGHT = 14
 const MONTHS_IN_HALF_YEAR = 6
 const MONTHS_IN_EIGHTEEN_MONTHS = 18
-
-const tableName = () => process.env.SUBMISSIONS_TABLE || 'adts-submissions'
 
 const dateCutoff = (period, now = new Date()) => {
   if (!period) {
@@ -45,6 +44,24 @@ const formatDate = (value) => {
   return `${day}/${months[date.getUTCMonth()]}/${date.getUTCFullYear()}`
 }
 
+// Drafts saved by the submission flow keep their details inside formData.
+const normaliseItem = (item) => {
+  const draftId = item.draftId ?? item.submissionId
+  if (!draftId || !item.formData) {
+    return item
+  }
+
+  const { clientDetails, animalDetails } = item.formData || {}
+  return {
+    ...item,
+    submissionId: draftId,
+    client: clientDetails?.name ?? item.client,
+    clientFarm: clientDetails?.farmName ?? item.clientFarm,
+    species: animalDetails?.species ?? item.species,
+    submittedAt: item.updatedAt ?? item.submittedAt
+  }
+}
+
 const toSearchResult = (item) => ({
   id: item.submissionId,
   statuses: ['Draft'],
@@ -60,7 +77,7 @@ const toSearchResult = (item) => ({
 
 const getSubmissionItems = async (docClient, ownerId, exclusiveStartKey) => {
   const result = await docClient.send(new ScanCommand({
-    TableName: tableName(),
+    TableName: submissionsTable(),
     FilterExpression: '(#status = :draft OR #status = :draftLower) AND (#ownerId = :ownerId OR #userId = :ownerId)',
     ExpressionAttributeNames: {
       '#status': 'status',
@@ -87,7 +104,7 @@ export const getSubmissions = async (docClient, ownerId, filters = {}) => {
     throw new Error('Draft owner is required')
   }
 
-  const items = await getSubmissionItems(docClient, ownerId)
+  const items = (await getSubmissionItems(docClient, ownerId)).map(normaliseItem)
   const cutoff = dateCutoff(filters['submitted-date'])
   const results = items
     .filter((item) =>

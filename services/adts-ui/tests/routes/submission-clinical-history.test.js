@@ -14,9 +14,17 @@ describe('Submission clinical history page', () => {
   })
 
   beforeEach(() => {
-    jest.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify([
-      { clientId: 101, name: 'Acme Farm', addressLine1: '1 Farm Road', postcode: 'L20 6EC', cph: '12/123/1234' }
-    ]), { status: 200 }))
+    jest.spyOn(globalThis, 'fetch').mockImplementation(async (requestUrl) => {
+      if (requestUrl === 'http://localhost:3200/drafts') {
+        return new Response(JSON.stringify({
+          draftId: '123e4567-e89b-12d3-a456-426614174000',
+          revision: 1
+        }), { status: 201 })
+      }
+      return new Response(JSON.stringify([
+        { clientId: 101, name: 'Acme Farm', addressLine1: '1 Farm Road', postcode: 'L20 6EC', cph: '12/123/1234' }
+      ]), { status: 200 })
+    })
   })
 
   afterEach(() => {
@@ -128,6 +136,17 @@ describe('Submission clinical history page', () => {
     const revisit = await getSaved(response)
     expect(revisit.request.response.source.context.submissionFormState.formData.clinicalHistory)
       .toEqual({ sampleTakenDate: '2024-02-29' })
+    expect(revisit.request.response.source.context.submissionFormState).toMatchObject({
+      draftId: '123e4567-e89b-12d3-a456-426614174000',
+      draftRevision: 1
+    })
+    const saveRequest = globalThis.fetch.mock.calls.find(([requestUrl]) =>
+      requestUrl === 'http://localhost:3200/drafts'
+    )
+    expect(JSON.parse(saveRequest[1].body)).toMatchObject({
+      lastSavedPage: 'clinicalHistory',
+      formData: { clinicalHistory: { sampleTakenDate: '2024-02-29' } }
+    })
     expect(revisit.payload).toContain('name="sampleTakenDate-day" type="text" value="29"')
     expect(revisit.payload).toContain('name="sampleTakenDate-month" type="text" value="02"')
     expect(revisit.payload).toContain('name="sampleTakenDate-year" type="text" value="2024"')
@@ -193,5 +212,24 @@ describe('Submission clinical history page', () => {
     const response = await post(dateFields(day, month, year))
 
     expect(response.statusCode).toBe(302)
+  })
+
+  test('does not advance when the backend cannot save clinical history', async () => {
+    jest.spyOn(console, 'error').mockImplementation(() => {})
+    globalThis.fetch.mockImplementation(async (requestUrl) => {
+      if (requestUrl === 'http://localhost:3200/drafts') {
+        return new Response('Unavailable', { status: 502 })
+      }
+      return new Response(JSON.stringify([
+        { clientId: 101, name: 'Acme Farm', addressLine1: '1 Farm Road', postcode: 'L20 6EC', cph: '12/123/1234' }
+      ]), { status: 200 })
+    })
+
+    const response = await post(dateFields('', '', ''))
+
+    expect(response.statusCode).toBe(502)
+    expect(response.headers.location).toBeUndefined()
+    expect(response.payload).toContain('We could not save your draft')
+    expect(response.request.response.source.context.submissionFormState.draftId).toBeUndefined()
   })
 })

@@ -77,7 +77,7 @@ describe('Dashboard Layout', () => {
     })
 
     test('renders the submission actions as GOV.UK styled link buttons', () => {
-      const actions = [...html.matchAll(/<a\b[^>]*href="\/submission-01-client-details\/start"[^>]*>[\s\S]*?<\/a>/g)]
+      const actions = [...html.matchAll(/<a\b[^>]*href="\/submission-01-client-details\/start\?type=(?:sick|healthy)"[^>]*>[\s\S]*?<\/a>/g)]
         .map(([link]) => link)
 
       expect(actions).toHaveLength(2)
@@ -119,12 +119,12 @@ describe('Dashboard Layout', () => {
     })
 
     test('both submission links navigate to the client details page', async () => {
-      for (const linkText of ['Sick animal submission', 'Healthy animal submission']) {
+      for (const [linkText, type] of [['Sick animal submission', 'sick'], ['Healthy animal submission', 'healthy']]) {
         const link = [...html.matchAll(/<a\b([^>]*)>([\s\S]*?)<\/a>/g)]
           .find(([, , content]) => content.includes(linkText))
 
         expect(link).toBeDefined()
-        expect(link[1]).toContain('href="/submission-01-client-details/start"')
+        expect(link[1]).toContain(`href="/submission-01-client-details/start?type=${type}"`)
       }
 
       const destinationResponse = await server.inject({
@@ -157,7 +157,9 @@ describe('Dashboard Layout', () => {
       })
 
       expect(clientDetailsResponse.statusCode).toBe(200)
-      expect(clientDetailsResponse.request.response.source.context.submissionFormState).toEqual({})
+      expect(clientDetailsResponse.request.response.source.context.submissionFormState).toEqual({
+        formData: { submissionType: 'sick' }
+      })
       expect(clientDetailsResponse.payload).not.toContain('Previous client')
       expect(clientDetailsResponse.payload).not.toContain('1 Previous Road')
     })

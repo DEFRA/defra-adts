@@ -80,13 +80,13 @@ jobs:
         run: |
           case "${{ inputs.service-name }}" in
             adts-ui)
-              echo "sonar-token=${{ secrets.SONAR_TOKEN }}" >> $GITHUB_OUTPUT
+              echo "sonar-token=SONAR_TOKEN" >> $GITHUB_OUTPUT
               ;;
             adts-backend)
-              echo "sonar-token=${{ secrets.BACKEND_SONAR_TOKEN }}" >> $GITHUB_OUTPUT
+              echo "sonar-token=BACKEND_SONAR_TOKEN" >> $GITHUB_OUTPUT
               ;;
             adts-submissions-service)
-              echo "sonar-token=${{ secrets.SUBMISSIONS_SONAR_TOKEN }}" >> $GITHUB_OUTPUT
+              echo "sonar-token=SUBMISSIONS_SONAR_TOKEN" >> $GITHUB_OUTPUT
               ;;
           esac
 
@@ -180,7 +180,7 @@ jobs:
         if: ${{ inputs.run-sonarqube-scan }}
         uses: sonarSource/sonarqube-scan-action@ba9859eae8dd6bd29e412f25ddbbef3d032000f4  # v8.2.2
         env:
-          SONAR_TOKEN: ${{ needs.get_sonarqube_token.outputs.sonar-token }}
+          SONAR_TOKEN: ${{ secrets[needs.get_sonarqube_token.outputs.sonar-token] }}
         with:
           projectBaseDir: ${{ inputs.service-directory }}
 

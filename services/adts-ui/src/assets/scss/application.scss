@@ -27,7 +27,7 @@
 .app-button--sick {
   background-color: $govuk-brand-colour;
   color: govuk-colour("white");
-  box-shadow: 0 $govuk-border-width-form-element 0 govuk-shade($govuk-brand-colour, 60%);
+  box-shadow: 0 $govuk-border-width-form-element 0 #0b2c49;
 
   &:link,
   &:visited,
@@ -36,8 +36,27 @@
   }
 
   &:hover {
-    background-color: govuk-shade($govuk-brand-colour, 20%);
+    background-color: #175a93;
   }
+}
+
+.app-sign-out {
+  margin: 0;
+
+  button {
+    background: none;
+    border: 0;
+    padding: 0;
+    color: $govuk-link-colour;
+    font: inherit;
+    text-decoration: underline;
+    cursor: pointer;
+  }
+}
+
+// GOV.UK Frontend 6 makes the header brand blue; keep the original black header.
+.govuk-header {
+  background-color: govuk-colour("black");
 }
 
 .app-button-stack {

@@ -1,0 +1,15 @@
+{% extends "govuk/template.njk" %}
+{% from "heading/macro.njk" import appHeading %}
+{% from "macros/serviceHeader.njk" import appServiceHeader %}
+
+{% block pageTitle %}{{ pageTitle }} – Animal Disease Testing Service{% endblock %}
+
+{% block head %}
+  <link rel="stylesheet" href="/assets/css/application.css">
+{% endblock %}
+
+{% block header %}{{ appServiceHeader() }}{% endblock %}
+
+{% block bodyEnd %}
+  <script type="module" src="/assets/js/all.js"></script>
+{% endblock %}

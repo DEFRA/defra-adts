@@ -3,6 +3,14 @@ import { getCounties } from '../../src/backend/counties.js'
 
 describe('getCounties', () => {
   const originalBackendUrl = process.env.BACKEND_SERVICE_URL
+  const request = {
+    server: {
+      app: {
+        getAuthSession: () => ({ token: 'test-token' }),
+        authMode: 'live'
+      }
+    }
+  }
 
   beforeEach(() => {
     process.env.BACKEND_SERVICE_URL = 'http://localhost:3200'
@@ -26,9 +34,11 @@ describe('getCounties', () => {
       headers: { 'Content-Type': 'application/json' }
     }))
 
-    const counties = await getCounties()
+    const counties = await getCounties(request)
 
-    expect(globalThis.fetch).toHaveBeenCalledWith('http://localhost:3200/GetCounties')
+    expect(globalThis.fetch).toHaveBeenCalledWith('http://localhost:3200/GetCounties', {
+      headers: { Authorization: 'Bearer test-token' }
+    })
     expect(counties).toEqual([
       { countyCode: '1', name: 'Dorset' },
       { countyCode: 'AB', name: 'Argyll and Bute' }
@@ -38,6 +48,6 @@ describe('getCounties', () => {
   test('throws when the backend responds with a non-OK status', async () => {
     jest.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('Server error', { status: 500 }))
 
-    await expect(getCounties()).rejects.toThrow('GetCounties failed with status 500')
+    await expect(getCounties(request)).rejects.toThrow('GetCounties failed with status 500')
   })
 })

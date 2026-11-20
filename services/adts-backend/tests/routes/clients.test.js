@@ -26,7 +26,7 @@ describe('GET /GetClients', () => {
   beforeAll(async () => {
     process.env.PORT = '3200'
     process.env.SUBMISSIONS_SERVICE_URL = 'http://localhost:3100'
-    server = await createServer({ docClient })
+    server = await createServer({ docClient, authorizeDataAccess: () => true })
   })
 
   afterAll(async () => {

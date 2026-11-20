@@ -18,12 +18,12 @@ const getSpeciesSelection = (selection) => {
   return { speciesName: selection, errors }
 }
 
-const findSelectedSpecies = async (speciesName, errors) => {
+const findSelectedSpecies = async (speciesName, errors, request) => {
   if (!speciesName) {
     return undefined
   }
 
-  const speciesResult = await safeLoad(getSpecies)
+  const speciesResult = await safeLoad(() => getSpecies(request))
   const matchedSpecies = speciesResult.data?.find(({ name }) => name === speciesName)
 
   if (!matchedSpecies) {
@@ -35,10 +35,10 @@ const findSelectedSpecies = async (speciesName, errors) => {
   return matchedSpecies
 }
 
-const buildViewContext = async (submissionFormState, { selection, errors = {} } = {}) => {
+const buildViewContext = async (submissionFormState, request, { selection, errors = {} } = {}) => {
   const [speciesResult, clientSummaryResult] = await Promise.all([
-    safeLoad(getSpecies),
-    loadClientSummary(submissionFormState)
+    safeLoad(() => getSpecies(request)),
+    loadClientSummary(submissionFormState, request)
   ])
   const allSpecies = speciesResult.data || []
   const savedSpecies = submissionFormState.formData?.animalDetails?.species
@@ -68,7 +68,7 @@ const submissionSpecies = (server, submissionFormStateKey) => {
       path: `/${pageName}`,
       handler: async (request, h) => {
         const submissionFormState = request.yar.get(submissionFormStateKey) || {}
-        const context = await buildViewContext(submissionFormState)
+        const context = await buildViewContext(submissionFormState, request)
         const view = h.view('submission-species.njk', context)
 
         return context.clientSummaryError ? view.code(BAD_GATEWAY_STATUS) : view
@@ -81,10 +81,10 @@ const submissionSpecies = (server, submissionFormStateKey) => {
         const submissionFormState = request.yar.get(submissionFormStateKey) || {}
         const selection = request.payload?.species
         const { speciesName, errors } = getSpeciesSelection(selection)
-        const matchedSpecies = await findSelectedSpecies(speciesName, errors)
+        const matchedSpecies = await findSelectedSpecies(speciesName, errors, request)
 
         if (Object.keys(errors).length > 0) {
-          const context = await buildViewContext(submissionFormState, { selection, errors })
+          const context = await buildViewContext(submissionFormState, request, { selection, errors })
           const view = h.view('submission-species.njk', context)
 
           return context.clientSummaryError

@@ -44,7 +44,7 @@ const drafts = (server, submissionFormStateKey) => {
     method: 'GET',
     path: '/drafts/{draftId}/continue',
     handler: async (request, h) => {
-      const result = await safeLoad(() => getDraft(request.params.draftId))
+      const result = await safeLoad(() => getDraft(request.params.draftId, request))
       if (result.error) {
         const statusCode = result.error.statusCode === NOT_FOUND ? NOT_FOUND : BAD_GATEWAY
         return draftError(h, statusCode, 'We could not load this draft. Try again later.')

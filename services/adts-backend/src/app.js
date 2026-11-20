@@ -11,8 +11,18 @@ import { getSpecies } from './data/species.js'
 import { getDraft } from './data/drafts.js'
 import { getSubmissions } from './data/submissions.js'
 import { createClientsHandler } from './handlers/clients.js'
+import { registerAuthentication } from './auth.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
+const authorizationUnavailable = (_request, h) =>
+  h.response({ error: 'Data access policy is not configured' })
+    .code(constants.HTTP_STATUS_SERVICE_UNAVAILABLE)
+const createAuthorizationGate = (handler, authorizeDataAccess) => async (request, h) => {
+  if (!await authorizeDataAccess(request)) {
+    return authorizationUnavailable(request, h)
+  }
+  return handler(request, h)
+}
 
 const createDynamoClientGetter = (docClient) => {
   let dynamoClient = docClient
@@ -43,6 +53,7 @@ const registerStaticRoutes = (server) => {
   server.route({
     method: 'GET',
     path: '/assets/js/{param*}',
+    options: { auth: false },
     handler: {
       directory: {
         path: path.join(__dirname, 'public/js')
@@ -54,11 +65,13 @@ const registerStaticRoutes = (server) => {
     {
       method: 'GET',
       path: '/',
+      options: { auth: false },
       handler: async () => ({ message: 'You have hit the backend page' })
     },
     {
       method: 'GET',
       path: '/health',
+      options: { auth: false },
       handler: (_request, h) => h.response({ status: 'UP' })
     }
   ])
@@ -69,6 +82,7 @@ const registerConnectionHealthRoute = (server) => {
     method: 'GET',
     path: '/connection_health',
     options: {
+      auth: false,
       validate: {
         query: Joi.object({
           protocol: Joi.string().trim().required(),
@@ -97,18 +111,16 @@ const registerConnectionHealthRoute = (server) => {
   })
 }
 
-const createSubmissionsHandler = (getDynamoClient) => {
+const createSubmissionsHandler = (getDynamoClient, authorizeDataAccess) => {
   const proxySubmissions = createProxyGet('submissions')
 
   return async (request, h) => {
     if (request.query.status?.toLowerCase() !== 'draft') {
-      return proxySubmissions(request, h)
+      return createAuthorizationGate(proxySubmissions, authorizeDataAccess)(request, h)
     }
 
     try {
-      const ownerId = process.env.NODE_ENV === 'development'
-        ? request.headers['x-local-draft-owner-id']
-        : undefined
+      const ownerId = request.auth.credentials.ownerId
       if (!ownerId) {
         return h.response({ error: 'Local draft owner is not configured' })
           .code(constants.HTTP_STATUS_SERVICE_UNAVAILABLE)
@@ -124,9 +136,7 @@ const createSubmissionsHandler = (getDynamoClient) => {
 }
 
 const createDraftHandler = (getDynamoClient) => async (request, h) => {
-  const ownerId = process.env.NODE_ENV === 'development'
-    ? request.headers['x-local-draft-owner-id']
-    : undefined
+  const ownerId = request.auth.credentials.ownerId
   if (!ownerId) {
     return h.response({ error: 'Local draft owner is not configured' })
       .code(constants.HTTP_STATUS_SERVICE_UNAVAILABLE)
@@ -146,7 +156,7 @@ const createDraftHandler = (getDynamoClient) => async (request, h) => {
   }
 }
 
-const registerSubmissionsRoutes = (server, getDynamoClient) => {
+const registerSubmissionsRoutes = (server, getDynamoClient, authorizeDataAccess) => {
   server.route([
     {
       method: 'GET',
@@ -156,12 +166,15 @@ const registerSubmissionsRoutes = (server, getDynamoClient) => {
     {
       method: 'GET',
       path: '/GetClients',
-      handler: createClientsHandler(getDynamoClient)
+      handler: createAuthorizationGate(
+        createClientsHandler(getDynamoClient),
+        authorizeDataAccess
+      )
     },
     {
       method: 'GET',
       path: '/submissions',
-      handler: createSubmissionsHandler(getDynamoClient)
+      handler: createSubmissionsHandler(getDynamoClient, authorizeDataAccess)
     },
     {
       method: 'GET',
@@ -231,16 +244,17 @@ const registerAnimalDetailsRoute = (server, getDynamoClient) => {
   })
 }
 
-const createServer = async ({ docClient } = {}) => {
+const createServer = async ({ docClient, authorizeDataAccess = () => false } = {}) => {
   const server = Hapi.server({
     port: process.env.PORT
   })
   const getDynamoClient = createDynamoClientGetter(docClient)
 
   await server.register([Inert])
+  await registerAuthentication(server)
   registerStaticRoutes(server)
   registerConnectionHealthRoute(server)
-  registerSubmissionsRoutes(server, getDynamoClient)
+  registerSubmissionsRoutes(server, getDynamoClient, authorizeDataAccess)
   registerSpeciesRoute(server, getDynamoClient)
   registerCountiesRoute(server, getDynamoClient)
   registerAnimalDetailsRoute(server, getDynamoClient)

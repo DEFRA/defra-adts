@@ -1,7 +1,7 @@
 import Joi from 'joi'
 import { HOME_FILTER_STATE_KEY, homeFilterSchema } from './homeFilters.js'
 
-const home = (server) => {
+const home = (server, buildAccount) => {
   server.route({
     method: 'GET',
     path: '/',
@@ -18,7 +18,7 @@ const home = (server) => {
       }
 
       return h.view('home.njk', {
-        user: request.auth.credentials,
+        account: buildAccount ? buildAccount(request) : null,
         filteredValues: {
           client: filterValues.client,
           clinician: filterValues.clinician,

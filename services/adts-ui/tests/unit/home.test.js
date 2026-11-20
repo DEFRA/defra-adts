@@ -9,13 +9,11 @@ describe('Home route', () => {
       route: (registeredRoute) => {
         route = registeredRoute
       }
-    })
+    }, () => ({ name: 'Test User' }))
   })
 
   test('uses an empty submitted date when cached filters do not contain one', () => {
-    const credentials = { user: 'test-user' }
     const request = {
-      auth: { credentials },
       yar: {
         get: jest.fn(() => ({
           client: 'Acme Farm',
@@ -29,7 +27,7 @@ describe('Home route', () => {
     route.handler(request, h)
 
     expect(h.view).toHaveBeenCalledWith('home.njk', {
-      user: credentials,
+      account: { name: 'Test User' },
       filteredValues: {
         client: 'Acme Farm',
         clinician: 'Dr Smith',

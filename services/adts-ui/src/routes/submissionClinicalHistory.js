@@ -65,8 +65,8 @@ const validate = (values, maxDate) => {
   return { values, sampleTakenDate, errors }
 }
 
-const renderPage = async (h, submissionFormState, values, errors = {}) => {
-  const clientSummaryResult = await loadClientSummary(submissionFormState)
+const renderPage = async (request, h, submissionFormState, values, errors = {}) => {
+  const clientSummaryResult = await loadClientSummary(submissionFormState, request)
   const errorList = errors.sampleTakenDate
     ? [{ text: errors.sampleTakenDate, href: '#sampleTakenDate-day' }]
     : []
@@ -97,7 +97,7 @@ const submissionClinicalHistory = (server, submissionFormStateKey) => {
       path: `/${pageName}`,
       handler: (request, h) => {
         const submissionFormState = request.yar.get(submissionFormStateKey) || { formData: {} }
-        return renderPage(h, submissionFormState, savedValues(submissionFormState))
+        return renderPage(request, h, submissionFormState, savedValues(submissionFormState))
       }
     },
     {
@@ -108,7 +108,7 @@ const submissionClinicalHistory = (server, submissionFormStateKey) => {
         const { values, sampleTakenDate, errors } = validate(submittedValues(request.payload || {}), today())
 
         if (Object.keys(errors).length) {
-          return renderPage(h, submissionFormState, values, errors)
+          return renderPage(request, h, submissionFormState, values, errors)
         }
 
         const formData = submissionFormState.formData || {}

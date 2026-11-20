@@ -1,6 +1,8 @@
-export const getSpecies = async () => {
+import { fetchFromBackend } from './auth.js'
+
+export const getSpecies = async (request) => {
   const backendBaseUrl = process.env.BACKEND_SERVICE_URL
-  const response = await fetch(`${backendBaseUrl}/GetSpecies`)
+  const response = await fetchFromBackend(`${backendBaseUrl}/GetSpecies`, request)
 
   if (!response.ok) {
     throw new Error(`GetSpecies failed with status ${response.status}`)

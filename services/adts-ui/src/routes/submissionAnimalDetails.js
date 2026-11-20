@@ -187,13 +187,13 @@ const buildFields = (details, values, errors) => ({
   }))
 })
 
-const renderAnimalDetails = async (h, submissionFormState, {
+const renderAnimalDetails = async (request, h, submissionFormState, {
   details,
   values,
   errors = {},
   detailsError
 }) => {
-  const clientSummaryResult = await loadClientSummary(submissionFormState)
+  const clientSummaryResult = await loadClientSummary(submissionFormState, request)
   const { species } = submissionFormState.formData.animalDetails
 
   const view = h.view('submission-animal-details.njk', {
@@ -234,9 +234,9 @@ const getAnimalDetailsPage = async (request, h, submissionFormStateKey) => {
     return h.redirect(`/${speciesPageName}`)
   }
 
-  const result = await safeLoad(() => getAnimalDetails(speciesId))
+  const result = await safeLoad(() => getAnimalDetails(speciesId, request))
 
-  return renderAnimalDetails(h, submissionFormState, {
+  return renderAnimalDetails(request, h, submissionFormState, {
     details: result.data,
     detailsError: result.error,
     values: savedValues(submissionFormState.formData.animalDetails)
@@ -282,12 +282,12 @@ const postAnimalDetails = async (request, h, submissionFormStateKey) => {
     return h.redirect(`/${speciesPageName}`)
   }
 
-  const result = await safeLoad(() => getAnimalDetails(speciesId))
+  const result = await safeLoad(() => getAnimalDetails(speciesId, request))
   const previousDetails = submissionFormState.formData.animalDetails
   const values = savedValues(previousDetails)
 
   if (result.error) {
-    return renderAnimalDetails(h, submissionFormState, {
+    return renderAnimalDetails(request, h, submissionFormState, {
       detailsError: result.error,
       values
     })
@@ -295,7 +295,7 @@ const postAnimalDetails = async (request, h, submissionFormStateKey) => {
 
   const { values: submittedValues, errors } = validate(request.payload || {}, result.data)
   if (Object.keys(errors).length > 0) {
-    return renderAnimalDetails(h, submissionFormState, {
+    return renderAnimalDetails(request, h, submissionFormState, {
       details: result.data,
       values: submittedValues,
       errors

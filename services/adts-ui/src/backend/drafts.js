@@ -1,11 +1,14 @@
-export const getDraft = async (draftId) => {
+import { fetchFromBackend } from './auth.js'
+
+export const getDraft = async (draftId, request) => {
   const backendBaseUrl = process.env.BACKEND_SERVICE_URL
-  const headers = process.env.NODE_ENV === 'development' && process.env.LOCAL_DRAFT_OWNER_ID
+  const headers = request.server.app.authMode === 'mock' && process.env.LOCAL_DRAFT_OWNER_ID
     ? { 'x-local-draft-owner-id': process.env.LOCAL_DRAFT_OWNER_ID }
-    : undefined
-  const response = await fetch(
+    : {}
+  const response = await fetchFromBackend(
     `${backendBaseUrl}/drafts/${encodeURIComponent(draftId)}`,
-    { headers }
+    request,
+    headers
   )
 
   if (!response.ok) {

@@ -193,18 +193,18 @@ const getClientDetailsViewContext = (submissionFormState, clients, counties, ove
   }
 }
 
-export const loadClients = async () => {
+export const loadClients = async (request) => {
   try {
-    return await getClients()
+    return await getClients(request)
   } catch (error) {
     console.error('Error contacting backend server:', error.message)
     return []
   }
 }
 
-export const loadCounties = async () => {
+export const loadCounties = async (request) => {
   try {
-    return await getCounties()
+    return await getCounties(request)
   } catch (error) {
     console.error('Error loading counties:', error.message)
     return []

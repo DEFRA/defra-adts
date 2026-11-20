@@ -5,6 +5,34 @@ Changes to this directory trigger the service's CI build.
 The UI calls this service using `BACKEND_SERVICE_URL`. The backend forwards
 submission and client lookup requests to `SUBMISSIONS_SERVICE_URL`.
 
+## API authentication
+
+The UI performs the browser-facing OIDC sign-in and sends its access token to
+this API as a bearer token. In production, set `AUTH_MODE=live`. The backend
+loads OIDC discovery metadata and validates the token signature, issuer,
+audience, expiry, subject, and the Entra API scope before using its subject as
+the draft owner. The backend accepts both providers:
+
+| Provider | Required live configuration |
+| --- | --- |
+| Defra ID | `DEFRA_ID_WELL_KNOWN_URL`, `DEFRA_ID_API_AUDIENCE` |
+| Entra ID | `ENTRA_TENANT_ID`, `ENTRA_API_AUDIENCE`, `ENTRA_API_SCOPE` |
+
+These are API resource identifiers, not client secrets. The Entra UI deployment
+must request the configured `ENTRA_API_SCOPE`. Configure audience/scope values
+from the corresponding API registrations; do not use placeholder values in a
+live deployment.
+
+Local development and tests use mock authentication. Production rejects mock
+mode. Health and connection-health routes remain unauthenticated.
+
+Client lookups and non-draft submission searches return `503` until an
+authorization policy is implemented. The applicant organization-to-PVS mapping
+and staff role values are not yet defined, so a valid token alone does not grant
+access to those records. Draft reads/searches are scoped to the validated
+issuer-and-subject pair. Do not remove the fail-closed data policy or trust a
+browser-supplied PVS identifier.
+
 For local development, start the seeded local DynamoDB from the repository root:
 
 ```bash
@@ -15,6 +43,7 @@ Then start the submissions service on port 3100 and the backend on port 3200:
 
 ```bash
 PORT=3100 npm start --prefix services/adts-submissions-service
+NODE_ENV=development AUTH_MODE=mock \
 DYNAMODB_ENDPOINT=http://localhost:8000 \
 AWS_ACCESS_KEY_ID=local \
 AWS_SECRET_ACCESS_KEY=local \

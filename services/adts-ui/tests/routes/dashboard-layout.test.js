@@ -31,7 +31,7 @@ describe('Dashboard Layout', () => {
   beforeAll(async () => {
     process.env.SESSION_SECRET = 'test-session-secret-with-at-least-32-characters'
     process.env.BACKEND_SERVICE_URL = 'http://localhost:3200'
-    jest.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify([]), {
+    jest.spyOn(globalThis, 'fetch').mockImplementation(async () => new Response(JSON.stringify([]), {
       status: 200,
       headers: { 'Content-Type': 'application/json' }
     }))
@@ -53,18 +53,24 @@ describe('Dashboard Layout', () => {
 
   describe('GOV.UK service header', () => {
     test('renders the GOV.UK header element', () => {
-      expect(html).toMatch(/<header[^>]*class="[^"]*govuk-header/)
+      expect(html).toMatch(/<(?:header|div)[^>]*class="[^"]*govuk-header/)
     })
 
     test('renders the GOV.UK logo (logotype)', () => {
-      // GOV.UK Frontend 5.x emits either a .govuk-header__logotype class
+      // GOV.UK Frontend 6.x emits either a .govuk-header__logotype class
       // or an SVG inside .govuk-header__logo
       expect(html).toMatch(/govuk-header__logotype|govuk-header__logo/)
     })
 
     test('displays the service name "Animal Disease Testing Service"', () => {
       expect(html).toMatch(
-        /class="[^"]*govuk-header__service-name[^"]*"[^>]*>\s*Animal Disease Testing Service\s*</
+        /class="[^"]*govuk-service-navigation__service-name[^"]*"[^>]*>\s*<a[^>]*>\s*Animal Disease Testing Service\s*</
+      )
+    })
+
+    test('renders sign out as a service navigation item', () => {
+      expect(html).toMatch(
+        /<li class="govuk-service-navigation__item">\s*<form class="app-sign-out" method="post" action="\/auth\/sign-out"><button type="submit" class="govuk-link">Sign out<\/button><\/form><\/li>/
       )
     })
   })
@@ -106,7 +112,7 @@ describe('Dashboard Layout', () => {
         { loadPaths: [path.join(process.cwd(), 'node_modules')], style: 'compressed', quietDeps: true, silenceDeprecations: ['import', 'global-builtin', 'color-functions'] }
       )
 
-      expect(css).toMatch(/\.app-button--healthy,.app-button--sick\{background-color:#1d70b8;color:#fff/)
+      expect(css).toMatch(/\.app-button--healthy,.app-button--sick\{background-color:var\(--govuk-brand-colour,\s*#1d70b8\);color:#fff/)
     })
 
     test('stacks the submission buttons vertically', () => {

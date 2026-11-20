@@ -1,0 +1,6 @@
+{% macro appHeading(params) %}
+  {% if params.caption %}
+    <span class="govuk-caption-l">{{ params.caption }}</span>
+  {% endif %}
+  <h1 class="govuk-heading-xl">{{ params.text }}</h1>
+{% endmacro %}

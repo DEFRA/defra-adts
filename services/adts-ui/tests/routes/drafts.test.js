@@ -8,7 +8,6 @@ describe('Continue draft route', () => {
 
   beforeAll(async () => {
     process.env.PORT = '3000'
-    process.env.NODE_ENV = 'development'
     process.env.LOCAL_DRAFT_OWNER_ID = 'user-456'
     process.env.BACKEND_SERVICE_URL = 'http://localhost:3200'
     process.env.SESSION_SECRET = 'test-session-secret-with-at-least-32-characters'

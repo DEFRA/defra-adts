@@ -24,9 +24,11 @@
     "@hapi/inert": "7.1.2",
     "@hapi/vision": "7.0.3",
     "@hapi/yar": "^11.0.3",
+    "@defra/hapi-oidc-auth": "git+https://github.com/DEFRA/hapi-oidc-auth.git#5dd8d1f0b996d934e2eb2806effc8d31437f38f1",
+    "@defra/hapi-oidc-auth-defra-id": "git+https://github.com/DEFRA/hapi-oidc-auth-defra-id.git#716f76af852838c2af70aa48a76a2c31df32494f",
     "accessible-autocomplete": "^3.0.2",
     "date-and-time": "^4.7.1",
-    "govuk-frontend": "5.14.0",
+    "govuk-frontend": "6.3.0",
     "joi": "^18.3.1",
     "nunjucks": "3.2.4"
   },

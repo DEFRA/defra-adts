@@ -46,7 +46,7 @@ const getClientSummaryFromDetails = (clientDetails) => ({
 
 const CLIENT_DETAILS_UNAVAILABLE = 'Client details unavailable'
 
-export const loadClientSummary = async (submissionFormState) => {
+export const loadClientSummary = async (submissionFormState, request) => {
   const clientDetails = submissionFormState.formData?.clientDetails
   const hasSubmittedClientDetails = clientDetails && [
     'name',
@@ -63,7 +63,7 @@ export const loadClientSummary = async (submissionFormState) => {
     return { clientSummary: getClientSummaryFromDetails(clientDetails) }
   }
 
-  const clientsResult = await safeLoad(getClients)
+  const clientsResult = await safeLoad(() => getClients(request))
 
   if (clientsResult.error) {
     return {

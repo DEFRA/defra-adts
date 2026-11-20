@@ -61,10 +61,10 @@ on:
         default: "npm run build"
         type: string
 
-    secrets:
-      SQ_ACCESS_TOKEN:
-        description: Access token for the SonarQube project
-        required: true
+#    secrets:
+#      SQ_ACCESS_TOKEN:
+#        description: Access token for the SonarQube project
+#        required: true
 
 jobs:
   get_sonarqube_token:

@@ -8,6 +8,7 @@ import { submissionsTable } from '../data/dynamo.js'
 
 export const draftPageKeys = Object.freeze([
   'clientDetails',
+  'species',
   'animalDetails',
   'clinicalHistory',
   'chooseTests',

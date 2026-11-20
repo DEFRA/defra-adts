@@ -83,7 +83,7 @@ describe('Submission species page', () => {
       requestUrl === 'http://localhost:3200/drafts'
     )
     expect(JSON.parse(saveRequest[1].body)).toMatchObject({
-      lastSavedPage: 'animalDetails',
+      lastSavedPage: 'species',
       formData: { animalDetails: { speciesId: '2', species: 'Sheep' } }
     })
     expect(revisit.payload).toMatch(/<option value="Sheep" selected>Sheep<\/option>/)
@@ -171,7 +171,7 @@ describe('Submission species page', () => {
     expect(JSON.parse(saveRequest[1].body)).toMatchObject({
       draftId: '123e4567-e89b-12d3-a456-426614174000',
       revision: 1,
-      lastSavedPage: 'animalDetails',
+      lastSavedPage: 'species',
       formData: {
         clientDetails: { name: 'Updated Client Name' },
         animalDetails: { speciesId: '4', species: 'Goat' }

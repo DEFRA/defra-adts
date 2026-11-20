@@ -2,10 +2,10 @@ import { getDraft } from '../backend/drafts.js'
 import { safeLoad } from './submissionViewHelpers.js'
 
 const resumePaths = {
-  'submission-01-client-details': '/submission-01-client-details',
-  'submission-02-species': '/submission-02-species',
-  'submission-02-animal-details': '/submission-02-animal-details',
-  'submission-03-clinical-history': '/submission-03-clinical-history'
+  clientDetails: '/submission-01-client-details',
+  species: '/submission-02-species',
+  animalDetails: '/submission-02-animal-details',
+  clinicalHistory: '/submission-03-clinical-history'
 }
 
 const NOT_FOUND = 404
@@ -31,7 +31,7 @@ const hasResumableState = (draft) => {
     return false
   }
   if (
-    draft.lastSavedPage === 'submission-02-animal-details' &&
+    draft.lastSavedPage === 'animalDetails' &&
     !draft.formData?.animalDetails?.speciesId
   ) {
     return false

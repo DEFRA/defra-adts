@@ -115,7 +115,7 @@ const submissionSpecies = (server, submissionFormStateKey) => {
         const saved = await persistSubmissionDraft(
           request,
           submissionFormStateKey,
-          'animalDetails',
+          'species',
           updatedFormData
         )
 

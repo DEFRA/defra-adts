@@ -78,7 +78,7 @@ jobs:
         id: get-token
         shell: bash
         run: |
-          case "${{ inputs.service-name }}" in:
+          case "${{ inputs.service-name }}" in
             adts-ui)
               echo "sonar-token=${{ secrets.SONAR_TOKEN }}" >> $GITHUB_OUTPUT
               ;;

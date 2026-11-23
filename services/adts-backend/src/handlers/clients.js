@@ -3,7 +3,14 @@ import { getCountyNames } from '../data/counties.js'
 import { mapLimsClient } from '../data/limsClients.js'
 
 export const createClientsHandler = (getDynamoClient) => async (_request, h) => {
-  const url = `${process.env.SUBMISSIONS_SERVICE_URL}/GetClients`
+  const pvsId = process.env.LIMS_PVS_ID
+  if (!pvsId) {
+    console.error('LIMS_PVS_ID must be configured to retrieve clients')
+    return h.response({ error: 'LIMS client lookup is not configured' })
+      .code(constants.HTTP_STATUS_INTERNAL_SERVER_ERROR)
+  }
+
+  const url = `${process.env.SUBMISSIONS_SERVICE_URL}/v1/clients?${new URLSearchParams({ pvsId })}`
 
   let response
   try {

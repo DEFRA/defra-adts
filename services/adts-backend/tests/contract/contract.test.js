@@ -10,6 +10,7 @@ describe('Backend API contracts', () => {
     process.env.NODE_ENV = 'development'
     process.env.PORT = '3200'
     process.env.SUBMISSIONS_SERVICE_URL = 'http://localhost:3100'
+    process.env.LIMS_PVS_ID = 'PVS001'
     server = await createServer({ docClient })
   })
 
@@ -83,19 +84,29 @@ describe('Backend API contracts', () => {
     })
   })
 
-  test('GET /submissions for non-Draft status preserves downstream status and body', async () => {
-    const downstreamPayload = {
-      results: [{ id: 'SUB-123', statuses: ['Submitted'] }],
-      totalCount: 1
-    }
-    jest.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify(downstreamPayload), {
-      status: 206,
+  test('GET /submissions for non-Draft status calls LIMS and returns mapped results', async () => {
+    const limsPayload = [{
+      draftSubmissionId: '',
+      submissionId: 'SUB-123',
+      status: 'Submitted',
+      clientName: 'Test Client',
+      clientFarm: 'Test Farm',
+      clinician: 'Dr Test',
+      submittedDate: '2026-10-20T00:00:00.000Z',
+      products: []
+    }]
+    jest.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify(limsPayload), {
+      status: 200,
       headers: { 'Content-Type': 'application/json' }
     }))
 
     const response = await server.inject({ method: 'GET', url: '/submissions?status=submitted' })
 
-    expect(response.statusCode).toBe(206)
-    expect(response.result).toEqual(downstreamPayload)
+    expect(response.statusCode).toBe(200)
+    expect(response.result.totalCount).toBe(1)
+    expect(response.result.results[0]).toMatchObject({
+      id: 'SUB-123',
+      statuses: ['Submitted']
+    })
   })
 })

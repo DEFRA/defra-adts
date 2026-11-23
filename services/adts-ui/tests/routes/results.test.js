@@ -87,6 +87,29 @@ describe('UI Results Card Rendering Integration Pipeline', () => {
     expect(response.payload).toContain('<option value="show_all" selected>Show all</option>')
   })
 
+  test('sends the local draft owner when showing all statuses in development', async () => {
+    const originalEnv = { NODE_ENV: process.env.NODE_ENV, owner: process.env.LOCAL_DRAFT_OWNER_ID }
+    process.env.NODE_ENV = 'development'
+    process.env.LOCAL_DRAFT_OWNER_ID = 'user-456'
+    const fetchMock = jest.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify({
+      results: [],
+      totalCount: 0
+    }), { status: 200, headers: { 'Content-Type': 'application/json' } }))
+
+    try {
+      await server.inject({ method: 'GET', url: '/results?status=show_all' })
+    } finally {
+      process.env.NODE_ENV = originalEnv.NODE_ENV
+      if (originalEnv.owner === undefined) {
+        delete process.env.LOCAL_DRAFT_OWNER_ID
+      } else {
+        process.env.LOCAL_DRAFT_OWNER_ID = originalEnv.owner
+      }
+    }
+
+    expect(fetchMock.mock.calls[0][1]).toEqual({ headers: { 'x-local-draft-owner-id': 'user-456' } })
+  })
+
   test('should accurately bind LIMS adapter payloads into GOV.UK layout elements', async () => {
     const mockLimsData = {
       results: [

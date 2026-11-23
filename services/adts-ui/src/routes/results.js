@@ -23,7 +23,7 @@ const results = (server) => {
       }
       const queryParams = new URLSearchParams(searchFilters).toString()
       const backendUrl = `${process.env.BACKEND_SERVICE_URL}/submissions?${queryParams}`
-      const headers = request.query.status === 'draft' &&
+      const headers = ['draft', 'show_all'].includes(request.query.status) &&
         process.env.NODE_ENV === 'development' &&
         process.env.LOCAL_DRAFT_OWNER_ID
         ? { 'x-local-draft-owner-id': process.env.LOCAL_DRAFT_OWNER_ID }

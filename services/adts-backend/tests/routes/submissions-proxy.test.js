@@ -1,6 +1,30 @@
 import { afterAll, afterEach, beforeAll, describe, expect, jest, test } from '@jest/globals'
 import createServer from '../../src/app.js'
 
+const jsonResponse = (body) => new Response(JSON.stringify(body), {
+  status: 200,
+  headers: { 'Content-Type': 'application/json' }
+})
+
+const limsSubmission = {
+  draftSubmissionId: 'DRAFT-1',
+  submissionId: 'SUB-1',
+  status: 'Submitted',
+  clientName: 'Acme Farm',
+  clientFarm: 'Home Farm',
+  clinician: 'Dr Vet',
+  submittedDate: '2026-10-20T00:00:00.000Z',
+  products: [{ productId: 'P1', name: 'Test A' }]
+}
+
+const localDraft = {
+  submissionId: 'draft-001',
+  status: 'Draft',
+  userId: 'user-456',
+  submittedAt: '2026-10-21T00:00:00.000Z',
+  client: 'Acme Farm'
+}
+
 describe('Submissions service proxy routes', () => {
   let server
   const docClient = { send: jest.fn() }
@@ -9,6 +33,7 @@ describe('Submissions service proxy routes', () => {
     process.env.PORT = '3200'
     process.env.NODE_ENV = 'development'
     process.env.SUBMISSIONS_SERVICE_URL = 'http://localhost:3100'
+    process.env.LIMS_PVS_ID = 'PVS001'
     server = await createServer({ docClient })
   })
 
@@ -21,37 +46,117 @@ describe('Submissions service proxy routes', () => {
     docClient.send.mockReset()
   })
 
-  test.each([
-    ['/v1/products?filter=mastitis&species=CATTLE', 'http://localhost:3100/v1/products?filter=mastitis&species=CATTLE'],
-    ['/submissions?client=Acme+Farm&status=submitted', 'http://localhost:3100/submissions?client=Acme+Farm&status=submitted']
-  ])('forwards GET %s to the submissions service', async (requestUrl, submissionsUrl) => {
+  test('forwards GET /v1/products to the submissions service', async () => {
     const payload = [{ id: 'result-1' }]
     jest.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify(payload), {
       status: 200,
       headers: { 'Content-Type': 'application/json' }
     }))
 
-    const response = await server.inject({ method: 'GET', url: requestUrl })
+    const response = await server.inject({ method: 'GET', url: '/v1/products?filter=mastitis&species=CATTLE' })
 
-    expect(globalThis.fetch).toHaveBeenCalledWith(submissionsUrl)
+    expect(globalThis.fetch).toHaveBeenCalledWith('http://localhost:3100/v1/products?filter=mastitis&species=CATTLE')
     expect(response.statusCode).toBe(200)
     expect(response.result).toEqual(payload)
   })
 
-  test('preserves an error status returned by the submissions service', async () => {
-    jest.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify({ error: 'Unavailable' }), {
-      status: 503,
-      headers: { 'Content-Type': 'application/json' }
-    }))
+  test('searches LIMS through the v1 submissions route and maps the results', async () => {
+    jest.spyOn(globalThis, 'fetch').mockResolvedValue(jsonResponse([
+      limsSubmission,
+      { ...limsSubmission, submissionId: 'SUB-2', clientName: 'Other Client', status: 'Cancelled' }
+    ]))
+
+    const response = await server.inject({
+      method: 'GET',
+      url: '/submissions?client=Acme&status=submitted&submitted-date=1_year'
+    })
+
+    const limsUrl = new URL(globalThis.fetch.mock.calls[0][0])
+    expect(limsUrl.origin + limsUrl.pathname).toBe('http://localhost:3100/v1/submissions')
+    expect(limsUrl.searchParams.get('pvsId')).toBe('PVS001')
+    expect(limsUrl.searchParams.get('submittedDateBegin')).toMatch(/^\d{4}-\d{2}-\d{2}$/)
+    expect(response.statusCode).toBe(200)
+    expect(response.result.totalCount).toBe(1)
+    expect(response.result.results[0]).toMatchObject({
+      id: 'SUB-1',
+      statuses: ['Submitted'],
+      client: 'Acme Farm',
+      clientFarm: 'Home Farm',
+      clinician: 'Dr Vet',
+      orderSubmitted: '20/Oct/2026',
+      hasTests: true,
+      tests: [expect.objectContaining({ name: 'Test A' })]
+    })
+    expect(docClient.send).not.toHaveBeenCalled()
+  })
+
+  test('returns only matching submission references for the requested client and farm', async () => {
+    jest.spyOn(globalThis, 'fetch').mockResolvedValue(jsonResponse([
+      { submissionId: 'SUB-1', clientName: 'Acme Farm', clientFarm: 'North Field' },
+      { submissionId: 'SUB-2', clientName: 'Acme Farm', clientFarm: 'South Field' },
+      { submissionId: 'SUB-3', clientName: 'Beta Farm', clientFarm: 'North Field' },
+      { submissionId: '', draftSubmissionId: 'DRAFT-1', clientName: 'Acme Farm', clientFarm: 'North Field' },
+      { submissionId: 'SUB-1', clientName: 'Acme Farm', clientFarm: 'North Field' }
+    ]))
+
+    const response = await server.inject({
+      method: 'GET',
+      url: '/submission-references?clientId=C-456&clientName=Acme%20Farm&clientFarm=North%20Field'
+    })
+
+    expect(response.statusCode).toBe(200)
+    expect(response.result).toEqual(['SUB-1'])
+    expect(globalThis.fetch).toHaveBeenCalledWith(
+      'http://localhost:3100/v1/submissions?pvsId=PVS001&clientId=C-456'
+    )
+  })
+
+  test('requires a client filter when retrieving submission references', async () => {
+    const fetchSpy = jest.spyOn(globalThis, 'fetch')
+
+    const response = await server.inject({ method: 'GET', url: '/submission-references' })
+
+    expect(response.statusCode).toBe(400)
+    expect(fetchSpy).not.toHaveBeenCalled()
+  })
+
+  test('combines local drafts with LIMS submissions when showing all', async () => {
+    jest.spyOn(globalThis, 'fetch').mockResolvedValue(jsonResponse([limsSubmission]))
+    docClient.send.mockResolvedValue({ Items: [localDraft] })
+
+    const response = await server.inject({
+      method: 'GET',
+      url: '/submissions',
+      headers: { 'x-local-draft-owner-id': 'user-456' }
+    })
+
+    expect(response.statusCode).toBe(200)
+    expect(response.result.results.map(({ id }) => id)).toEqual(['draft-001', 'SUB-1'])
+    expect(response.result.totalCount).toBe(2)
+  })
+
+  test('returns LIMS submissions without local drafts when no draft owner is configured', async () => {
+    jest.spyOn(globalThis, 'fetch').mockResolvedValue(jsonResponse([limsSubmission]))
 
     const response = await server.inject({ method: 'GET', url: '/submissions' })
 
-    expect(response.statusCode).toBe(503)
-    expect(response.result).toEqual({ error: 'Unavailable' })
+    expect(response.statusCode).toBe(200)
+    expect(response.result.results.map(({ id }) => id)).toEqual(['SUB-1'])
+    expect(docClient.send).not.toHaveBeenCalled()
   })
 
-  test('uses DynamoDB for Draft searches', async () => {
-    jest.spyOn(globalThis, 'fetch')
+  test('returns a gateway error when the submissions service search fails', async () => {
+    jest.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('{}', { status: 503 }))
+    jest.spyOn(console, 'error').mockImplementation(() => {})
+
+    const response = await server.inject({ method: 'GET', url: '/submissions' })
+
+    expect(response.statusCode).toBe(502)
+    expect(response.result).toEqual({ error: 'Unable to retrieve submissions' })
+  })
+
+  test('retrieves only local drafts when filtering by Draft status without calling LIMS', async () => {
+    const fetchSpy = jest.spyOn(globalThis, 'fetch')
     docClient.send.mockResolvedValue({
       Items: [{
         submissionId: 'draft-001',
@@ -68,18 +173,18 @@ describe('Submissions service proxy routes', () => {
       headers: { 'x-local-draft-owner-id': 'user-456' }
     })
 
-    expect(globalThis.fetch).not.toHaveBeenCalled()
     expect(response.statusCode).toBe(200)
-    expect(response.result.results).toHaveLength(1)
+    expect(fetchSpy).not.toHaveBeenCalled()
+    expect(response.result.totalCount).toBe(1)
     expect(response.result.results[0]).toMatchObject({
       id: 'draft-001',
       statuses: ['Draft'],
-      client: 'Acme Farm',
-      orderSubmitted: '20/Oct/2026'
+      client: 'Acme Farm'
     })
   })
 
   test('returns a gateway error when a Draft search fails in DynamoDB', async () => {
+    jest.spyOn(globalThis, 'fetch').mockResolvedValue(jsonResponse([]))
     docClient.send.mockRejectedValue(new Error('DynamoDB unavailable'))
     jest.spyOn(console, 'error').mockImplementation(() => {})
 
@@ -183,7 +288,7 @@ describe('Submissions service proxy routes', () => {
     jest.spyOn(globalThis, 'fetch').mockRejectedValue(new Error('Connection refused'))
     jest.spyOn(console, 'error').mockImplementation(() => {})
 
-    const response = await server.inject({ method: 'GET', url: '/submissions' })
+    const response = await server.inject({ method: 'GET', url: '/v1/products?filter=x' })
 
     expect(response.statusCode).toBe(502)
     expect(response.result).toEqual({ error: 'Unable to reach submissions service' })
@@ -197,7 +302,7 @@ describe('Submissions service proxy routes', () => {
     }))
     jest.spyOn(console, 'error').mockImplementation(() => {})
 
-    const response = await server.inject({ method: 'GET', url: '/submissions' })
+    const response = await server.inject({ method: 'GET', url: '/v1/products?filter=x' })
 
     expect(response.statusCode).toBe(502)
     expect(response.result).toEqual({ error: 'Unable to reach submissions service' })

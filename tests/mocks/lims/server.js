@@ -166,8 +166,13 @@ const handleGet = (endpoint, url, response) => {
           clientFarm: item.clientFarm,
           clinician: item.clinician,
           submittedDate: item.submittedDate ?? null,
+          changedStatusDate: item.changedStatusDate ?? item.submittedDate ?? null,
           isCancelable: item.status === 'Draft',
-          products: (item.products ?? []).map(({ productId, name = '' }) => ({ productId, name }))
+          samplesOverdue: item.samplesOverdue ?? false,
+          resultsAvailable: item.resultsAvailable ?? false,
+          isDigital: item.isDigital ?? true,
+          numberSamples: item.numberSamples ?? null,
+          products: (item.products ?? []).map(({ productId, name = '', productType = '' }) => ({ productId, name, productType }))
         }))
       return sendJson(response, 200, records)
     }
@@ -232,7 +237,17 @@ const server = createServer(async (request, response) => {
     }
 
     const draftSubmissionId = payload.draftSubmissionId || String(++nextDraftId)
-    drafts.set(draftSubmissionId, { ...payload, draftSubmissionId, status: 'Draft' })
+    const now = new Date().toISOString()
+    drafts.set(draftSubmissionId, {
+      ...payload,
+      draftSubmissionId,
+      status: 'Draft',
+      submittedDate: payload.submittedDate || null,
+      changedStatusDate: now,
+      samplesOverdue: false,
+      resultsAvailable: false,
+      isDigital: true
+    })
     return sendJson(response, 200, { draftSubmissionId })
   }
 
@@ -250,7 +265,17 @@ const server = createServer(async (request, response) => {
     }
 
     const submissionId = `VI-26-${String(nextSubmissionId++).padStart(6, '0')}`
-    const submission = { ...draft, submissionId, status: 'Submitted', submittedDate: new Date().toISOString() }
+    const now = new Date().toISOString()
+    const submission = {
+      ...draft,
+      submissionId,
+      status: 'Submitted',
+      submittedDate: now,
+      changedStatusDate: now,
+      samplesOverdue: false,
+      resultsAvailable: false,
+      isDigital: true
+    }
     submissions.set(submissionId, submission)
     drafts.set(payload.draftSubmissionId, submission)
     return sendJson(response, 200, { submissionId })

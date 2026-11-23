@@ -443,6 +443,26 @@ describe('client initialization', () => {
     })
   })
 
+  test('enhances the previous submission reference select for autocomplete', async () => {
+    const submissionReferenceSelect = {
+      dataset: { defaultValue: 'Start typing a submission reference' }
+    }
+    globalThis.document = {
+      querySelector: jest.fn((selector) => selector === 'select#previousSubmissionReference'
+        ? submissionReferenceSelect
+        : null),
+      querySelectorAll: jest.fn().mockReturnValue([])
+    }
+
+    await import('../../src/client/all.js')
+
+    expect(enhanceSelectElement).toHaveBeenCalledWith({
+      defaultValue: 'Start typing a submission reference',
+      inputClasses: 'govuk-!-width-one-half',
+      selectElement: submissionReferenceSelect
+    })
+  })
+
   test('shows only the animal ID inputs matching the selected number of animals', async () => {
     const numberOfAnimals = {
       value: '1',

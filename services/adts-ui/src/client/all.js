@@ -199,6 +199,16 @@ if (breedSelect) {
   })
 }
 
+const previousSubmissionReference = document.querySelector('select#previousSubmissionReference')
+
+if (previousSubmissionReference) {
+  accessibleAutocomplete.enhanceSelectElement({
+    defaultValue: previousSubmissionReference.dataset.defaultValue,
+    inputClasses: HALF_WIDTH_INPUT_CLASS,
+    selectElement: previousSubmissionReference
+  })
+}
+
 const hideAutocompleteHints = () => {
   document.querySelectorAll('.autocomplete__hint').forEach((hint) => {
     hint.setAttribute('aria-hidden', 'true')

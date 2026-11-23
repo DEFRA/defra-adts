@@ -10,6 +10,7 @@ import { getCounties } from './data/counties.js'
 import { getSpecies } from './data/species.js'
 import { getDraft } from './data/drafts.js'
 import { getSubmissions } from './data/submissions.js'
+import { getLimsSubmissionReferences, getLimsSubmissions } from './data/limsSubmissions.js'
 import { createClientsHandler } from './handlers/clients.js'
 import registerDraftRoutes from './routes/drafts.js'
 
@@ -98,29 +99,45 @@ const registerConnectionHealthRoute = (server) => {
   })
 }
 
-const createSubmissionsHandler = (getDynamoClient) => {
-  const proxySubmissions = createProxyGet('submissions')
+const createSubmissionsHandler = (getDynamoClient) => async (request, h) => {
+  const status = request.query.status?.toLowerCase()
+  const ownerId = process.env.NODE_ENV === 'development'
+    ? request.headers['x-local-draft-owner-id']
+    : undefined
 
-  return async (request, h) => {
-    if (request.query.status?.toLowerCase() !== 'draft') {
-      return proxySubmissions(request, h)
-    }
+  if (status === 'draft' && !ownerId) {
+    return h.response({ error: 'Local draft owner is not configured' })
+      .code(constants.HTTP_STATUS_SERVICE_UNAVAILABLE)
+  }
 
-    try {
-      const ownerId = process.env.NODE_ENV === 'development'
-        ? request.headers['x-local-draft-owner-id']
-        : undefined
-      if (!ownerId) {
-        return h.response({ error: 'Local draft owner is not configured' })
-          .code(constants.HTTP_STATUS_SERVICE_UNAVAILABLE)
-      }
+  try {
+    // Determine whether to call LIMS and fetch local drafts based on status
+    const shouldGetLims = status !== 'draft'
+    const shouldGetLocalDrafts = !status || status === 'show_all' || status === 'draft'
 
-      return h.response(await getSubmissions(getDynamoClient(), ownerId, request.query))
-    } catch (error) {
-      console.error('Error retrieving submissions:', error.message)
-      return h.response({ error: 'Unable to retrieve submissions' })
-        .code(constants.HTTP_STATUS_BAD_GATEWAY)
-    }
+    const [limsResults, localDrafts] = await Promise.all([
+      shouldGetLims ? getLimsSubmissions(request.query) : Promise.resolve([]),
+      shouldGetLocalDrafts && ownerId
+        ? getSubmissions(getDynamoClient(), ownerId, request.query)
+        : { results: [] }
+    ])
+    const results = [...localDrafts.results, ...limsResults]
+
+    return h.response({ results, totalCount: results.length })
+  } catch (error) {
+    console.error('Error retrieving submissions:', error.message)
+    return h.response({ error: 'Unable to retrieve submissions' })
+      .code(constants.HTTP_STATUS_BAD_GATEWAY)
+  }
+}
+
+const createSubmissionReferencesHandler = async (request, h) => {
+  try {
+    return h.response(await getLimsSubmissionReferences(request.query))
+  } catch (error) {
+    console.error('Error retrieving submission references:', error.message)
+    return h.response({ error: 'Unable to retrieve submission references' })
+      .code(constants.HTTP_STATUS_BAD_GATEWAY)
   }
 }
 
@@ -163,6 +180,20 @@ const registerSubmissionsRoutes = (server, getDynamoClient) => {
       method: 'GET',
       path: '/submissions',
       handler: createSubmissionsHandler(getDynamoClient)
+    },
+    {
+      method: 'GET',
+      path: '/submission-references',
+      options: {
+        validate: {
+          query: Joi.object({
+            clientId: Joi.string().trim().min(1),
+            clientName: Joi.string().trim().min(1),
+            clientFarm: Joi.string().trim().min(1)
+          }).or('clientId', 'clientName', 'clientFarm').unknown(false)
+        }
+      },
+      handler: createSubmissionReferencesHandler
     },
     {
       method: 'GET',

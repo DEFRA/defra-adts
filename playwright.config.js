@@ -69,6 +69,7 @@ webServer: [
       NODE_ENV: 'development',
       SUBMISSIONS_SERVICE_URL: 'http://localhost:3100',
       LOCAL_DRAFT_OWNER_ID: 'local-e2e',
+      LIMS_PVS_ID: 'PVS001',
       DYNAMODB_ENDPOINT: 'http://localhost:8000',
       AWS_REGION: 'eu-west-2',
       AWS_ACCESS_KEY_ID: 'local',

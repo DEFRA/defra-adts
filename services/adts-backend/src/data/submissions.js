@@ -6,7 +6,7 @@ const DAYS_IN_FORTNIGHT = 14
 const MONTHS_IN_HALF_YEAR = 6
 const MONTHS_IN_EIGHTEEN_MONTHS = 18
 
-const dateCutoff = (period, now = new Date()) => {
+export const dateCutoff = (period, now = new Date()) => {
   if (!period) {
     return undefined
   }
@@ -30,10 +30,10 @@ const dateCutoff = (period, now = new Date()) => {
   return cutoff
 }
 
-const matchesText = (value, filter) =>
+export const matchesText = (value, filter) =>
   !filter || String(value ?? '').toLocaleLowerCase().includes(filter.trim().toLocaleLowerCase())
 
-const formatDate = (value) => {
+export const formatDate = (value) => {
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) {
     return '---'

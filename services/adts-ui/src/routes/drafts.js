@@ -58,7 +58,7 @@ const drafts = (server, submissionFormStateKey) => {
 
       request.yar.set(submissionFormStateKey, {
         draftId: draft.draftId,
-        revision: draft.revision,
+        draftRevision: draft.revision,
         lastSavedPage: draft.lastSavedPage,
         formData: draft.formData
       })

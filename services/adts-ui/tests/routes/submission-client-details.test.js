@@ -323,6 +323,45 @@ describe('Submission client details page', () => {
     })
   })
 
+  test('clearing a previously selected animal address removes its saved details', async () => {
+    const selected = await server.inject({
+      method: 'POST',
+      url,
+      payload: { clientId: '101', animalsAtClientAddress: 'no', animalAddressClientId: '102' }
+    })
+    const cleared = await server.inject({
+      method: 'POST',
+      url,
+      headers: { cookie: getCookieHeader(selected) },
+      payload: {
+        clientId: '101',
+        animalsAtClientAddress: 'no',
+        animalAddressClientId: '',
+        animalAddress: 'Green Acres'
+      }
+    })
+
+    expect(cleared.statusCode).toBe(302)
+    const revisit = await server.inject({
+      method: 'GET',
+      url,
+      headers: { cookie: getCookieHeader(cleared) }
+    })
+    expect(revisit.request.response.source.context.submissionFormState.formData.clientDetails)
+      .toEqual({
+        clientId: '101',
+        cph: '',
+        name: 'Acme Farm',
+        farmName: '',
+        addressLine1: '',
+        addressLine2: '',
+        addressLine3: '',
+        county: '',
+        postcode: '',
+        animalsAtClientAddress: 'no'
+      })
+  })
+
   test('rejects an invalid animal location answer', async () => {
     const invalidAnswer = await server.inject({
       method: 'POST',
@@ -342,6 +381,30 @@ describe('Submission client details page', () => {
 
     expect(response.statusCode).toBe(400)
     expect(response.payload).toContain('Select a client from the list, or enter client details manually.')
+  })
+
+  test('does not continue when a previously saved client selection is cleared', async () => {
+    const selected = await server.inject({
+      method: 'POST',
+      url,
+      payload: { clientId: '101' }
+    })
+    const cleared = await server.inject({
+      method: 'POST',
+      url,
+      headers: { cookie: getCookieHeader(selected) },
+      payload: { clientId: '' }
+    })
+
+    expect(cleared.statusCode).toBe(400)
+    expect(cleared.payload).toContain('Select a client from the list')
+    const revisit = await server.inject({
+      method: 'GET',
+      url,
+      headers: { cookie: getCookieHeader(selected) }
+    })
+    expect(revisit.request.response.source.context.submissionFormState.formData.clientDetails.clientId)
+      .toBe('101')
   })
 
   test('prefills the edit form from the selected client and stores edited values for the submission', async () => {

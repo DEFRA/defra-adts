@@ -17,6 +17,26 @@ test.describe('Client lookup via LIMS', () => {
     expect(limsRequests).toContainEqual({ pvsId: 'PVS001', filter: '' })
   })
 
+  test('requires a client selection after returning from species', async ({ page }) => {
+    await page.goto('/submission-01-client-details')
+    await page.getByRole('combobox', { name: 'Client' }).fill('Example Farm')
+    await page.getByRole('option', {
+      name: 'Example Farm, North Field, 1 Test Lane, Teston, Dorset, ZZ1 1ZZ, 12/345/6789',
+      exact: true
+    }).click()
+    await page.getByRole('button', { name: 'Continue' }).click()
+    await expect(page).toHaveURL(/\/submission-02-species$/)
+
+    await page.getByRole('link', { name: 'Back' }).click()
+    await expect(page).toHaveURL(/\/submission-01-client-details$/)
+    await page.getByRole('combobox', { name: 'Client' }).fill('')
+    await page.getByRole('button', { name: 'Continue' }).click()
+
+    await expect(page).toHaveURL(/\/submission-01-client-details$/)
+    await expect(page.getByText('Select a client from the list, or enter client details manually.'))
+      .toBeVisible()
+  })
+
   test('does not expose the LIMS identifier to the browser', async ({ page }) => {
     const browserUrls = []
     page.on('request', (request) => browserUrls.push(request.url()))

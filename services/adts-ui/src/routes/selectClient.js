@@ -140,13 +140,24 @@ const getSavedAnimalAddressDetails = (payload, animalAddressDetails) => {
   }
 }
 
+const hasClearedAnimalAddressSelection = (payload, savedClientDetails) =>
+  payload.animalsAtClientAddress === 'no' &&
+  Boolean(savedClientDetails.animalAddressClientId) &&
+  Object.hasOwn(payload, 'animalAddressClientId') &&
+  payload.animalAddressClientId === ''
+
 const buildClientDetails = (payload, client, animalAddressClient, savedClientDetails = {}) => {
   const details = getClientDetailsForSubmission(payload, client, savedClientDetails)
-  const animalAddressDetails = getAnimalAddressDetailsForSubmission(
-    payload,
-    animalAddressClient,
-    savedClientDetails
-  )
+  const animalAddressCleared = hasClearedAnimalAddressSelection(payload, savedClientDetails)
+  const animalAddressDetails = animalAddressCleared
+    ? getClientFieldValues()
+    : getAnimalAddressDetailsForSubmission(payload, animalAddressClient, savedClientDetails)
+  const animalAddressData = animalAddressCleared
+    ? {}
+    : {
+        ...getAnimalAddressDetailsToSave(payload, animalAddressClient, savedClientDetails),
+        ...getSavedAnimalAddressDetails(payload, animalAddressDetails)
+      }
 
   return {
     ...(client && { clientId: client.clientId }),
@@ -154,8 +165,7 @@ const buildClientDetails = (payload, client, animalAddressClient, savedClientDet
       clientFieldNames.map((fieldName) => [fieldName, String(details[fieldName] || '').trim()])
     ),
     ...(payload.animalsAtClientAddress && { animalsAtClientAddress: payload.animalsAtClientAddress }),
-    ...getAnimalAddressDetailsToSave(payload, animalAddressClient, savedClientDetails),
-    ...getSavedAnimalAddressDetails(payload, animalAddressDetails)
+    ...animalAddressData
   }
 }
 

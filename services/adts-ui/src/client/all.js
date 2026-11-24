@@ -120,8 +120,22 @@ const enhanceAddressLookup = (selectElement, editButton) => {
 
       if (selectedOption) {
         selectedOption.selected = true
-        syncEditButton()
+      } else {
+        selectElement.value = ''
       }
+      syncEditButton()
+    }
+  })
+
+  const autocompleteInput = selectElement.previousElementSibling.querySelector('.autocomplete__input')
+  autocompleteInput.addEventListener('input', (event) => {
+    const selectedOption = Array.from(selectElement.options)
+      .find((option) => option.value === selectElement.value)
+    const selectedText = selectedOption && (selectedOption.textContent || selectedOption.innerText)
+
+    if (selectedText !== event.target.value) {
+      selectElement.value = ''
+      syncEditButton()
     }
   })
 

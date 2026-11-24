@@ -50,7 +50,7 @@ on:
         type: boolean
 
       sonarqube-scan-directory:
-        description: Base directory for sonar scanning
+        description: Base directory for SonarQube scanning
         required: false
         default: ""
         type: string
@@ -163,8 +163,7 @@ jobs:
         env:
           SONAR_TOKEN: ${{ secrets.SQ_ACCESS_TOKEN }}
         with:
-          projectBaseDir: >- 
-            ${{ inputs.sonarqube-scan-directory }}
+          projectBaseDir: ${{ inputs.sonarqube-scan-directory }}
 
       - name: Write validation summary
         env:

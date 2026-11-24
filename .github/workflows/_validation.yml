@@ -63,7 +63,7 @@ on:
 
       sonar-scan-directory:
         description: Base directory for sonar scanning
-        required: true
+        required: false
         default: ""
         type: string
 

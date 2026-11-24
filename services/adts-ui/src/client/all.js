@@ -104,7 +104,7 @@ if (speciesSelect) {
   })
 }
 
-const enhanceAddressLookup = (selectElement, editButton) => {
+const enhanceAddressLookup = (selectElement, editButton, clearButton) => {
   const syncEditButton = () => {
     if (editButton) {
       editButton.hidden = !selectElement.value && editButton.dataset.manualAddress !== 'true'
@@ -139,6 +139,16 @@ const enhanceAddressLookup = (selectElement, editButton) => {
     }
   })
 
+  if (clearButton) {
+    clearButton.addEventListener('click', (event) => {
+      event.preventDefault()
+      selectElement.value = ''
+      autocompleteInput.value = ''
+      autocompleteInput.dispatchEvent(new Event('input', { bubbles: true }))
+      syncEditButton()
+    })
+  }
+
   if (editButton) {
     selectElement.addEventListener('change', syncEditButton)
     syncEditButton()
@@ -146,7 +156,11 @@ const enhanceAddressLookup = (selectElement, editButton) => {
 }
 
 if (clientSelect) {
-  enhanceAddressLookup(clientSelect, document.querySelector('[data-client-edit-button]'))
+  enhanceAddressLookup(
+    clientSelect,
+    document.querySelector('[data-client-edit-button]'),
+    document.querySelector('[data-clear-client]')
+  )
 }
 
 if (animalAddressSelect) {

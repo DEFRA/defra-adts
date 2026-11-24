@@ -99,6 +99,23 @@
   margin: 30px 0 64px;
 }
 
+.app-client-selection {
+  display: flex;
+  align-items: flex-start;
+  gap: govuk-spacing(2);
+
+  .govuk-form-group {
+    flex: 1 1 auto;
+    min-width: 0;
+    margin-bottom: 0;
+  }
+
+  [data-clear-client] {
+    flex: 0 0 auto;
+    margin-bottom: 0;
+  }
+}
+
 .app-animal-address .govuk-radios__conditional {
   border-left: 0;
   margin-left: 0;

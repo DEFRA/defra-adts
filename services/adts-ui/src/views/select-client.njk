@@ -138,18 +138,21 @@
       <button class="govuk-button govuk-button--secondary" type="submit" name="intent" value="cancel">Cancel</button>
     {% else %}
       <p class="govuk-body-l">Enter the name of your client, their address, or the County Parish Holding (CPH) eg 48/234/2348:</p>
-      {{ govukSelect({
-        id: "client",
-        name: "clientId",
-        label: {
-          text: "Client",
-          classes: "govuk-visually-hidden"
-        },
-        attributes: {
-          "data-default-value": selectedClientName
-        },
-        items: clientOptions
-      }) }}
+      <div class="app-client-selection">
+        {{ govukSelect({
+          id: "client",
+          name: "clientId",
+          label: {
+            text: "Client",
+            classes: "govuk-visually-hidden"
+          },
+          attributes: {
+            "data-default-value": selectedClientName
+          },
+          items: clientOptions
+        }) }}
+        <button class="govuk-button govuk-button--secondary" type="submit" name="intent" value="clearClient" data-clear-client>Clear</button>
+      </div>
       <p class="govuk-body app-create-address-link">Or you can <a class="govuk-link" href="/submission-01-client-address?intent=new" data-create-client-address-link>create a new client</a>.</p>
       {% if hasManualClient %}
         <a class="govuk-button govuk-button--secondary" href="/submission-01-client-address?intent=edit">Edit</a>

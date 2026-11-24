@@ -23,7 +23,7 @@ export const CPH_ERROR = 'Enter a CPH number in the format XX/XXX/XXXX'
 export const CPH_PATTERN = /^\d{2}\/\d{3}\/\d{4}$/
 
 export const submissionClientSchema = Joi.object({
-  intent: Joi.string().valid('edit', 'new', 'cancel', 'newClientAddress', 'newAnimalAddress', 'editAnimalAddress', 'cancelAnimalAddress').optional(),
+  intent: Joi.string().valid('edit', 'new', 'cancel', 'newClientAddress', 'newAnimalAddress', 'editAnimalAddress', 'cancelAnimalAddress', 'clearClient').optional(),
   clientId: Joi.string().allow('').optional(),
   animalAddressClientId: Joi.string().allow('').optional(),
   manualClientEntry: Joi.string().valid('yes').optional(),
@@ -327,6 +327,13 @@ const handleClientPostIntent = ({
   selectedAnimalAddress
 }) => {
   const savedClientDetails = formData.clientDetails || {}
+  if (payload.intent === 'clearClient') {
+    return renderClientDetailsPage(h, submissionFormState, clients, counties, {
+      selectedClientId: '',
+      ...getAnimalLocation(payload, formData, selectedAnimalAddress)
+    })
+  }
+
   if (
     payload.intent === 'editAnimalAddress' &&
     (selectedAnimalAddress || savedClientDetails.animalAddressDetails)

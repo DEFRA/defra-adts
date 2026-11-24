@@ -1,4 +1,5 @@
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, jest, test } from '@jest/globals'
+import { JSDOM } from 'jsdom'
 import createServer from '../../src/app.js'
 
 const getCookieHeader = (response) => {
@@ -66,6 +67,7 @@ describe('Submission client details page', () => {
     expect(response.payload).toContain('Animal Disease Testing Service')
     expect(response.payload).toContain('<form method="post" action="/submission-01-client-details" novalidate>')
     expect(response.payload).toContain('<select class="govuk-select" id="client" name="clientId"')
+    expect(response.payload).toMatch(/class="govuk-button govuk-button--secondary" type="submit" name="intent" value="clearClient" data-clear-client>Clear<\/button>/)
     expect(response.payload).toContain('name="intent"')
     expect(response.payload).toContain('href="/submission-01-client-address?intent=new"')
     expect(response.payload).toContain('create a new client')
@@ -85,6 +87,51 @@ describe('Submission client details page', () => {
       { value: '101', text: 'Acme Farm', selected: false },
       { value: '102', text: 'Green Acres', selected: false }
     ])
+  })
+
+  test('clears a selected client without saving form state when JavaScript is unavailable', async () => {
+    const selectedClientResponse = await server.inject({
+      method: 'POST',
+      url,
+      payload: { clientId: '101' }
+    })
+    const response = await server.inject({
+      method: 'GET',
+      url,
+      headers: { cookie: getCookieHeader(selectedClientResponse) }
+    })
+    const { document } = new JSDOM(response.payload).window
+    const clientSelect = document.querySelector('#client')
+    const clearButton = document.querySelector('[data-clear-client]')
+    const form = document.querySelector('form')
+    let submittedIntent
+
+    expect(clientSelect.value).toBe('101')
+    form.addEventListener('submit', (event) => {
+      event.preventDefault()
+      submittedIntent = event.submitter?.value
+    })
+    clearButton.click()
+
+    expect(submittedIntent).toBe('clearClient')
+
+    const clearResponse = await server.inject({
+      method: 'POST',
+      url,
+      headers: { cookie: getCookieHeader(selectedClientResponse) },
+      payload: {
+        ...Object.fromEntries(new document.defaultView.FormData(form)),
+        intent: submittedIntent
+      }
+    })
+    const { document: clearedDocument } = new JSDOM(clearResponse.payload).window
+
+    expect(clearResponse.statusCode).toBe(200)
+    expect(clearedDocument.querySelector('#client').value).toBe('')
+    expect(clearResponse.request.response.source.context.submissionFormState.formData.clientDetails.clientId)
+      .toBe('101')
+    expect(globalThis.fetch.mock.calls.filter(([requestUrl]) => requestUrl === 'http://localhost:3200/drafts'))
+      .toHaveLength(1)
   })
 
   test('stores selected client details in Yar and redirects to species capture', async () => {

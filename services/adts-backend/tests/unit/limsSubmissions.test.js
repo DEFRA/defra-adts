@@ -10,6 +10,7 @@ describe('LIMS submissions data access', () => {
 
   afterEach(() => {
     jest.restoreAllMocks()
+    jest.useRealTimers()
     if (originalPvsId === undefined) {
       delete process.env.LIMS_PVS_ID
     } else {
@@ -64,5 +65,22 @@ describe('LIMS submissions data access', () => {
     )
 
     await expect(getLimsSubmissions()).rejects.toThrow('invalid response')
+  })
+
+  test.each([
+    ['2026-03-31', '1_month', '2026-02-28'],
+    ['2024-03-31', '1_month', '2024-02-29'],
+    ['2026-08-31', '6_months', '2026-02-28'],
+    ['2026-08-31', '18_months', '2025-02-28']
+  ])('clamps %s - %s to %s', async (today, period, expectedCutoff) => {
+    process.env.LIMS_PVS_ID = 'PVS001'
+    process.env.SUBMISSIONS_SERVICE_URL = 'http://localhost:3100'
+    jest.useFakeTimers().setSystemTime(new Date(`${today}T12:00:00.000Z`))
+    jest.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('[]', { status: 200 }))
+
+    await getLimsSubmissions({ 'submitted-date': period })
+
+    const requestUrl = new URL(globalThis.fetch.mock.calls[0][0])
+    expect(requestUrl.searchParams.get('submittedDateBegin')).toBe(expectedCutoff)
   })
 })

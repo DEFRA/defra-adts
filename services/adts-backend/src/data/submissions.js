@@ -6,6 +6,20 @@ const DAYS_IN_FORTNIGHT = 14
 const MONTHS_IN_HALF_YEAR = 6
 const MONTHS_IN_EIGHTEEN_MONTHS = 18
 
+const subtractUtcMonths = (date, months) => {
+  const day = date.getUTCDate()
+  date.setUTCDate(1)
+  date.setUTCMonth(date.getUTCMonth() - months)
+
+  const lastDayOfMonth = new Date(Date.UTC(
+    date.getUTCFullYear(),
+    date.getUTCMonth() + 1,
+    0
+  )).getUTCDate()
+
+  date.setUTCDate(Math.min(day, lastDayOfMonth))
+}
+
 export const dateCutoff = (period, now = new Date()) => {
   if (!period) {
     return undefined
@@ -16,10 +30,10 @@ export const dateCutoff = (period, now = new Date()) => {
     '1_day': () => cutoff.setUTCDate(cutoff.getUTCDate() - 1),
     '1_week': () => cutoff.setUTCDate(cutoff.getUTCDate() - DAYS_IN_WEEK),
     '14_days': () => cutoff.setUTCDate(cutoff.getUTCDate() - DAYS_IN_FORTNIGHT),
-    '1_month': () => cutoff.setUTCMonth(cutoff.getUTCMonth() - 1),
-    '6_months': () => cutoff.setUTCMonth(cutoff.getUTCMonth() - MONTHS_IN_HALF_YEAR),
+    '1_month': () => subtractUtcMonths(cutoff, 1),
+    '6_months': () => subtractUtcMonths(cutoff, MONTHS_IN_HALF_YEAR),
     '1_year': () => cutoff.setUTCFullYear(cutoff.getUTCFullYear() - 1),
-    '18_months': () => cutoff.setUTCMonth(cutoff.getUTCMonth() - MONTHS_IN_EIGHTEEN_MONTHS)
+    '18_months': () => subtractUtcMonths(cutoff, MONTHS_IN_EIGHTEEN_MONTHS)
   }
 
   if (!Object.hasOwn(periods, period)) {

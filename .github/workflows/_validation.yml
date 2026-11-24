@@ -165,7 +165,7 @@ jobs:
         with:
           projectBaseDir: >- 
             ${{
-              inputs.sonar-scan-directory != "" 
+              inputs.sonar-scan-directory != '' 
               && inputs.sonar-scan-directory
               || inputs.service-directory
             }}

@@ -76,6 +76,17 @@ describe('Dashboard Layout', () => {
       expect(html).not.toContain('>Clients<')
     })
 
+    describe('Result card styles', () => {
+      test('uses the accessible text colour for metadata labels', () => {
+        const { css } = sass.compile(
+          path.join(process.cwd(), 'src/assets/scss/application.scss'),
+          { loadPaths: [path.join(process.cwd(), 'node_modules')], style: 'compressed', quietDeps: true, silenceDeprecations: ['import', 'global-builtin', 'color-functions'] }
+        )
+
+        expect(css).toMatch(/\.app-result-card__meta-label\{[^}]*color:#0b0c0c/)
+      })
+    })
+
     test('renders the submission actions as GOV.UK styled link buttons', () => {
       const actions = [...html.matchAll(/<a\b[^>]*href="\/submission-01-client-details\/start\?type=(?:sick|healthy)"[^>]*>[\s\S]*?<\/a>/g)]
         .map(([link]) => link)

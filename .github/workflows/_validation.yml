@@ -61,6 +61,12 @@ on:
         default: "npm run build"
         type: string
 
+      sonar-scan-directory:
+        description: Base directory for sonar scanning
+        required: true
+        default: ""
+        type: string
+
     secrets:
       SQ_ACCESS_TOKEN:
         description: Access token for the SonarQube project
@@ -157,7 +163,12 @@ jobs:
         env:
           SONAR_TOKEN: ${{ secrets.SQ_ACCESS_TOKEN }}
         with:
-          projectBaseDir: ${{ inputs.service-directory }}
+          projectBaseDir: >- 
+            ${{
+              inputs.sonar-scan-directory != "" 
+              && inputs.sonar-scan-directory
+              || inputs.service-directory
+            }}
 
       - name: Write validation summary
         env:

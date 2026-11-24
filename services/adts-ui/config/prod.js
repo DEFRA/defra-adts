@@ -1,2 +1,0 @@
-// Prod config
-;

@@ -141,7 +141,7 @@ describe('client initialization', () => {
     clientInput.value = 'Acme Farm'
     const clearEvent = { preventDefault: jest.fn() }
     clearClientButton.addEventListener.mock.calls[0][1](clearEvent)
-    expect(clearEvent.preventDefault).toHaveBeenCalled()
+    expect(clearEvent.preventDefault).not.toHaveBeenCalled()
     expect(clientSelect.value).toBe('')
     expect(clientInput.value).toBe('')
     expect(clientInput.dispatchEvent).toHaveBeenCalledWith(expect.any(Event))

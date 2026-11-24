@@ -89,7 +89,7 @@ describe('Submission client details page', () => {
     ])
   })
 
-  test('clears a selected client without saving form state when JavaScript is unavailable', async () => {
+  test('clears and saves client details when JavaScript is unavailable', async () => {
     const selectedClientResponse = await server.inject({
       method: 'POST',
       url,
@@ -128,10 +128,13 @@ describe('Submission client details page', () => {
 
     expect(clearResponse.statusCode).toBe(200)
     expect(clearedDocument.querySelector('#client').value).toBe('')
-    expect(clearResponse.request.response.source.context.submissionFormState.formData.clientDetails.clientId)
-      .toBe('101')
-    expect(globalThis.fetch.mock.calls.filter(([requestUrl]) => requestUrl === 'http://localhost:3200/drafts'))
-      .toHaveLength(1)
+    expect(clearResponse.request.response.source.context.submissionFormState.formData.clientDetails)
+      .toMatchObject({ name: '', farmName: '', addressLine1: '' })
+    const draftRequests = globalThis.fetch.mock.calls.filter(
+      ([requestUrl]) => requestUrl === 'http://localhost:3200/drafts'
+    )
+    expect(draftRequests).toHaveLength(2)
+    expect(JSON.parse(draftRequests[1][1].body).formData.clientDetails.name).toBe('')
   })
 
   test('stores selected client details in Yar and redirects to species capture', async () => {
@@ -452,6 +455,83 @@ describe('Submission client details page', () => {
     })
     expect(revisit.request.response.source.context.submissionFormState.formData.clientDetails.clientId)
       .toBe('101')
+  })
+
+  test('keeps a cleared manually created client empty when resuming a draft', async () => {
+    let savedDraft
+    const fetchBackend = routeBackend()
+    globalThis.fetch.mockImplementation(async (requestUrl, options) => {
+      if (requestUrl === 'http://localhost:3200/drafts' && options?.method === 'POST') {
+        savedDraft = JSON.parse(options.body)
+        const revision = (savedDraft.revision || 0) + 1
+        return jsonResponse({ draftId: 'draft-client-clear', revision })
+      }
+      if (requestUrl === 'http://localhost:3200/drafts/draft-client-clear') {
+        return jsonResponse({
+          ...savedDraft,
+          draftId: 'draft-client-clear',
+          status: 'Draft',
+          revision: 2
+        })
+      }
+      return fetchBackend(requestUrl, options)
+    })
+
+    const createdClient = await server.inject({
+      method: 'POST',
+      url: '/submission-01-client-address',
+      payload: {
+        name: 'New Client',
+        farmName: 'New Farm',
+        addressLine1: '1 New Road',
+        postcode: 'AA1 1AA'
+      }
+    })
+    const firstContinue = await server.inject({
+      method: 'POST',
+      url,
+      headers: { cookie: getCookieHeader(createdClient) },
+      payload: { clientId: '', animalsAtClientAddress: 'yes' }
+    })
+    const cleared = await server.inject({
+      method: 'POST',
+      url,
+      headers: { cookie: getCookieHeader(firstContinue) },
+      payload: { clientId: '', intent: 'clearClient', animalsAtClientAddress: 'yes' }
+    })
+
+    expect(firstContinue.statusCode).toBe(302)
+    expect(cleared.statusCode).toBe(200)
+    expect(savedDraft.lastSavedPage).toBe('clientDetails')
+    expect(savedDraft.formData.clientDetails).toMatchObject({
+      name: '',
+      farmName: '',
+      addressLine1: '',
+      postcode: ''
+    })
+    expect(savedDraft.formData.clientDetails.clientId).toBeUndefined()
+
+    const resumed = await server.inject({
+      method: 'GET',
+      url: '/drafts/draft-client-clear/continue'
+    })
+    const resumedPage = await server.inject({
+      method: 'GET',
+      url,
+      headers: { cookie: getCookieHeader(resumed) }
+    })
+    const continueWithoutClient = await server.inject({
+      method: 'POST',
+      url,
+      headers: { cookie: getCookieHeader(resumedPage) },
+      payload: { clientId: '', animalsAtClientAddress: 'yes' }
+    })
+
+    expect(resumed.statusCode).toBe(302)
+    expect(resumed.headers.location).toBe(`/${url.slice(1)}`)
+    expect(resumedPage.request.response.source.context.selectedClientName).toBe('')
+    expect(continueWithoutClient.statusCode).toBe(400)
+    expect(continueWithoutClient.payload).toContain('Select a client from the list')
   })
 
   test('prefills the edit form from the selected client and stores edited values for the submission', async () => {

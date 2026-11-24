@@ -70,6 +70,21 @@ const buildQuery = (pvsId, filters) => {
   return query
 }
 
+const filterSubmissions = (records, filters) => {
+  const wantedStatus = filters.status && filters.status !== 'show_all'
+    ? statusKey(filters.status)
+    : undefined
+
+  return records
+    .map(toResult)
+    .filter(({ key, result }) =>
+      (!wantedStatus || key === wantedStatus) &&
+      matchesText(result.client, filters.client) &&
+      matchesText(result.clinician, filters.clinician)
+    )
+    .map(({ result }) => result)
+}
+
 export const getLimsSubmissionReferences = async ({ clientId, clientName, clientFarm } = {}) => {
   const pvsId = process.env.LIMS_PVS_ID
   if (!pvsId) {
@@ -120,16 +135,5 @@ export const getLimsSubmissions = async (filters = {}) => {
     throw new TypeError('Submissions service returned an invalid response')
   }
 
-  const wantedStatus = filters.status && filters.status !== 'show_all'
-    ? statusKey(filters.status)
-    : undefined
-
-  return records
-    .map(toResult)
-    .filter(({ key, result }) =>
-      (!wantedStatus || key === wantedStatus) &&
-      matchesText(result.client, filters.client) &&
-      matchesText(result.clinician, filters.clinician)
-    )
-    .map(({ result }) => result)
+  return filterSubmissions(records, filters)
 }

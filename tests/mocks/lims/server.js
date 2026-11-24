@@ -11,6 +11,7 @@ let nextDraftId = 100
 let nextSubmissionId = 1
 const drafts = new Map()
 const submissions = new Map()
+const requests = []
 
 const products = [
   {
@@ -30,15 +31,16 @@ const products = [
 
 const clients = [
   {
-    clientId: 'C-456',
-    name: 'Synthetic Client',
-    farm: 'Sample Farm',
-    address: 'Main Road, Sampleton',
+    clientId: 'client-001',
+    name: 'Example Farm',
+    farm: 'North Field',
+    address: '1 Test Lane, Teston',
     subCounty: '',
-    county: 'Test County',
-    postcode: 'AA1 1AA',
-    cphh: '00-000-0000'
-  }
+    county: 'DORS',
+    postcode: 'ZZ1 1ZZ',
+    cphh: '12/345/6789'
+  },
+  { clientId: 42, name: 'Second Example Farm' }
 ]
 
 const pvs = {
@@ -85,6 +87,7 @@ const resetState = () => {
   nextSubmissionId = 1
   drafts.clear()
   submissions.clear()
+  requests.length = 0
 }
 
 const findFailure = async (endpoint, response) => {
@@ -133,6 +136,10 @@ const handleGet = (endpoint, url, response) => {
       return sendJson(response, 200, matches)
     }
     case 'general/getClients': {
+      requests.push({
+        pvsId: url.searchParams.get('pvsId') ?? '',
+        filter: url.searchParams.get('filter') ?? ''
+      })
       if (url.searchParams.get('pvsId') !== pvs.pvsId) {
         return sendJson(response, 200, [])
       }
@@ -212,6 +219,10 @@ const server = createServer(async (request, response) => {
   if (url.pathname === '/__admin/reset' && request.method === 'POST') {
     resetState()
     return sendJson(response, 200, { status: 'RESET' })
+  }
+
+  if (url.pathname === '/__requests' && request.method === 'GET') {
+    return sendJson(response, 200, requests)
   }
 
   const prefixPath = `/${configuredPrefix}/`

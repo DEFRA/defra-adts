@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test'
 
-const limsUrl = 'http://localhost:3300'
+const limsUrl = 'http://localhost:8500'
 
 test.describe('Client lookup via LIMS', () => {
   test('renders LIMS clients as options and queries LIMS server-side', async ({ page }) => {
@@ -14,7 +14,7 @@ test.describe('Client lookup via LIMS', () => {
     expect(html).toContain('<option value="42">Second Example Farm</option>')
 
     const limsRequests = await (await page.request.get(`${limsUrl}/__requests`)).json()
-    expect(limsRequests).toContainEqual({ pvsId: 'E2E-PVS-001', filter: '' })
+    expect(limsRequests).toContainEqual({ pvsId: 'PVS001', filter: '' })
   })
 
   test('does not expose the LIMS identifier to the browser', async ({ page }) => {

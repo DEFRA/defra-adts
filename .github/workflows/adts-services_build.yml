@@ -117,7 +117,7 @@ jobs:
             MATRIX=$MATRIX"\"test-command\": \"npm run test:coverage && npm run test:integration\","
             MATRIX=$MATRIX"\"build-command\": \"npm run build\","
             MATRIX=$MATRIX"\"sonar-token\": \"SONAR_TOKEN\","
-            MATRIX=$MATRIX"\"sonar-scan-directory\": \".\","
+            MATRIX=$MATRIX"\"sonarqube-scan-directory\": \".\","
             MATRIX=$MATRIX"\"dockerfile\": \"services/adts-ui/Dockerfile\","
             MATRIX=$MATRIX"\"aws-region\": \"AWS_REGION\","
             MATRIX=$MATRIX"\"ecr-repository\": \"ADTS_UI_ECR\","
@@ -196,6 +196,12 @@ jobs:
       run-sonarqube-scan: ${{ matrix.run-sonarqube-scan }}
       test-command: ${{ matrix.test-command }}
       build-command: ${{ matrix.build-command }}
+      sonarqube-scan-directory: >-
+        ${{
+          matrix.sonarqube-scan-directory != ''
+          && matrix.sonarqube-scan-directory
+          || matrix.service-directory
+        }}
     secrets:
       SQ_ACCESS_TOKEN: >-
         ${{ 

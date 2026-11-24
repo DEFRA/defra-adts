@@ -49,6 +49,12 @@ on:
         default: true
         type: boolean
 
+      sonarqube-scan-directory:
+        description: Base directory for sonar scanning
+        required: false
+        default: ""
+        type: string
+
       test-command:
         description: Command used to run tests
         required: false
@@ -59,12 +65,6 @@ on:
         description: Command used to build the service
         required: false
         default: "npm run build"
-        type: string
-
-      sonar-scan-directory:
-        description: Base directory for sonar scanning
-        required: false
-        default: ""
         type: string
 
     secrets:
@@ -164,11 +164,7 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SQ_ACCESS_TOKEN }}
         with:
           projectBaseDir: >- 
-            ${{
-              inputs.sonar-scan-directory != '' 
-              && inputs.sonar-scan-directory
-              || inputs.service-directory
-            }}
+            ${{ inputs.sonarqube-scan-directory }}
 
       - name: Write validation summary
         env:

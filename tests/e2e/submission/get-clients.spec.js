@@ -24,6 +24,7 @@ test.describe('Client lookup via LIMS', () => {
       name: 'Example Farm, North Field, 1 Test Lane, Teston, Dorset, ZZ1 1ZZ, 12/345/6789',
       exact: true
     }).click()
+    await page.getByRole('radio', { name: 'Yes', exact: true }).check()
     await page.getByRole('button', { name: 'Continue' }).click()
     await expect(page).toHaveURL(/\/submission-02-species$/)
 

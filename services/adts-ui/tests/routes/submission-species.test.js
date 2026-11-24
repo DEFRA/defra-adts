@@ -158,7 +158,8 @@ describe('Submission species page', () => {
         addressLine3: '',
         county: 'Northshire',
         postcode: 'AB1 2CD',
-        cph: '48/234/2348'
+        cph: '48/234/2348',
+        animalsAtClientAddress: 'yes'
       }
     })
     globalThis.fetch.mockClear()
@@ -186,7 +187,8 @@ describe('Submission species page', () => {
       addressLine2: 'New Village',
       addressLine3: '',
       county: 'Northshire',
-      postcode: 'AB1 2CD'
+      postcode: 'AB1 2CD',
+      animalsAtClientAddress: 'yes'
     })
     expect(revisit.payload).toContain('Updated Client Name')
     expect(revisit.payload).not.toContain('Updated Farm')
@@ -319,7 +321,7 @@ describe('Submission species page', () => {
       method: 'POST',
       url: '/submission-01-client-details',
       headers: { cookie: getCookieHeader(clientDetailsPage) || getCookieHeader(savedClientAddress) },
-      payload: { clientId: '' }
+      payload: { clientId: '', animalsAtClientAddress: 'yes' }
     })
 
     expect(clientDetails.statusCode).toBe(302)

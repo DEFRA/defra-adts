@@ -78,6 +78,7 @@ describe('Submission client details page', () => {
     expect(response.payload).toContain('<select class="govuk-select" id="animalAddress" name="animalAddressClientId"')
     expect(response.payload).toContain('href="/submission-01-animal-address?intent=new"')
     expect(response.payload).toContain('create a new animal\'s address')
+    expect(response.payload).toMatch(/type="submit" name="intent" value="clearAnimalAddress" data-clear-animal-address>Clear<\/button>/)
     expect(response.payload).toMatch(/data-client-edit-button\s+hidden/)
     expect(response.payload).toMatch(/data-animal-address-edit-button[^>]*\shidden(?:\s|>)/)
     expect(globalThis.fetch).toHaveBeenCalledWith('http://localhost:3200/GetClients')
@@ -93,7 +94,7 @@ describe('Submission client details page', () => {
     const selectedClientResponse = await server.inject({
       method: 'POST',
       url,
-      payload: { clientId: '101' }
+      payload: { clientId: '101', animalsAtClientAddress: 'yes' }
     })
     const response = await server.inject({
       method: 'GET',
@@ -141,7 +142,7 @@ describe('Submission client details page', () => {
     const response = await server.inject({
       method: 'POST',
       url,
-      payload: { clientId: '101' }
+      payload: { clientId: '101', animalsAtClientAddress: 'yes' }
     })
 
     expect(response.statusCode).toBe(302)
@@ -166,7 +167,8 @@ describe('Submission client details page', () => {
       addressLine2: '',
       addressLine3: '',
       county: '',
-      postcode: ''
+      postcode: '',
+      animalsAtClientAddress: 'yes'
     })
     expect(revisitResponse.request.response.source.context.submissionFormState).toMatchObject({
       draftId: '123e4567-e89b-12d3-a456-426614174000',
@@ -221,7 +223,11 @@ describe('Submission client details page', () => {
       return routeBackend()(requestUrl)
     })
 
-    const response = await server.inject({ method: 'POST', url, payload: { clientId: '101' } })
+    const response = await server.inject({
+      method: 'POST',
+      url,
+      payload: { clientId: '101', animalsAtClientAddress: 'yes' }
+    })
 
     expect(response.statusCode).toBe(502)
     expect(response.payload).toContain('We could not save your draft')
@@ -239,7 +245,7 @@ describe('Submission client details page', () => {
     const response = await server.inject({
       method: 'POST',
       url,
-      payload: { clientId: '101' }
+      payload: { clientId: '101', animalsAtClientAddress: 'yes' }
     })
 
     expect(response.statusCode).toBe(502)
@@ -412,6 +418,56 @@ describe('Submission client details page', () => {
       })
   })
 
+  test('clearing a manually entered animal address removes its saved details', async () => {
+    const started = await server.inject({
+      method: 'POST',
+      url,
+      payload: { clientId: '101', animalsAtClientAddress: 'no' }
+    })
+    const savedAddress = await server.inject({
+      method: 'POST',
+      url: '/submission-01-animal-address',
+      headers: { cookie: getCookieHeader(started) },
+      payload: {
+        animalAddressName: 'Second Site',
+        animalAddressAddressLine1: '2 Farm Road',
+        animalAddressPostcode: 'AB1 2CD'
+      }
+    })
+    const cleared = await server.inject({
+      method: 'POST',
+      url,
+      headers: { cookie: getCookieHeader(savedAddress) },
+      payload: {
+        clientId: '101',
+        animalsAtClientAddress: 'no',
+        intent: 'clearAnimalAddress',
+        animalAddress: 'Second Site, 2 Farm Road, AB1 2CD'
+      }
+    })
+
+    expect(cleared.statusCode).toBe(200)
+    expect(cleared.request.response.source.context.submissionFormState.formData.clientDetails).toEqual({
+      clientId: '101',
+      cph: '',
+      name: 'Acme Farm',
+      farmName: '',
+      addressLine1: '',
+      addressLine2: '',
+      addressLine3: '',
+      county: '',
+      postcode: '',
+      animalsAtClientAddress: 'no'
+    })
+    expect(cleared.payload).not.toContain('Second Site')
+    expect(cleared.payload).toMatch(/name="animalsAtClientAddress"[^>]*value="no"[^>]*checked/)
+    const draftRequests = globalThis.fetch.mock.calls.filter(
+      ([requestUrl]) => requestUrl === 'http://localhost:3200/drafts'
+    )
+    expect(draftRequests).toHaveLength(2)
+    expect(JSON.parse(draftRequests[1][1].body).formData.clientDetails).not.toHaveProperty('animalAddressDetails')
+  })
+
   test('rejects an invalid animal location answer', async () => {
     const invalidAnswer = await server.inject({
       method: 'POST',
@@ -420,6 +476,21 @@ describe('Submission client details page', () => {
     })
 
     expect(invalidAnswer.statusCode).toBe(400)
+  })
+
+  test('requires an answer for whether the animals are at the client address', async () => {
+    const response = await server.inject({
+      method: 'POST',
+      url,
+      payload: { clientId: '101' }
+    })
+
+    expect(response.statusCode).toBe(400)
+    expect(response.payload).toContain('Select whether the animals are at the client’s address')
+    expect(response.payload).toContain('href="#animalsAtClientAddress"')
+    expect(response.request.response.source.context.errors).toEqual({
+      animalsAtClientAddress: 'Select whether the animals are at the client’s address'
+    })
   })
 
   test('requires an existing selection or the manual-entry form before continuing', async () => {
@@ -437,7 +508,7 @@ describe('Submission client details page', () => {
     const selected = await server.inject({
       method: 'POST',
       url,
-      payload: { clientId: '101' }
+      payload: { clientId: '101', animalsAtClientAddress: 'yes' }
     })
     const cleared = await server.inject({
       method: 'POST',
@@ -582,7 +653,8 @@ describe('Submission client details page', () => {
         addressLine3: '',
         county: 'Merseyside',
         postcode: 'L20 6EC',
-        cph: '12/123/1234'
+        cph: '12/123/1234',
+        animalsAtClientAddress: 'yes'
       }
     })
 
@@ -600,7 +672,8 @@ describe('Submission client details page', () => {
       addressLine3: '',
       county: 'Merseyside',
       postcode: 'L20 6EC',
-      cph: '12/123/1234'
+      cph: '12/123/1234',
+      animalsAtClientAddress: 'yes'
     })
     expect(revisitResponse.payload).not.toContain('<p class="govuk-body">Edited Farm Name</p>')
     expect(revisitResponse.payload).not.toContain('<p class="govuk-body">2 Farm Road, Farmsville</p>')
@@ -751,7 +824,7 @@ describe('Submission client details page', () => {
       method: 'POST',
       url,
       headers: { cookie: getCookieHeader(response) },
-      payload: { clientId: '' }
+      payload: { clientId: '', animalsAtClientAddress: 'yes' }
     })
     expect(continueResponse.statusCode).toBe(302)
     expect(continueResponse.headers.location).toBe('/submission-02-species')
@@ -1154,7 +1227,7 @@ describe('Submission client details page', () => {
     const selected = await server.inject({
       method: 'POST',
       url,
-      payload: { clientId: '101' }
+      payload: { clientId: '101', animalsAtClientAddress: 'yes' }
     })
     const cookie = getCookieHeader(selected)
 
@@ -1207,7 +1280,7 @@ describe('Submission client details page', () => {
     const existingClientResponse = await server.inject({
       method: 'POST',
       url,
-      payload: { clientId: '101' }
+      payload: { clientId: '101', animalsAtClientAddress: 'yes' }
     })
 
     const response = await server.inject({
@@ -1236,7 +1309,8 @@ describe('Submission client details page', () => {
       addressLine2: '',
       addressLine3: '',
       county: '',
-      postcode: ''
+      postcode: '',
+      animalsAtClientAddress: 'yes'
     })
   })
 
@@ -1257,7 +1331,7 @@ describe('Submission client details page', () => {
     const response = await server.inject({
       method: 'POST',
       url,
-      payload: { clientId: '101' }
+      payload: { clientId: '101', animalsAtClientAddress: 'yes' }
     })
 
     expect(response.statusCode).toBe(400)

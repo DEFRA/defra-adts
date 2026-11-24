@@ -9,6 +9,9 @@ const statusLabels = {
   tests_complete: 'All tests complete'
 }
 
+const orFallback = (value, fallback) => value || fallback
+const nullishFallback = (value, fallback) => value ?? fallback
+
 const statusKey = (item) => {
   if (typeof item === 'string') {
     const normalized = item.toLowerCase().replaceAll(/[\s-]+/g, '_')
@@ -33,25 +36,26 @@ const statusKey = (item) => {
 
 const toResult = (item) => {
   const key = statusKey(item)
-  const id = item.submissionId || item.draftSubmissionId
-  const tests = (item.products ?? []).map(({ name, productType = '---', sampleType = '---' }) => ({
-    name: name || '---',
-    type: productType,
-    sampleType,
-    qty: item.numberSamples ?? '---'
-  }))
+  const id = orFallback(item.submissionId, item.draftSubmissionId)
+  const tests = nullishFallback(item.products, [])
+    .map(({ name, productType = '---', sampleType = '---' }) => ({
+      name: orFallback(name, '---'),
+      type: productType,
+      sampleType,
+      qty: nullishFallback(item.numberSamples, '---')
+    }))
 
   return {
     key,
     result: {
       id,
-      statuses: [statusLabels[key] ?? item.status ?? '---'],
-      samplesTo: item.samplesTo || '---',
-      client: item.clientName || '---',
-      clientFarm: item.clientFarm || '---',
-      species: item.species || '---',
-      clinician: item.clinician || '---',
-      orderSubmitted: formatDate(item.submittedDate || item.changedStatusDate),
+      statuses: [nullishFallback(statusLabels[key], nullishFallback(item.status, '---'))],
+      samplesTo: orFallback(item.samplesTo, '---'),
+      client: orFallback(item.clientName, '---'),
+      clientFarm: orFallback(item.clientFarm, '---'),
+      species: orFallback(item.species, '---'),
+      clinician: orFallback(item.clinician, '---'),
+      orderSubmitted: formatDate(orFallback(item.submittedDate, item.changedStatusDate)),
       hasTests: tests.length > 0,
       tests
     }

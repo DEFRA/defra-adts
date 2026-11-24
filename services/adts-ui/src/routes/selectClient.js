@@ -23,7 +23,7 @@ export const CPH_ERROR = 'Enter a CPH number in the format XX/XXX/XXXX'
 export const CPH_PATTERN = /^\d{2}\/\d{3}\/\d{4}$/
 
 export const submissionClientSchema = Joi.object({
-  intent: Joi.string().valid('edit', 'new', 'cancel', 'newClientAddress', 'newAnimalAddress', 'editAnimalAddress', 'cancelAnimalAddress', 'clearClient').optional(),
+  intent: Joi.string().valid('edit', 'new', 'cancel', 'newClientAddress', 'newAnimalAddress', 'editAnimalAddress', 'cancelAnimalAddress', 'clearClient', 'clearAnimalAddress').optional(),
   clientId: Joi.string().allow('').optional(),
   animalAddressClientId: Joi.string().allow('').optional(),
   manualClientEntry: Joi.string().valid('yes').optional(),
@@ -417,6 +417,55 @@ const handleClearClientIntent = async ({
   )
 }
 
+const handleClearAnimalAddressIntent = async ({
+  request,
+  h,
+  submissionFormStateKey,
+  submissionFormState,
+  formData,
+  clients,
+  counties
+}) => {
+  const clientDetails = { ...formData.clientDetails }
+  delete clientDetails.animalAddressClientId
+  delete clientDetails.animalAddress
+  delete clientDetails.animalAddressDetails
+  const clearedFormData = { ...formData, clientDetails }
+
+  if (submissionFormState.draftId) {
+    const draftSaved = await persistSubmissionDraft(
+      request,
+      submissionFormStateKey,
+      'clientDetails',
+      clearedFormData
+    )
+    if (!draftSaved) {
+      return renderClientDetailsPage(
+        h,
+        submissionFormState,
+        clients,
+        counties,
+        { saveError: DRAFT_SAVE_ERROR }
+      ).code(BAD_GATEWAY_STATUS)
+    }
+  } else {
+    request.yar.set(submissionFormStateKey, { ...submissionFormState, formData: clearedFormData })
+    request.yar.touch()
+  }
+
+  return renderClientDetailsPage(
+    h,
+    { ...submissionFormState, formData: clearedFormData },
+    clients,
+    counties,
+    {
+      animalAddressClientId: '',
+      animalAddress: '',
+      animalAddressDetails: getClientFieldValues()
+    }
+  )
+}
+
 const handleClientSubmission = async ({
   request,
   h,
@@ -464,6 +513,21 @@ const handleClientSubmission = async ({
     return renderClientSelectionError(h, submissionFormState, clients, counties, payload, selectedClient)
   }
 
+  if (!payload.animalsAtClientAddress) {
+    const error = 'Select whether the animals are at the client’s address'
+    return renderClientDetailsPage(
+      h,
+      submissionFormState,
+      clients,
+      counties,
+      {
+        animalsAtClientAddress: payload.animalsAtClientAddress,
+        errors: { animalsAtClientAddress: error },
+        errorList: [{ text: error, href: '#animalsAtClientAddress' }]
+      }
+    ).code(BAD_REQUEST_STATUS)
+  }
+
   const updatedFormData = {
     ...formData,
     clientDetails: buildClientDetails(payload, selectedClient, selectedAnimalAddress, savedClientDetails)
@@ -505,7 +569,9 @@ const createPostHandler = (submissionFormStateKey) => async (request, h) => {
   )
   const intentHandler = payload.intent === 'clearClient'
     ? handleClearClientIntent
-    : handleClientSubmission
+    : payload.intent === 'clearAnimalAddress'
+      ? handleClearAnimalAddressIntent
+      : handleClientSubmission
 
   return intentHandler({
     request,

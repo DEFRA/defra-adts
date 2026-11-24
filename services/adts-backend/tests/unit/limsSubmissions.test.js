@@ -67,6 +67,29 @@ describe('LIMS submissions data access', () => {
     await expect(getLimsSubmissions()).rejects.toThrow('invalid response')
   })
 
+  test('uses submission fallbacks without replacing a zero sample count', async () => {
+    process.env.LIMS_PVS_ID = 'PVS001'
+    process.env.SUBMISSIONS_SERVICE_URL = 'http://localhost:3100'
+    jest.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify([{
+      submissionId: '',
+      draftSubmissionId: 'D-1',
+      status: 'Submitted',
+      products: [{ name: '' }],
+      numberSamples: 0,
+      clientName: ''
+    }]), { status: 200 }))
+
+    const [result] = await getLimsSubmissions()
+
+    expect(result).toMatchObject({
+      id: 'D-1',
+      statuses: ['Submitted'],
+      client: '---',
+      hasTests: true,
+      tests: [{ name: '---', qty: 0 }]
+    })
+  })
+
   test('filters submissions by status, client, and clinician', async () => {
     process.env.LIMS_PVS_ID = 'PVS001'
     process.env.SUBMISSIONS_SERVICE_URL = 'http://localhost:3100'

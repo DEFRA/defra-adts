@@ -105,6 +105,9 @@ if (speciesSelect) {
 }
 
 const enhanceAddressLookup = (selectElement, editButton, clearButton) => {
+  const getOptionText = (option) => (option.textContent || option.innerText).trim()
+  const getAutocompleteInput = () =>
+    selectElement.previousElementSibling.querySelector('.autocomplete__input')
   const syncEditButton = () => {
     if (editButton) {
       editButton.hidden = !selectElement.value && editButton.dataset.manualAddress !== 'true'
@@ -116,10 +119,11 @@ const enhanceAddressLookup = (selectElement, editButton, clearButton) => {
     selectElement,
     onConfirm: (query) => {
       const selectedOption = Array.from(selectElement.options)
-        .find((option) => (option.textContent || option.innerText) === query)
+        .find((option) => getOptionText(option) === query.trim())
 
       if (selectedOption) {
         selectedOption.selected = true
+        getAutocompleteInput().value = getOptionText(selectedOption)
       } else {
         selectElement.value = ''
       }
@@ -127,13 +131,13 @@ const enhanceAddressLookup = (selectElement, editButton, clearButton) => {
     }
   })
 
-  const autocompleteInput = selectElement.previousElementSibling.querySelector('.autocomplete__input')
+  const autocompleteInput = getAutocompleteInput()
   autocompleteInput.addEventListener('input', (event) => {
     const selectedOption = Array.from(selectElement.options)
       .find((option) => option.value === selectElement.value)
-    const selectedText = selectedOption && (selectedOption.textContent || selectedOption.innerText)
+    const selectedText = selectedOption && getOptionText(selectedOption)
 
-    if (selectedText !== event.target.value) {
+    if (selectedText !== event.target.value.trim()) {
       selectElement.value = ''
       syncEditButton()
     }
@@ -165,7 +169,8 @@ if (clientSelect) {
 if (animalAddressSelect) {
   enhanceAddressLookup(
     animalAddressSelect,
-    document.querySelector('[data-animal-address-edit-button]')
+    document.querySelector('[data-animal-address-edit-button]'),
+    document.querySelector('[data-clear-animal-address]')
   )
 }
 

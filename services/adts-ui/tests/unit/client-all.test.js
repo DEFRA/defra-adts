@@ -38,7 +38,7 @@ describe('client initialization', () => {
     const clientOption = { value: '101', textContent: 'Acme Farm', selected: false }
     const animalAddressOption = { value: '102', textContent: 'Green Acres', selected: false }
     const clientInput = { value: '', addEventListener: jest.fn(), dispatchEvent: jest.fn() }
-    const animalAddressInput = { value: '', addEventListener: jest.fn() }
+    const animalAddressInput = { value: '', addEventListener: jest.fn(), dispatchEvent: jest.fn() }
     const clientSelect = {
       dataset: { defaultValue: 'Acme Farm' },
       options: [clientOption],
@@ -60,6 +60,7 @@ describe('client initialization', () => {
     const speciesSelect = { dataset: { defaultValue: 'Sheep' } }
     const editButton = { dataset: {}, hidden: false }
     const clearClientButton = { addEventListener: jest.fn() }
+    const clearAnimalAddressButton = { addEventListener: jest.fn() }
     const animalAddressEditButton = { dataset: { manualAddress: 'false' }, hidden: false }
     const hint = { setAttribute: jest.fn() }
     globalThis.document = {
@@ -71,6 +72,7 @@ describe('client initialization', () => {
         if (selector === '[data-client-edit-button]') return editButton
         if (selector === '[data-clear-client]') return clearClientButton
         if (selector === '[data-animal-address-edit-button]') return animalAddressEditButton
+        if (selector === '[data-clear-animal-address]') return clearAnimalAddressButton
         return null
       }),
       querySelectorAll: jest.fn((selector) => selector === '.autocomplete__hint' ? [hint] : [])
@@ -102,6 +104,7 @@ describe('client initialization', () => {
     expect(clientSelect.addEventListener).toHaveBeenCalledWith('change', expect.any(Function))
     expect(clientInput.addEventListener).toHaveBeenCalledWith('input', expect.any(Function))
     expect(clearClientButton.addEventListener).toHaveBeenCalledWith('click', expect.any(Function))
+    expect(clearAnimalAddressButton.addEventListener).toHaveBeenCalledWith('click', expect.any(Function))
     expect(animalAddressInput.addEventListener).toHaveBeenCalledWith('input', expect.any(Function))
     expect(hint.setAttribute).toHaveBeenCalledWith('aria-hidden', 'true')
     expect(mutationObserver).toHaveBeenCalledWith(expect.any(Function))
@@ -112,6 +115,7 @@ describe('client initialization', () => {
     )[0]
     clientLookupConfig.onConfirm('Acme Farm')
     expect(clientOption.selected).toBe(true)
+    expect(clientInput.value).toBe('Acme Farm')
     expect(editButton.hidden).toBe(false)
     clientInput.value = ''
     clientInput.addEventListener.mock.calls[0][1]({ target: clientInput })
@@ -128,6 +132,12 @@ describe('client initialization', () => {
     animalAddressLookupConfig.onConfirm('Green Acres')
     expect(animalAddressOption.selected).toBe(true)
     expect(animalAddressEditButton.hidden).toBe(false)
+    clearAnimalAddressButton.addEventListener.mock.calls[0][1]({ preventDefault: jest.fn() })
+    expect(animalAddressOption.selected).toBe(false)
+    expect(animalAddressInput.value).toBe('')
+    expect(animalAddressInput.dispatchEvent).toHaveBeenCalledWith(expect.any(Event))
+    expect(animalAddressEditButton.hidden).toBe(true)
+    animalAddressLookupConfig.onConfirm('Green Acres')
     animalAddressInput.value = ''
     animalAddressInput.addEventListener.mock.calls[0][1]({ target: animalAddressInput })
     expect(animalAddressOption.selected).toBe(false)

@@ -368,59 +368,67 @@ const clearClientDetails = (clientDetails) => {
   return clearedDetails
 }
 
-const createPostHandler = (submissionFormStateKey) => async (request, h) => {
-  const submissionFormState = request.yar.get(submissionFormStateKey) || {}
-  const formData = submissionFormState.formData || {}
-  const payload = request.payload
-  if (payload.intent === 'new') {
-    return h.redirect(`/${clientAddressPageName}?intent=new`)
+const handleClearClientIntent = async ({
+  request,
+  h,
+  submissionFormStateKey,
+  submissionFormState,
+  formData,
+  payload,
+  clients,
+  counties,
+  selectedAnimalAddress
+}) => {
+  const clearedFormData = {
+    ...formData,
+    clientDetails: clearClientDetails(formData.clientDetails || {})
   }
 
-  const clients = await loadClients()
-  const counties = await loadCounties()
-  const selectedClient = clients.find((client) => client.clientId === payload.clientId)
-  const selectedAnimalAddress = clients.find((client) =>
-    String(client.clientId) === String(payload.animalAddressClientId)
-  )
-  if (payload.intent === 'clearClient') {
-    const updatedFormData = {
-      ...formData,
-      clientDetails: clearClientDetails(formData.clientDetails || {})
-    }
-
-    if (submissionFormState.draftId) {
-      const saved = await persistSubmissionDraft(
-        request,
-        submissionFormStateKey,
-        'clientDetails',
-        updatedFormData
-      )
-      if (!saved) {
-        return renderClientDetailsPage(
-          h,
-          submissionFormState,
-          clients,
-          counties,
-          { saveError: DRAFT_SAVE_ERROR }
-        ).code(BAD_GATEWAY_STATUS)
-      }
-    } else {
-      request.yar.set(submissionFormStateKey, { ...submissionFormState, formData: updatedFormData })
-      request.yar.touch()
-    }
-
-    return renderClientDetailsPage(
-      h,
-      { ...submissionFormState, formData: updatedFormData },
-      clients,
-      counties,
-      {
-        selectedClientId: '',
-        ...getAnimalLocation(payload, updatedFormData, selectedAnimalAddress)
-      }
+  if (submissionFormState.draftId) {
+    const draftSaved = await persistSubmissionDraft(
+      request,
+      submissionFormStateKey,
+      'clientDetails',
+      clearedFormData
     )
+    if (!draftSaved) {
+      return renderClientDetailsPage(
+        h,
+        submissionFormState,
+        clients,
+        counties,
+        { saveError: DRAFT_SAVE_ERROR }
+      ).code(BAD_GATEWAY_STATUS)
+    }
+  } else {
+    request.yar.set(submissionFormStateKey, { ...submissionFormState, formData: clearedFormData })
+    request.yar.touch()
   }
 
+  return renderClientDetailsPage(
+    h,
+    { ...submissionFormState, formData: clearedFormData },
+    clients,
+    counties,
+    {
+      selectedClientId: '',
+      ...getAnimalLocation(payload, clearedFormData, selectedAnimalAddress)
+    }
+  )
+}
+
+const handleClientSubmission = async ({
+  request,
+  h,
+  submissionFormStateKey,
+  submissionFormState,
+  formData,
+  payload,
+  clients,
+  counties,
+  selectedClient,
+  selectedAnimalAddress
+}) => {
   const savedClientDetails = formData.clientDetails || {}
   const hasSubmittedFields = hasSubmittedClientFields(payload) || isManualClientEntry(savedClientDetails)
   const intentResponse = handleClientPostIntent({
@@ -479,6 +487,38 @@ const createPostHandler = (submissionFormStateKey) => async (request, h) => {
   }
 
   return h.redirect(`/${nextPageName}`)
+}
+
+const createPostHandler = (submissionFormStateKey) => async (request, h) => {
+  const submissionFormState = request.yar.get(submissionFormStateKey) || {}
+  const formData = submissionFormState.formData || {}
+  const payload = request.payload
+  if (payload.intent === 'new') {
+    return h.redirect(`/${clientAddressPageName}?intent=new`)
+  }
+
+  const clients = await loadClients()
+  const counties = await loadCounties()
+  const selectedClient = clients.find((client) => client.clientId === payload.clientId)
+  const selectedAnimalAddress = clients.find((client) =>
+    String(client.clientId) === String(payload.animalAddressClientId)
+  )
+  const intentHandler = payload.intent === 'clearClient'
+    ? handleClearClientIntent
+    : handleClientSubmission
+
+  return intentHandler({
+    request,
+    h,
+    submissionFormStateKey,
+    submissionFormState,
+    formData,
+    payload,
+    clients,
+    counties,
+    selectedClient,
+    selectedAnimalAddress
+  })
 }
 
 const getStartRoute = (submissionFormStateKey) => ({

@@ -140,7 +140,7 @@ const enhanceAddressLookup = (selectElement, editButton, clearButton) => {
   })
 
   if (clearButton) {
-    clearButton.addEventListener('click', (event) => {
+    clearButton.addEventListener('click', () => {
       selectElement.value = ''
       autocompleteInput.value = ''
       autocompleteInput.dispatchEvent(new Event('input', { bubbles: true }))

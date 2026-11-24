@@ -120,6 +120,19 @@ describe('Submissions service proxy routes', () => {
     expect(fetchSpy).not.toHaveBeenCalled()
   })
 
+  test('returns a gateway error when submission references cannot be retrieved', async () => {
+    jest.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('{}', { status: 503 }))
+    jest.spyOn(console, 'error').mockImplementation(() => {})
+
+    const response = await server.inject({
+      method: 'GET',
+      url: '/submission-references?clientId=C-456'
+    })
+
+    expect(response.statusCode).toBe(502)
+    expect(response.result).toEqual({ error: 'Unable to retrieve submission references' })
+  })
+
   test('combines local drafts with LIMS submissions when showing all', async () => {
     jest.spyOn(globalThis, 'fetch').mockResolvedValue(jsonResponse([limsSubmission]))
     docClient.send.mockResolvedValue({ Items: [localDraft] })

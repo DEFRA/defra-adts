@@ -12,15 +12,23 @@ const statusLabels = {
 const statusKey = (item) => {
   if (typeof item === 'string') {
     const normalized = item.toLowerCase().replaceAll(/[\s-]+/g, '_')
-    return normalized === 'all_tests_complete' ? 'tests_complete' : normalized
+    const aliases = { all_tests_complete: 'tests_complete' }
+    return aliases[normalized] ?? normalized
   }
+
   const status = String(item.status ?? '').trim()
-  if (!status || status === 'Draft') return 'draft'
-  if (status === 'Cancelled') return 'cancelled'
-  if (item.samplesOverdue === true) return 'samples_overdue'
-  if (item.resultsAvailable === true) return 'tests_complete'
-  if (item.isDigital === false) return 'in_progress'
-  return 'submitted'
+  const directStatus = { '': 'draft', Draft: 'draft', Cancelled: 'cancelled' }[status]
+  if (directStatus) {
+    return directStatus
+  }
+
+  const conditionalStatus = [
+    [item.samplesOverdue === true, 'samples_overdue'],
+    [item.resultsAvailable === true, 'tests_complete'],
+    [item.isDigital === false, 'in_progress']
+  ].find(([condition]) => condition)
+
+  return conditionalStatus?.[1] ?? 'submitted'
 }
 
 const toResult = (item) => {

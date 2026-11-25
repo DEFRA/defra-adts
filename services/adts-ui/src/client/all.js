@@ -104,7 +104,7 @@ if (speciesSelect) {
   })
 }
 
-const enhanceAddressLookup = (selectElement, editButton, clearButton) => {
+const enhanceAddressLookup = (selectElement, editButton) => {
   const getOptionText = (option) => (option.textContent || option.innerText).trim()
   const getAutocompleteInput = () =>
     selectElement.previousElementSibling.querySelector('.autocomplete__input')
@@ -143,15 +143,6 @@ const enhanceAddressLookup = (selectElement, editButton, clearButton) => {
     }
   })
 
-  if (clearButton) {
-    clearButton.addEventListener('click', () => {
-      selectElement.value = ''
-      autocompleteInput.value = ''
-      autocompleteInput.dispatchEvent(new Event('input', { bubbles: true }))
-      syncEditButton()
-    })
-  }
-
   if (editButton) {
     selectElement.addEventListener('change', syncEditButton)
     syncEditButton()
@@ -161,16 +152,14 @@ const enhanceAddressLookup = (selectElement, editButton, clearButton) => {
 if (clientSelect) {
   enhanceAddressLookup(
     clientSelect,
-    document.querySelector('[data-client-edit-button]'),
-    document.querySelector('[data-clear-client]')
+    document.querySelector('[data-client-edit-button]')
   )
 }
 
 if (animalAddressSelect) {
   enhanceAddressLookup(
     animalAddressSelect,
-    document.querySelector('[data-animal-address-edit-button]'),
-    document.querySelector('[data-clear-animal-address]')
+    document.querySelector('[data-animal-address-edit-button]')
   )
 }
 

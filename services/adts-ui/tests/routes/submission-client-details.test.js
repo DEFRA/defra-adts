@@ -1,5 +1,4 @@
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, jest, test } from '@jest/globals'
-import { JSDOM } from 'jsdom'
 import createServer from '../../src/app.js'
 
 const getCookieHeader = (response) => {
@@ -67,7 +66,7 @@ describe('Submission client details page', () => {
     expect(response.payload).toContain('Animal Disease Testing Service')
     expect(response.payload).toContain('<form method="post" action="/submission-01-client-details" novalidate>')
     expect(response.payload).toContain('<select class="govuk-select" id="client" name="clientId"')
-    expect(response.payload).toMatch(/class="govuk-button govuk-button--secondary" type="submit" name="intent" value="clearClient" data-clear-client>Clear<\/button>/)
+    expect(response.payload).not.toContain('data-clear-client')
     expect(response.payload).toContain('name="intent"')
     expect(response.payload).toContain('href="/submission-01-client-address?intent=new"')
     expect(response.payload).toContain('create a new client')
@@ -78,7 +77,7 @@ describe('Submission client details page', () => {
     expect(response.payload).toContain('<select class="govuk-select" id="animalAddress" name="animalAddressClientId"')
     expect(response.payload).toContain('href="/submission-01-animal-address?intent=new"')
     expect(response.payload).toContain('create a new animal\'s address')
-    expect(response.payload).toMatch(/type="submit" name="intent" value="clearAnimalAddress" data-clear-animal-address>Clear<\/button>/)
+    expect(response.payload).not.toContain('data-clear-animal-address')
     expect(response.payload).toMatch(/data-client-edit-button\s+hidden/)
     expect(response.payload).toMatch(/data-animal-address-edit-button[^>]*\shidden(?:\s|>)/)
     expect(globalThis.fetch).toHaveBeenCalledWith('http://localhost:3200/GetClients')
@@ -88,54 +87,6 @@ describe('Submission client details page', () => {
       { value: '101', text: 'Acme Farm', selected: false },
       { value: '102', text: 'Green Acres', selected: false }
     ])
-  })
-
-  test('clears and saves client details when JavaScript is unavailable', async () => {
-    const selectedClientResponse = await server.inject({
-      method: 'POST',
-      url,
-      payload: { clientId: '101', animalsAtClientAddress: 'yes' }
-    })
-    const response = await server.inject({
-      method: 'GET',
-      url,
-      headers: { cookie: getCookieHeader(selectedClientResponse) }
-    })
-    const { document } = new JSDOM(response.payload).window
-    const clientSelect = document.querySelector('#client')
-    const clearButton = document.querySelector('[data-clear-client]')
-    const form = document.querySelector('form')
-    let submittedIntent
-
-    expect(clientSelect.value).toBe('101')
-    form.addEventListener('submit', (event) => {
-      event.preventDefault()
-      submittedIntent = event.submitter?.value
-    })
-    clearButton.click()
-
-    expect(submittedIntent).toBe('clearClient')
-
-    const clearResponse = await server.inject({
-      method: 'POST',
-      url,
-      headers: { cookie: getCookieHeader(selectedClientResponse) },
-      payload: {
-        ...Object.fromEntries(new document.defaultView.FormData(form)),
-        intent: submittedIntent
-      }
-    })
-    const { document: clearedDocument } = new JSDOM(clearResponse.payload).window
-
-    expect(clearResponse.statusCode).toBe(200)
-    expect(clearedDocument.querySelector('#client').value).toBe('')
-    expect(clearResponse.request.response.source.context.submissionFormState.formData.clientDetails)
-      .toMatchObject({ name: '', farmName: '', addressLine1: '' })
-    const draftRequests = globalThis.fetch.mock.calls.filter(
-      ([requestUrl]) => requestUrl === 'http://localhost:3200/drafts'
-    )
-    expect(draftRequests).toHaveLength(2)
-    expect(JSON.parse(draftRequests[1][1].body).formData.clientDetails.name).toBe('')
   })
 
   test('stores selected client details in Yar and redirects to species capture', async () => {
@@ -352,40 +303,34 @@ describe('Submission client details page', () => {
     expect(revisitResponse.payload).toMatch(/name="animalsAtClientAddress"[^>]*value="yes"[^>]*checked/)
   })
 
-  test('omits the animal address when No is chosen but the address is blank', async () => {
+  test('requires an animal address when No is chosen but the address is blank', async () => {
     const response = await server.inject({
       method: 'POST',
       url,
       payload: { clientId: '101', animalsAtClientAddress: 'no', animalAddress: '   ' }
     })
 
-    const revisitResponse = await server.inject({
-      method: 'GET',
-      url,
-      headers: { cookie: getCookieHeader(response) }
+    expect(response.statusCode).toBe(400)
+    expect(response.payload).toContain('Enter or select an animal address')
+    expect(response.payload).toContain('href="#animalAddress"')
+    expect(response.payload).toContain('id="animalAddress-error"')
+    expect(response.payload).toMatch(/name="animalsAtClientAddress"[^>]*value="no"[^>]*checked/)
+    expect(response.request.response.source.context.errors).toEqual({
+      animalAddress: 'Enter or select an animal address'
     })
-
-    expect(revisitResponse.request.response.source.context.submissionFormState.formData.clientDetails).toEqual({
-      clientId: '101',
-      cph: '',
-      name: 'Acme Farm',
-      farmName: '',
-      addressLine1: '',
-      addressLine2: '',
-      addressLine3: '',
-      county: '',
-      postcode: '',
-      animalsAtClientAddress: 'no'
-    })
+    expect(globalThis.fetch).not.toHaveBeenCalledWith(
+      'http://localhost:3200/drafts',
+      expect.anything()
+    )
   })
 
-  test('clearing a previously selected animal address removes its saved details', async () => {
+  test('does not clear a saved animal address when its lookup is blanked', async () => {
     const selected = await server.inject({
       method: 'POST',
       url,
       payload: { clientId: '101', animalsAtClientAddress: 'no', animalAddressClientId: '102' }
     })
-    const cleared = await server.inject({
+    const blanked = await server.inject({
       method: 'POST',
       url,
       headers: { cookie: getCookieHeader(selected) },
@@ -393,79 +338,21 @@ describe('Submission client details page', () => {
         clientId: '101',
         animalsAtClientAddress: 'no',
         animalAddressClientId: '',
+        animalAddress: ''
+      }
+    })
+
+    expect(blanked.statusCode).toBe(400)
+    expect(blanked.payload).toContain('Enter or select an animal address')
+    expect(blanked.request.response.source.context.submissionFormState.formData.clientDetails)
+      .toMatchObject({
+        animalAddressClientId: '102',
         animalAddress: 'Green Acres'
-      }
-    })
-
-    expect(cleared.statusCode).toBe(302)
-    const revisit = await server.inject({
-      method: 'GET',
-      url,
-      headers: { cookie: getCookieHeader(cleared) }
-    })
-    expect(revisit.request.response.source.context.submissionFormState.formData.clientDetails)
-      .toEqual({
-        clientId: '101',
-        cph: '',
-        name: 'Acme Farm',
-        farmName: '',
-        addressLine1: '',
-        addressLine2: '',
-        addressLine3: '',
-        county: '',
-        postcode: '',
-        animalsAtClientAddress: 'no'
       })
-  })
-
-  test('clearing a manually entered animal address removes its saved details', async () => {
-    const started = await server.inject({
-      method: 'POST',
-      url,
-      payload: { clientId: '101', animalsAtClientAddress: 'no' }
-    })
-    const savedAddress = await server.inject({
-      method: 'POST',
-      url: '/submission-01-animal-address',
-      headers: { cookie: getCookieHeader(started) },
-      payload: {
-        animalAddressName: 'Second Site',
-        animalAddressAddressLine1: '2 Farm Road',
-        animalAddressPostcode: 'AB1 2CD'
-      }
-    })
-    const cleared = await server.inject({
-      method: 'POST',
-      url,
-      headers: { cookie: getCookieHeader(savedAddress) },
-      payload: {
-        clientId: '101',
-        animalsAtClientAddress: 'no',
-        intent: 'clearAnimalAddress',
-        animalAddress: 'Second Site, 2 Farm Road, AB1 2CD'
-      }
-    })
-
-    expect(cleared.statusCode).toBe(200)
-    expect(cleared.request.response.source.context.submissionFormState.formData.clientDetails).toEqual({
-      clientId: '101',
-      cph: '',
-      name: 'Acme Farm',
-      farmName: '',
-      addressLine1: '',
-      addressLine2: '',
-      addressLine3: '',
-      county: '',
-      postcode: '',
-      animalsAtClientAddress: 'no'
-    })
-    expect(cleared.payload).not.toContain('Second Site')
-    expect(cleared.payload).toMatch(/name="animalsAtClientAddress"[^>]*value="no"[^>]*checked/)
     const draftRequests = globalThis.fetch.mock.calls.filter(
       ([requestUrl]) => requestUrl === 'http://localhost:3200/drafts'
     )
-    expect(draftRequests).toHaveLength(2)
-    expect(JSON.parse(draftRequests[1][1].body).formData.clientDetails).not.toHaveProperty('animalAddressDetails')
+    expect(draftRequests).toHaveLength(1)
   })
 
   test('rejects an invalid animal location answer', async () => {
@@ -528,7 +415,7 @@ describe('Submission client details page', () => {
       .toBe('101')
   })
 
-  test('keeps a cleared manually created client empty when resuming a draft', async () => {
+  test('keeps manually created client details when the client lookup is blank', async () => {
     let savedDraft
     const fetchBackend = routeBackend()
     globalThis.fetch.mockImplementation(async (requestUrl, options) => {
@@ -564,45 +451,24 @@ describe('Submission client details page', () => {
       headers: { cookie: getCookieHeader(createdClient) },
       payload: { clientId: '', animalsAtClientAddress: 'yes' }
     })
-    const cleared = await server.inject({
+    const continued = await server.inject({
       method: 'POST',
       url,
       headers: { cookie: getCookieHeader(firstContinue) },
-      payload: { clientId: '', intent: 'clearClient', animalsAtClientAddress: 'yes' }
-    })
-
-    expect(firstContinue.statusCode).toBe(302)
-    expect(cleared.statusCode).toBe(200)
-    expect(savedDraft.lastSavedPage).toBe('clientDetails')
-    expect(savedDraft.formData.clientDetails).toMatchObject({
-      name: '',
-      farmName: '',
-      addressLine1: '',
-      postcode: ''
-    })
-    expect(savedDraft.formData.clientDetails.clientId).toBeUndefined()
-
-    const resumed = await server.inject({
-      method: 'GET',
-      url: '/drafts/draft-client-clear/continue'
-    })
-    const resumedPage = await server.inject({
-      method: 'GET',
-      url,
-      headers: { cookie: getCookieHeader(resumed) }
-    })
-    const continueWithoutClient = await server.inject({
-      method: 'POST',
-      url,
-      headers: { cookie: getCookieHeader(resumedPage) },
       payload: { clientId: '', animalsAtClientAddress: 'yes' }
     })
 
-    expect(resumed.statusCode).toBe(302)
-    expect(resumed.headers.location).toBe(`/${url.slice(1)}`)
-    expect(resumedPage.request.response.source.context.selectedClientName).toBe('')
-    expect(continueWithoutClient.statusCode).toBe(400)
-    expect(continueWithoutClient.payload).toContain('Select a client from the list')
+    expect(firstContinue.statusCode).toBe(302)
+    expect(continued.statusCode).toBe(302)
+    expect(continued.headers.location).toBe('/submission-02-species')
+    expect(savedDraft.lastSavedPage).toBe('clientDetails')
+    expect(savedDraft.formData.clientDetails).toMatchObject({
+      name: 'New Client',
+      farmName: 'New Farm',
+      addressLine1: '1 New Road',
+      postcode: 'AA1 1AA'
+    })
+    expect(savedDraft.formData.clientDetails.clientId).toBeUndefined()
   })
 
   test('prefills the edit form from the selected client and stores edited values for the submission', async () => {

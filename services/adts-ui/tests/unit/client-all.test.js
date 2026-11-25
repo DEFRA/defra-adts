@@ -59,8 +59,6 @@ describe('client initialization', () => {
     })
     const speciesSelect = { dataset: { defaultValue: 'Sheep' } }
     const editButton = { dataset: {}, hidden: false }
-    const clearClientButton = { addEventListener: jest.fn() }
-    const clearAnimalAddressButton = { addEventListener: jest.fn() }
     const animalAddressEditButton = { dataset: { manualAddress: 'false' }, hidden: false }
     const hint = { setAttribute: jest.fn() }
     globalThis.document = {
@@ -70,9 +68,7 @@ describe('client initialization', () => {
         if (selector === 'select#animalAddress') return animalAddressSelect
         if (selector === 'select#species') return speciesSelect
         if (selector === '[data-client-edit-button]') return editButton
-        if (selector === '[data-clear-client]') return clearClientButton
         if (selector === '[data-animal-address-edit-button]') return animalAddressEditButton
-        if (selector === '[data-clear-animal-address]') return clearAnimalAddressButton
         return null
       }),
       querySelectorAll: jest.fn((selector) => selector === '.autocomplete__hint' ? [hint] : [])
@@ -103,8 +99,8 @@ describe('client initialization', () => {
     expect(animalAddressEditButton.hidden).toBe(true)
     expect(clientSelect.addEventListener).toHaveBeenCalledWith('change', expect.any(Function))
     expect(clientInput.addEventListener).toHaveBeenCalledWith('input', expect.any(Function))
-    expect(clearClientButton.addEventListener).toHaveBeenCalledWith('click', expect.any(Function))
-    expect(clearAnimalAddressButton.addEventListener).toHaveBeenCalledWith('click', expect.any(Function))
+    expect(globalThis.document.querySelector).not.toHaveBeenCalledWith('[data-clear-client]')
+    expect(globalThis.document.querySelector).not.toHaveBeenCalledWith('[data-clear-animal-address]')
     expect(animalAddressInput.addEventListener).toHaveBeenCalledWith('input', expect.any(Function))
     expect(hint.setAttribute).toHaveBeenCalledWith('aria-hidden', 'true')
     expect(mutationObserver).toHaveBeenCalledWith(expect.any(Function))
@@ -132,12 +128,10 @@ describe('client initialization', () => {
     animalAddressLookupConfig.onConfirm('Green Acres')
     expect(animalAddressOption.selected).toBe(true)
     expect(animalAddressEditButton.hidden).toBe(false)
-    clearAnimalAddressButton.addEventListener.mock.calls[0][1]({ preventDefault: jest.fn() })
-    expect(animalAddressOption.selected).toBe(false)
-    expect(animalAddressInput.value).toBe('')
-    expect(animalAddressInput.dispatchEvent).toHaveBeenCalledWith(expect.any(Event))
-    expect(animalAddressEditButton.hidden).toBe(true)
     animalAddressLookupConfig.onConfirm('Green Acres')
+    expect(animalAddressOption.selected).toBe(true)
+    expect(animalAddressInput.value).toBe('Green Acres')
+    expect(animalAddressEditButton.hidden).toBe(false)
     animalAddressInput.value = ''
     animalAddressInput.addEventListener.mock.calls[0][1]({ target: animalAddressInput })
     expect(animalAddressOption.selected).toBe(false)
@@ -145,16 +139,6 @@ describe('client initialization', () => {
 
     clientOption.selected = false
     clientSelect.addEventListener.mock.calls[0][1]()
-    expect(editButton.hidden).toBe(true)
-
-    clientOption.selected = true
-    clientInput.value = 'Acme Farm'
-    const clearEvent = { preventDefault: jest.fn() }
-    clearClientButton.addEventListener.mock.calls[0][1](clearEvent)
-    expect(clearEvent.preventDefault).not.toHaveBeenCalled()
-    expect(clientSelect.value).toBe('')
-    expect(clientInput.value).toBe('')
-    expect(clientInput.dispatchEvent).toHaveBeenCalledWith(expect.any(Event))
     expect(editButton.hidden).toBe(true)
   })
 

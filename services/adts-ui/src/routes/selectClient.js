@@ -2,10 +2,6 @@ import Joi from 'joi'
 import { BAD_GATEWAY_STATUS, BAD_REQUEST_STATUS } from './submissionViewHelpers.js'
 import { DRAFT_SAVE_ERROR, persistSubmissionDraft } from './submissionDrafts.js'
 import {
-  handleClearAnimalAddressIntent,
-  handleClearClientIntent
-} from './selectClientClearHandlers.js'
-import {
   getAnimalLocation,
   getSubmittedClientDetails,
   hasSubmittedClientFields,
@@ -33,7 +29,7 @@ export const CPH_ERROR = 'Enter a CPH number in the format XX/XXX/XXXX'
 export const CPH_PATTERN = /^\d{2}\/\d{3}\/\d{4}$/
 
 export const submissionClientSchema = Joi.object({
-  intent: Joi.string().valid('edit', 'new', 'cancel', 'newClientAddress', 'newAnimalAddress', 'editAnimalAddress', 'cancelAnimalAddress', 'clearClient', 'clearAnimalAddress').optional(),
+  intent: Joi.string().valid('edit', 'new', 'cancel', 'newClientAddress', 'newAnimalAddress', 'editAnimalAddress', 'cancelAnimalAddress').optional(),
   clientId: Joi.string().allow('').optional(),
   animalAddressClientId: Joi.string().allow('').optional(),
   manualClientEntry: Joi.string().valid('yes').optional(),
@@ -150,24 +146,17 @@ const getSavedAnimalAddressDetails = (payload, animalAddressDetails) => {
   }
 }
 
-const hasClearedAnimalAddressSelection = (payload, savedClientDetails) =>
-  payload.animalsAtClientAddress === 'no' &&
-  Boolean(savedClientDetails.animalAddressClientId) &&
-  Object.hasOwn(payload, 'animalAddressClientId') &&
-  payload.animalAddressClientId === ''
-
 const buildClientDetails = (payload, client, animalAddressClient, savedClientDetails = {}) => {
   const details = getClientDetailsForSubmission(payload, client, savedClientDetails)
-  const animalAddressCleared = hasClearedAnimalAddressSelection(payload, savedClientDetails)
-  const animalAddressDetails = animalAddressCleared
-    ? getClientFieldValues()
-    : getAnimalAddressDetailsForSubmission(payload, animalAddressClient, savedClientDetails)
-  const animalAddressData = animalAddressCleared
-    ? {}
-    : {
-        ...getAnimalAddressDetailsToSave(payload, animalAddressClient, savedClientDetails),
-        ...getSavedAnimalAddressDetails(payload, animalAddressDetails)
-      }
+  const animalAddressDetails = getAnimalAddressDetailsForSubmission(
+    payload,
+    animalAddressClient,
+    savedClientDetails
+  )
+  const animalAddressData = {
+    ...getAnimalAddressDetailsToSave(payload, animalAddressClient, savedClientDetails),
+    ...getSavedAnimalAddressDetails(payload, animalAddressDetails)
+  }
 
   return {
     ...(client && { clientId: client.clientId }),
@@ -301,6 +290,8 @@ const handleClientSubmission = async ({
     counties,
     payload,
     selectedClient,
+    selectedAnimalAddress,
+    formData,
     hasSubmittedFields
   })
   if (validationError) {
@@ -339,6 +330,8 @@ const renderClientSubmissionValidationError = ({
   counties,
   payload,
   selectedClient,
+  selectedAnimalAddress,
+  formData,
   hasSubmittedFields
 }) => {
   const cphErrors = getCphErrors(payload)
@@ -373,6 +366,32 @@ const renderClientSubmissionValidationError = ({
     ).code(BAD_REQUEST_STATUS)
   }
 
+  if (
+    payload.animalsAtClientAddress === 'no' &&
+    !selectedAnimalAddress &&
+    !payload.animalAddress?.trim()
+  ) {
+    const error = 'Enter or select an animal address'
+    const clientDetails = formData.clientDetails || {}
+
+    return renderClientDetailsPage(
+      h,
+      submissionFormState,
+      clients,
+      counties,
+      {
+        selectedClientId: selectedClient?.clientId || clientDetails.clientId || '',
+        ...getAnimalLocation(payload, formData, selectedAnimalAddress),
+        ...(hasSubmittedClientFields(payload) && {
+          clientDetails: getSubmittedClientDetails(payload, selectedClient, formData),
+          editMode: true
+        }),
+        errors: { animalAddress: error },
+        errorList: [{ text: error, href: '#animalAddress' }]
+      }
+    ).code(BAD_REQUEST_STATUS)
+  }
+
   return undefined
 }
 
@@ -390,12 +409,7 @@ const createPostHandler = (submissionFormStateKey) => async (request, h) => {
   const selectedAnimalAddress = clients.find((client) =>
     String(client.clientId) === String(payload.animalAddressClientId)
   )
-  const intentHandler = {
-    clearClient: handleClearClientIntent,
-    clearAnimalAddress: handleClearAnimalAddressIntent
-  }[payload.intent] || handleClientSubmission
-
-  return intentHandler({
+  return handleClientSubmission({
     request,
     h,
     submissionFormStateKey,
@@ -405,8 +419,7 @@ const createPostHandler = (submissionFormStateKey) => async (request, h) => {
     clients,
     counties,
     selectedClient,
-    selectedAnimalAddress,
-    getAnimalLocation
+    selectedAnimalAddress
   })
 }
 

@@ -138,21 +138,18 @@
       <button class="govuk-button govuk-button--secondary" type="submit" name="intent" value="cancel">Cancel</button>
     {% else %}
       <p class="govuk-body-l">Enter the name of your client, their address, or the County Parish Holding (CPH) eg 48/234/2348:</p>
-      <div class="app-client-selection">
-        {{ govukSelect({
-          id: "client",
-          name: "clientId",
-          label: {
-            text: "Client",
-            classes: "govuk-visually-hidden"
-          },
-          attributes: {
-            "data-default-value": selectedClientName
-          },
-          items: clientOptions
-        }) }}
-        <button class="govuk-button govuk-button--secondary" type="submit" name="intent" value="clearClient" data-clear-client>Clear</button>
-      </div>
+      {{ govukSelect({
+        id: "client",
+        name: "clientId",
+        label: {
+          text: "Client",
+          classes: "govuk-visually-hidden"
+        },
+        attributes: {
+          "data-default-value": selectedClientName
+        },
+        items: clientOptions
+      }) }}
       <p class="govuk-body app-create-address-link">Or you can <a class="govuk-link" href="/submission-01-client-address?intent=new" data-create-client-address-link>create a new client</a>.</p>
       {% if hasManualClient %}
         <a class="govuk-button govuk-button--secondary" href="/submission-01-client-address?intent=edit">Edit</a>
@@ -183,12 +180,12 @@
           id: "animalAddress",
           name: "animalAddressClientId",
           label: { text: "Animal address", classes: "govuk-visually-hidden" },
+          errorMessage: { text: errors.animalAddress } if errors.animalAddress,
           attributes: { "data-default-value": selectedAnimalAddressName },
           items: animalAddressOptions
         }) }}
         <input type="hidden" name="animalAddress" value="{{ animalAddress }}">
         <p class="govuk-body app-create-address-link">Or you can <a class="govuk-link" href="/submission-01-animal-address?intent=new" data-create-animal-address-link>create a new animal's address</a>.</p>
-        <button class="govuk-button govuk-button--secondary" type="submit" name="intent" value="clearAnimalAddress" data-clear-animal-address>Clear</button>
         <button class="govuk-button govuk-button--secondary" type="submit" name="intent" value="editAnimalAddress" data-animal-address-edit-button data-manual-address="{% if hasSavedManualAnimalAddress %}true{% else %}false{% endif %}" {% if not hasSelectedAnimalAddress %}hidden{% endif %}>Edit</button>
       </div>
     </div>

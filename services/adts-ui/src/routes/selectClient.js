@@ -323,6 +323,43 @@ const handleClientSubmission = async ({
   return h.redirect(`/${nextPageName}`)
 }
 
+const isAnimalAddressMissing = (payload, selectedAnimalAddress) =>
+  payload.animalsAtClientAddress === 'no' &&
+  !selectedAnimalAddress &&
+  !payload.animalAddress?.trim()
+
+const renderAnimalAddressRequiredError = ({
+  h,
+  submissionFormState,
+  clients,
+  counties,
+  payload,
+  selectedClient,
+  selectedAnimalAddress,
+  formData,
+  hasSubmittedClientFields
+}) => {
+  const error = 'Enter or select an animal address'
+  const clientDetails = formData.clientDetails || {}
+
+  return renderClientDetailsPage(
+    h,
+    submissionFormState,
+    clients,
+    counties,
+    {
+      selectedClientId: selectedClient?.clientId || clientDetails.clientId || '',
+      ...getAnimalLocation(payload, formData, selectedAnimalAddress),
+      ...(hasSubmittedClientFields && {
+        clientDetails: getSubmittedClientDetails(payload, selectedClient, formData),
+        editMode: true
+      }),
+      errors: { animalAddress: error },
+      errorList: [{ text: error, href: '#animalAddress' }]
+    }
+  ).code(BAD_REQUEST_STATUS)
+}
+
 const renderClientSubmissionValidationError = ({
   h,
   submissionFormState,
@@ -366,30 +403,18 @@ const renderClientSubmissionValidationError = ({
     ).code(BAD_REQUEST_STATUS)
   }
 
-  if (
-    payload.animalsAtClientAddress === 'no' &&
-    !selectedAnimalAddress &&
-    !payload.animalAddress?.trim()
-  ) {
-    const error = 'Enter or select an animal address'
-    const clientDetails = formData.clientDetails || {}
-
-    return renderClientDetailsPage(
+  if (isAnimalAddressMissing(payload, selectedAnimalAddress)) {
+    return renderAnimalAddressRequiredError({
       h,
       submissionFormState,
       clients,
       counties,
-      {
-        selectedClientId: selectedClient?.clientId || clientDetails.clientId || '',
-        ...getAnimalLocation(payload, formData, selectedAnimalAddress),
-        ...(hasSubmittedClientFields(payload) && {
-          clientDetails: getSubmittedClientDetails(payload, selectedClient, formData),
-          editMode: true
-        }),
-        errors: { animalAddress: error },
-        errorList: [{ text: error, href: '#animalAddress' }]
-      }
-    ).code(BAD_REQUEST_STATUS)
+      payload,
+      selectedClient,
+      selectedAnimalAddress,
+      formData,
+      hasSubmittedClientFields: hasSubmittedClientFields(payload)
+    })
   }
 
   return undefined

@@ -16,7 +16,7 @@ the draft owner. The backend accepts both providers:
 | Provider | Required live configuration |
 | --- | --- |
 | Defra ID | `DEFRA_ID_WELL_KNOWN_URL`, `DEFRA_ID_API_AUDIENCE` |
-| Entra ID | `ENTRA_TENANT_ID`, `ENTRA_API_AUDIENCE`, `ENTRA_API_SCOPE` |
+| Entra ID | `ENTRA_WELL_KNOWN_URL`, `ENTRA_API_AUDIENCE`, `ENTRA_API_SCOPE` |
 
 These are API resource identifiers, not client secrets. The Entra UI deployment
 must request the configured `ENTRA_API_SCOPE`. Configure audience/scope values
@@ -25,6 +25,8 @@ live deployment.
 
 Local development and tests use mock authentication. Production rejects mock
 mode. Health and connection-health routes remain unauthenticated.
+When running the backend in live Entra mode locally, provide its
+`ENTRA_WELL_KNOWN_URL` along with the audience and scope configuration.
 
 Client lookups and non-draft submission searches return `503` until an
 authorization policy is implemented. The applicant organization-to-PVS mapping

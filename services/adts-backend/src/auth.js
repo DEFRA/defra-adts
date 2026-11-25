@@ -35,7 +35,7 @@ const loadProviders = async () => {
   const requiredVariables = [
     'DEFRA_ID_WELL_KNOWN_URL',
     'DEFRA_ID_API_AUDIENCE',
-    'ENTRA_TENANT_ID',
+    'ENTRA_WELL_KNOWN_URL',
     'ENTRA_API_AUDIENCE',
     'ENTRA_API_SCOPE'
   ]
@@ -52,7 +52,7 @@ const loadProviders = async () => {
     }),
     loadProvider({
       name: 'Entra ID',
-      discoveryUrl: `https://login.microsoftonline.com/${encodeURIComponent(process.env.ENTRA_TENANT_ID)}/v2.0/.well-known/openid-configuration`,
+      discoveryUrl: process.env.ENTRA_WELL_KNOWN_URL,
       audience: process.env.ENTRA_API_AUDIENCE,
       requiredScope: process.env.ENTRA_API_SCOPE.split('/').at(-1).trim()
     })

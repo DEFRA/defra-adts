@@ -98,6 +98,60 @@ describe('backend OIDC authentication', () => {
       .rejects.toThrow('AUTH_MODE must be "live" in production')
   })
 
+  test('loads Entra discovery metadata from the configured well-known URL', async () => {
+    const originalEnv = Object.fromEntries([
+      'DEFRA_ID_WELL_KNOWN_URL',
+      'DEFRA_ID_API_AUDIENCE',
+      'ENTRA_WELL_KNOWN_URL',
+      'ENTRA_TENANT_ID',
+      'ENTRA_API_AUDIENCE',
+      'ENTRA_API_SCOPE'
+    ].map((name) => [name, process.env[name]]))
+    const entraWellKnownUrl =
+      'https://login.microsoftonline.com/tenant-123/v2.0/.well-known/openid-configuration'
+    const discoveryResponses = {
+      'https://defra.example/.well-known/openid-configuration': {
+        issuer: 'https://defra.example',
+        jwks_uri: 'https://defra.example/jwks'
+      },
+      [entraWellKnownUrl]: {
+        issuer: 'https://login.microsoftonline.com/tenant-123/v2.0',
+        jwks_uri: 'https://login.microsoftonline.com/tenant-123/discovery/v2.0/keys'
+      }
+    }
+
+    process.env.NODE_ENV = 'test'
+    process.env.AUTH_MODE = 'live'
+    process.env.DEFRA_ID_WELL_KNOWN_URL =
+      'https://defra.example/.well-known/openid-configuration'
+    process.env.DEFRA_ID_API_AUDIENCE = 'defra-api'
+    process.env.ENTRA_WELL_KNOWN_URL = entraWellKnownUrl
+    delete process.env.ENTRA_TENANT_ID
+    process.env.ENTRA_API_AUDIENCE = 'entra-api'
+    process.env.ENTRA_API_SCOPE = 'api://entra-api/access_as_user'
+    const fetchSpy = jest.spyOn(globalThis, 'fetch').mockImplementation(async (url) =>
+      new Response(JSON.stringify(discoveryResponses[url]), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      })
+    )
+
+    try {
+      await registerAuthentication(Hapi.server())
+
+      expect(fetchSpy).toHaveBeenCalledWith(entraWellKnownUrl)
+    } finally {
+      fetchSpy.mockRestore()
+      for (const [name, value] of Object.entries(originalEnv)) {
+        if (value === undefined) {
+          delete process.env[name]
+        } else {
+          process.env[name] = value
+        }
+      }
+    }
+  })
+
   test('keeps client and non-draft submission data unavailable without policy', async () => {
     const server = await createServer({ docClient: { send: jest.fn() } })
 

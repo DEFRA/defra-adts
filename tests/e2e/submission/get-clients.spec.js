@@ -28,7 +28,7 @@ test.describe('Client lookup via LIMS', () => {
     await page.getByRole('button', { name: 'Continue' }).click()
     await expect(page).toHaveURL(/\/submission-02-species$/)
 
-    await page.getByRole('link', { name: 'Back' }).click()
+    await page.getByRole('link', { name: 'Back', exact: true }).click()
     await expect(page).toHaveURL(/\/submission-01-client-details$/)
     await page.getByRole('combobox', { name: 'Client' }).fill('')
     await page.getByRole('button', { name: 'Continue' }).click()

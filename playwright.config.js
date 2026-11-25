@@ -84,6 +84,7 @@ webServer: [
     timeout: 60 * 1000,
     env: {
       PORT: '3000',
+      AUTH_MODE: 'mock',
       SESSION_SECRET: 'e2e-test-session-secret-with-at-least-32-characters',
       BACKEND_SERVICE_URL: 'http://localhost:3200'
     }

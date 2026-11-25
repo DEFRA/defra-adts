@@ -11,10 +11,15 @@ each audience, configuring one provider per deployment:
   Customer Identity.
 - `AUTH_PROVIDER=entra` for staff signing in with Microsoft Entra ID.
 
-Local development defaults to Defra ID mock mode. Production must set
-`AUTH_PROVIDER` and `AUTH_MODE=live`; mock authentication is rejected in
-production. Live configuration is supplied through environment variables and
-secrets, not source control:
+Outside automated tests, set `AUTH_MODE` explicitly; the UI will not silently
+sign in a mock user when the mode is missing. `AUTH_MODE=mock` uses the OIDC
+plugin's built-in sample identity and does not exercise an OIDC login flow.
+To test local sign-in, run `npm run dev:defra-id-stub` from the repository root;
+it starts the mock OIDC provider and runs the UI in live mode.
+
+Production must set `AUTH_PROVIDER` and `AUTH_MODE=live`; mock authentication
+is rejected in production. Live configuration is supplied through environment
+variables and secrets, not source control:
 
 | Provider | Required live configuration |
 | --- | --- |

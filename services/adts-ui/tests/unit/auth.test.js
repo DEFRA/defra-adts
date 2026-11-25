@@ -58,6 +58,13 @@ describe('unauthenticated access', () => {
     expect(response.statusCode).not.toBe(302)
   })
 
+  test('requires an explicit authentication mode outside tests', async () => {
+    setEnv({ ...liveEnv, NODE_ENV: 'development' })
+    delete process.env.AUTH_MODE
+
+    await expect(createServer()).rejects.toThrow('AUTH_MODE must be set to "mock" or "live"')
+  })
+
   test('rejects live mode in development unless the local HTTP exception is set', async () => {
     setEnv({ ...liveEnv, NODE_ENV: 'development' })
     await expect(createServer()).rejects.toThrow('Live authentication requires secure cookies')

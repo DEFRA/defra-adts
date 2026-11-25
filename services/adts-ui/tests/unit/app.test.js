@@ -39,6 +39,7 @@ describe('createServer', () => {
   test('uses HTTP-compatible session cookies in development and secure cookies in production', async () => {
     process.env.SESSION_SECRET = 'test-session-secret-with-at-least-32-characters'
     process.env.NODE_ENV = 'development'
+    process.env.AUTH_MODE = 'mock'
     server = await createServer()
 
     expect(server).toBeDefined()

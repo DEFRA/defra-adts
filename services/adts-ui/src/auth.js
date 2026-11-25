@@ -65,7 +65,7 @@ const isLocalInsecureAllowed = (provider) => {
 const getRuntimeConfig = () => {
   const isProduction = process.env.NODE_ENV === 'production'
   const providerName = process.env.AUTH_PROVIDER || (isProduction ? '' : 'defra-id')
-  const mode = process.env.AUTH_MODE || (isProduction ? '' : 'mock')
+  const mode = process.env.AUTH_MODE || (process.env.NODE_ENV === 'test' ? 'mock' : '')
   const provider = providers[providerName]
 
   if (!provider) {

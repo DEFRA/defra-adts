@@ -62,6 +62,15 @@ describe('Dashboard Layout', () => {
       expect(html).toMatch(/govuk-header__logotype|govuk-header__logo/)
     })
 
+    test('keeps the GOV.UK header background black', () => {
+      const { css } = sass.compile(
+        path.join(process.cwd(), 'src/assets/scss/application.scss'),
+        { loadPaths: [path.join(process.cwd(), 'node_modules')], style: 'compressed', quietDeps: true, silenceDeprecations: ['import', 'global-builtin', 'color-functions'] }
+      )
+
+      expect(css).toMatch(/\.govuk-header\{[^}]*background-color:#0b0c0c/)
+    })
+
     test('displays the service name "Animal Disease Testing Service"', () => {
       expect(html).toMatch(
         /class="[^"]*govuk-service-navigation__service-name[^"]*"[^>]*>\s*<a[^>]*>\s*Animal Disease Testing Service\s*</
@@ -89,7 +98,9 @@ describe('Dashboard Layout', () => {
           { loadPaths: [path.join(process.cwd(), 'node_modules')], style: 'compressed', quietDeps: true, silenceDeprecations: ['import', 'global-builtin', 'color-functions'] }
         )
 
-        expect(css).toMatch(/\.app-result-card__meta-label\{[^}]*color:#0b0c0c/)
+        expect(css).toMatch(
+          /\.app-result-card__meta-label\{[^}]*color:var\(--govuk-text-colour,\s*#0b0c0c\)/
+        )
       })
     })
 
@@ -123,7 +134,7 @@ describe('Dashboard Layout', () => {
         { loadPaths: [path.join(process.cwd(), 'node_modules')], style: 'compressed', quietDeps: true, silenceDeprecations: ['import', 'global-builtin', 'color-functions'] }
       )
 
-      expect(css).toMatch(/\.app-button--healthy,.app-button--sick\{background-color:#1d70b8;color:#fff/)
+      expect(css).toMatch(/\.app-button--healthy,.app-button--sick\{background-color:var\(--govuk-brand-colour,\s*#1d70b8\);color:#fff/)
     })
 
     test('stacks the submission buttons vertically', () => {

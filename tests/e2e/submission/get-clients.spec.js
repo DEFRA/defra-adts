@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test'
 
-const limsUrl = 'http://localhost:3300'
+const limsUrl = 'http://localhost:8500'
 
 test.describe('Client lookup via LIMS', () => {
   test('renders LIMS clients as options and queries LIMS server-side', async ({ page }) => {
@@ -14,7 +14,28 @@ test.describe('Client lookup via LIMS', () => {
     expect(html).toContain('<option value="42">Second Example Farm</option>')
 
     const limsRequests = await (await page.request.get(`${limsUrl}/__requests`)).json()
-    expect(limsRequests).toContainEqual({ pvsId: 'E2E-PVS-001', filter: '' })
+    expect(limsRequests).toContainEqual({ pvsId: 'PVS001', filter: '' })
+  })
+
+  test('requires a client selection after returning from species', async ({ page }) => {
+    await page.goto('/submission-01-client-details')
+    await page.getByRole('combobox', { name: 'Client' }).fill('Example Farm')
+    await page.getByRole('option', {
+      name: 'Example Farm, North Field, 1 Test Lane, Teston, Dorset, ZZ1 1ZZ, 12/345/6789',
+      exact: true
+    }).click()
+    await page.getByRole('radio', { name: 'Yes', exact: true }).check()
+    await page.getByRole('button', { name: 'Continue' }).click()
+    await expect(page).toHaveURL(/\/submission-02-species$/)
+
+    await page.getByRole('link', { name: 'Back', exact: true }).click()
+    await expect(page).toHaveURL(/\/submission-01-client-details$/)
+    await page.getByRole('combobox', { name: 'Client' }).fill('')
+    await page.getByRole('button', { name: 'Continue' }).click()
+
+    await expect(page).toHaveURL(/\/submission-01-client-details$/)
+    await expect(page.getByText('Select a client from the list, or enter client details manually.'))
+      .toBeVisible()
   })
 
   test('does not expose the LIMS identifier to the browser', async ({ page }) => {

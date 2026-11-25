@@ -34,7 +34,7 @@ describe('Continue draft route', () => {
           draftId: 'draft-001',
           status: 'Draft',
           revision: 3,
-          lastSavedPage: 'submission-02-species',
+          lastSavedPage: 'species',
           formData
         }), { status: 200, headers: { 'Content-Type': 'application/json' } })
       }
@@ -65,9 +65,76 @@ describe('Continue draft route', () => {
     expect(resumedPage.payload).toContain('value="Sheep" selected')
     expect(resumedPage.request.response.source.context.submissionFormState).toEqual({
       draftId: 'draft-001',
-      revision: 3,
-      lastSavedPage: 'submission-02-species',
+      draftRevision: 3,
+      lastSavedPage: 'species',
       formData
+    })
+  })
+
+  test('continues saving a resumed draft with its current revision', async () => {
+    const formData = {
+      clientDetails: { name: 'Acme Farm' },
+      animalDetails: {
+        speciesId: '7',
+        species: 'Sheep',
+        numberOfAnimals: 1,
+        ageCategory: 'ADULT',
+        purpose: 'FIBRE'
+      }
+    }
+    let savedDraft
+    jest.spyOn(globalThis, 'fetch').mockImplementation(async (url, options) => {
+      if (String(url).endsWith('/drafts/draft-001')) {
+        return new Response(JSON.stringify({
+          draftId: 'draft-001',
+          status: 'Draft',
+          revision: 3,
+          lastSavedPage: 'animalDetails',
+          formData
+        }), { status: 200, headers: { 'Content-Type': 'application/json' } })
+      }
+
+      if (String(url).endsWith('/GetAnimalDetails?speciesId=7')) {
+        return new Response(JSON.stringify({
+          speciesId: '7',
+          ageCategories: [{ value: 'ADULT', label: 'Adult' }],
+          ageUnits: [],
+          purposes: [{ value: 'FIBRE', label: 'Fibre' }],
+          keepingTypes: [],
+          breeds: [],
+          sexes: [],
+          organicAccreditationApplicable: false
+        }), { status: 200, headers: { 'Content-Type': 'application/json' } })
+      }
+
+      if (String(url).endsWith('/drafts') && options?.method === 'POST') {
+        savedDraft = JSON.parse(options.body)
+        return new Response(JSON.stringify({ draftId: 'draft-001', revision: 4 }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' }
+        })
+      }
+
+      return new Response('{}', { status: 404 })
+    })
+
+    const continueResponse = await server.inject({
+      method: 'GET',
+      url: '/drafts/draft-001/continue'
+    })
+    const postResponse = await server.inject({
+      method: 'POST',
+      url: '/submission-02-animal-details',
+      headers: { cookie: getCookieHeader(continueResponse) },
+      payload: { ageCategory: 'ADULT', purpose: 'FIBRE', numberOfAnimals: '1' }
+    })
+
+    expect(postResponse.statusCode).toBe(302)
+    expect(postResponse.headers.location).toBe('/submission-03-clinical-history')
+    expect(savedDraft).toMatchObject({
+      draftId: 'draft-001',
+      revision: 3,
+      lastSavedPage: 'animalDetails'
     })
   })
 
@@ -94,7 +161,7 @@ describe('Continue draft route', () => {
       draftId: 'draft-001',
       status: 'Draft',
       revision: 1,
-      lastSavedPage: 'submission-02-animal-details',
+      lastSavedPage: 'animalDetails',
       formData: { animalDetails: {} }
     }), { status: 200, headers: { 'Content-Type': 'application/json' } }))
 

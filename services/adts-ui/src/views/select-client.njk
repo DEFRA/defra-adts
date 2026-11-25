@@ -6,9 +6,10 @@
 {% from "govuk/components/input/macro.njk" import govukInput %}
 {% from "govuk/components/button/macro.njk" import govukButton %}
 {% from "govuk/components/error-summary/macro.njk" import govukErrorSummary %}
+{% from "govuk/components/notification-banner/macro.njk" import govukNotificationBanner %}
 {% from "macros/submissionProgress.njk" import submissionProgress %}
 
-{% block pageTitle %}{% if selectionError or errorList.length %}Error: {% endif %}Client details – ADTS{% endblock %}
+{% block pageTitle %}{% if selectionError or errorList.length or saveError %}Error: {% endif %}Client details – ADTS{% endblock %}
 
 {% block head %}
   <link rel="stylesheet" href="/assets/css/application.css">
@@ -28,6 +29,14 @@
   </div>
 
   {{ submissionProgress(1) }}
+
+  {% if saveError %}
+    {{ govukNotificationBanner({
+      type: "important",
+      titleText: "Important",
+      text: saveError
+    }) }}
+  {% endif %}
 
   {% if errorList.length %}
     {{ govukErrorSummary({
@@ -153,6 +162,7 @@
       {{ govukRadios({
         name: "animalsAtClientAddress",
         fieldset: { legend: { text: "Are the animals at the client’s address?", classes: "govuk-fieldset__legend--m" } },
+        errorMessage: { text: errors.animalsAtClientAddress } if errors.animalsAtClientAddress,
         items: [
           { value: "yes", text: "Yes", checked: animalsAtClientAddress == "yes" },
           { value: "no", text: "No", checked: animalsAtClientAddress == "no" }
@@ -163,6 +173,7 @@
           id: "animalAddress",
           name: "animalAddressClientId",
           label: { text: "Animal address", classes: "govuk-visually-hidden" },
+          errorMessage: { text: errors.animalAddress } if errors.animalAddress,
           attributes: { "data-default-value": selectedAnimalAddressName },
           items: animalAddressOptions
         }) }}

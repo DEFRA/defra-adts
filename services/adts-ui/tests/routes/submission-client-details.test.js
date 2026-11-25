@@ -24,6 +24,12 @@ const jsonResponse = (body) => new Response(JSON.stringify(body), {
 })
 
 const routeBackend = ({ clients = DEFAULT_CLIENTS, counties = DEFAULT_COUNTIES } = {}) => async (requestUrl) => {
+  if (requestUrl === 'http://localhost:3200/drafts') {
+    return jsonResponse({
+      draftId: '123e4567-e89b-12d3-a456-426614174000',
+      revision: 1
+    })
+  }
   if (requestUrl === 'http://localhost:3200/GetClients') return jsonResponse(clients)
   if (requestUrl === 'http://localhost:3200/GetCounties') return jsonResponse(counties)
   throw new Error(`Unexpected backend request: ${requestUrl}`)
@@ -60,6 +66,7 @@ describe('Submission client details page', () => {
     expect(response.payload).toContain('Animal Disease Testing Service')
     expect(response.payload).toContain('<form method="post" action="/submission-01-client-details" novalidate>')
     expect(response.payload).toContain('<select class="govuk-select" id="client" name="clientId"')
+    expect(response.payload).not.toContain('data-clear-client')
     expect(response.payload).toContain('name="intent"')
     expect(response.payload).toContain('href="/submission-01-client-address?intent=new"')
     expect(response.payload).toContain('create a new client')
@@ -70,6 +77,7 @@ describe('Submission client details page', () => {
     expect(response.payload).toContain('<select class="govuk-select" id="animalAddress" name="animalAddressClientId"')
     expect(response.payload).toContain('href="/submission-01-animal-address?intent=new"')
     expect(response.payload).toContain('create a new animal\'s address')
+    expect(response.payload).not.toContain('data-clear-animal-address')
     expect(response.payload).toMatch(/data-client-edit-button\s+hidden/)
     expect(response.payload).toMatch(/data-animal-address-edit-button[^>]*\shidden(?:\s|>)/)
     expect(globalThis.fetch).toHaveBeenCalledWith('http://localhost:3200/GetClients')
@@ -85,7 +93,7 @@ describe('Submission client details page', () => {
     const response = await server.inject({
       method: 'POST',
       url,
-      payload: { clientId: '101' }
+      payload: { clientId: '101', animalsAtClientAddress: 'yes' }
     })
 
     expect(response.statusCode).toBe(302)
@@ -110,11 +118,91 @@ describe('Submission client details page', () => {
       addressLine2: '',
       addressLine3: '',
       county: '',
-      postcode: ''
+      postcode: '',
+      animalsAtClientAddress: 'yes'
+    })
+    expect(revisitResponse.request.response.source.context.submissionFormState).toMatchObject({
+      draftId: '123e4567-e89b-12d3-a456-426614174000',
+      draftRevision: 1
+    })
+    const saveRequest = globalThis.fetch.mock.calls.find(([requestUrl]) =>
+      requestUrl === 'http://localhost:3200/drafts'
+    )
+    expect(JSON.parse(saveRequest[1].body)).toMatchObject({
+      lastSavedPage: 'clientDetails',
+      formData: {
+        clientDetails: {
+          clientId: '101',
+          name: 'Acme Farm'
+        }
+      }
     })
     expect(revisitResponse.payload).toContain('<option value="101" selected>Acme Farm</option>')
     expect(revisitResponse.payload).toContain('data-default-value="Acme Farm"')
     expect(revisitResponse.payload).toMatch(/data-client-edit-button\s*>Edit<\/button>/)
+  })
+
+  test.each([
+    ['/start', 'sick'],
+    ['/start?type=sick', 'sick'],
+    ['/start?type=healthy', 'healthy'],
+    ['/start?type=other', 'sick']
+  ])('starting via %s saves the draft with submission type %s', async (path, expectedType) => {
+    const started = await server.inject({ method: 'GET', url: `${url}${path}` })
+    expect(started.statusCode).toBe(302)
+    expect(globalThis.fetch).not.toHaveBeenCalledWith('http://localhost:3200/drafts', expect.anything())
+
+    await server.inject({
+      method: 'POST',
+      url,
+      headers: { cookie: getCookieHeader(started) },
+      payload: { clientId: '101', animalsAtClientAddress: 'yes' }
+    })
+
+    const saveRequest = globalThis.fetch.mock.calls.find(([requestUrl]) =>
+      requestUrl === 'http://localhost:3200/drafts'
+    )
+    expect(JSON.parse(saveRequest[1].body).formData.submissionType).toBe(expectedType)
+  })
+
+  test('does not advance when the backend returns an invalid draft response', async () => {
+    jest.spyOn(console, 'error').mockImplementation(() => {})
+    globalThis.fetch.mockImplementation(async (requestUrl) => {
+      if (requestUrl === 'http://localhost:3200/drafts') {
+        return jsonResponse({ draftId: 123 })
+      }
+      return routeBackend()(requestUrl)
+    })
+
+    const response = await server.inject({
+      method: 'POST',
+      url,
+      payload: { clientId: '101', animalsAtClientAddress: 'yes' }
+    })
+
+    expect(response.statusCode).toBe(502)
+    expect(response.payload).toContain('We could not save your draft')
+  })
+
+  test('does not advance when the backend cannot save the draft', async () => {
+    jest.spyOn(console, 'error').mockImplementation(() => {})
+    globalThis.fetch.mockImplementation(async (requestUrl) => {
+      if (requestUrl === 'http://localhost:3200/drafts') {
+        return new Response('Unavailable', { status: 502 })
+      }
+      return routeBackend()(requestUrl)
+    })
+
+    const response = await server.inject({
+      method: 'POST',
+      url,
+      payload: { clientId: '101', animalsAtClientAddress: 'yes' }
+    })
+
+    expect(response.statusCode).toBe(502)
+    expect(response.headers.location).toBeUndefined()
+    expect(response.payload).toContain('We could not save your draft')
+    expect(response.request.response.source.context.submissionFormState.draftId).toBeUndefined()
   })
 
   test('renders the animal location question with a separate create-address link', async () => {
@@ -215,31 +303,56 @@ describe('Submission client details page', () => {
     expect(revisitResponse.payload).toMatch(/name="animalsAtClientAddress"[^>]*value="yes"[^>]*checked/)
   })
 
-  test('omits the animal address when No is chosen but the address is blank', async () => {
+  test('requires an animal address when No is chosen but the address is blank', async () => {
     const response = await server.inject({
       method: 'POST',
       url,
       payload: { clientId: '101', animalsAtClientAddress: 'no', animalAddress: '   ' }
     })
 
-    const revisitResponse = await server.inject({
-      method: 'GET',
+    expect(response.statusCode).toBe(400)
+    expect(response.payload).toContain('Enter or select an animal address')
+    expect(response.payload).toContain('href="#animalAddress"')
+    expect(response.payload).toContain('id="animalAddress-error"')
+    expect(response.payload).toMatch(/name="animalsAtClientAddress"[^>]*value="no"[^>]*checked/)
+    expect(response.request.response.source.context.errors).toEqual({
+      animalAddress: 'Enter or select an animal address'
+    })
+    expect(globalThis.fetch).not.toHaveBeenCalledWith(
+      'http://localhost:3200/drafts',
+      expect.anything()
+    )
+  })
+
+  test('does not clear a saved animal address when its lookup is blanked', async () => {
+    const selected = await server.inject({
+      method: 'POST',
       url,
-      headers: { cookie: getCookieHeader(response) }
+      payload: { clientId: '101', animalsAtClientAddress: 'no', animalAddressClientId: '102' }
+    })
+    const blanked = await server.inject({
+      method: 'POST',
+      url,
+      headers: { cookie: getCookieHeader(selected) },
+      payload: {
+        clientId: '101',
+        animalsAtClientAddress: 'no',
+        animalAddressClientId: '',
+        animalAddress: ''
+      }
     })
 
-    expect(revisitResponse.request.response.source.context.submissionFormState.formData.clientDetails).toEqual({
-      clientId: '101',
-      cph: '',
-      name: 'Acme Farm',
-      farmName: '',
-      addressLine1: '',
-      addressLine2: '',
-      addressLine3: '',
-      county: '',
-      postcode: '',
-      animalsAtClientAddress: 'no'
-    })
+    expect(blanked.statusCode).toBe(400)
+    expect(blanked.payload).toContain('Enter or select an animal address')
+    expect(blanked.request.response.source.context.submissionFormState.formData.clientDetails)
+      .toMatchObject({
+        animalAddressClientId: '102',
+        animalAddress: 'Green Acres'
+      })
+    const draftRequests = globalThis.fetch.mock.calls.filter(
+      ([requestUrl]) => requestUrl === 'http://localhost:3200/drafts'
+    )
+    expect(draftRequests).toHaveLength(1)
   })
 
   test('rejects an invalid animal location answer', async () => {
@@ -252,6 +365,21 @@ describe('Submission client details page', () => {
     expect(invalidAnswer.statusCode).toBe(400)
   })
 
+  test('requires an answer for whether the animals are at the client address', async () => {
+    const response = await server.inject({
+      method: 'POST',
+      url,
+      payload: { clientId: '101' }
+    })
+
+    expect(response.statusCode).toBe(400)
+    expect(response.payload).toContain('Select whether the animals are at the client’s address')
+    expect(response.payload).toContain('href="#animalsAtClientAddress"')
+    expect(response.request.response.source.context.errors).toEqual({
+      animalsAtClientAddress: 'Select whether the animals are at the client’s address'
+    })
+  })
+
   test('requires an existing selection or the manual-entry form before continuing', async () => {
     const response = await server.inject({
       method: 'POST',
@@ -261,6 +389,86 @@ describe('Submission client details page', () => {
 
     expect(response.statusCode).toBe(400)
     expect(response.payload).toContain('Select a client from the list, or enter client details manually.')
+  })
+
+  test('does not continue when a previously saved client selection is cleared', async () => {
+    const selected = await server.inject({
+      method: 'POST',
+      url,
+      payload: { clientId: '101', animalsAtClientAddress: 'yes' }
+    })
+    const cleared = await server.inject({
+      method: 'POST',
+      url,
+      headers: { cookie: getCookieHeader(selected) },
+      payload: { clientId: '' }
+    })
+
+    expect(cleared.statusCode).toBe(400)
+    expect(cleared.payload).toContain('Select a client from the list')
+    const revisit = await server.inject({
+      method: 'GET',
+      url,
+      headers: { cookie: getCookieHeader(selected) }
+    })
+    expect(revisit.request.response.source.context.submissionFormState.formData.clientDetails.clientId)
+      .toBe('101')
+  })
+
+  test('keeps manually created client details when the client lookup is blank', async () => {
+    let savedDraft
+    const fetchBackend = routeBackend()
+    globalThis.fetch.mockImplementation(async (requestUrl, options) => {
+      if (requestUrl === 'http://localhost:3200/drafts' && options?.method === 'POST') {
+        savedDraft = JSON.parse(options.body)
+        const revision = (savedDraft.revision || 0) + 1
+        return jsonResponse({ draftId: 'draft-client-clear', revision })
+      }
+      if (requestUrl === 'http://localhost:3200/drafts/draft-client-clear') {
+        return jsonResponse({
+          ...savedDraft,
+          draftId: 'draft-client-clear',
+          status: 'Draft',
+          revision: 2
+        })
+      }
+      return fetchBackend(requestUrl, options)
+    })
+
+    const createdClient = await server.inject({
+      method: 'POST',
+      url: '/submission-01-client-address',
+      payload: {
+        name: 'New Client',
+        farmName: 'New Farm',
+        addressLine1: '1 New Road',
+        postcode: 'AA1 1AA'
+      }
+    })
+    const firstContinue = await server.inject({
+      method: 'POST',
+      url,
+      headers: { cookie: getCookieHeader(createdClient) },
+      payload: { clientId: '', animalsAtClientAddress: 'yes' }
+    })
+    const continued = await server.inject({
+      method: 'POST',
+      url,
+      headers: { cookie: getCookieHeader(firstContinue) },
+      payload: { clientId: '', animalsAtClientAddress: 'yes' }
+    })
+
+    expect(firstContinue.statusCode).toBe(302)
+    expect(continued.statusCode).toBe(302)
+    expect(continued.headers.location).toBe('/submission-02-species')
+    expect(savedDraft.lastSavedPage).toBe('clientDetails')
+    expect(savedDraft.formData.clientDetails).toMatchObject({
+      name: 'New Client',
+      farmName: 'New Farm',
+      addressLine1: '1 New Road',
+      postcode: 'AA1 1AA'
+    })
+    expect(savedDraft.formData.clientDetails.clientId).toBeUndefined()
   })
 
   test('prefills the edit form from the selected client and stores edited values for the submission', async () => {
@@ -311,7 +519,8 @@ describe('Submission client details page', () => {
         addressLine3: '',
         county: 'Merseyside',
         postcode: 'L20 6EC',
-        cph: '12/123/1234'
+        cph: '12/123/1234',
+        animalsAtClientAddress: 'yes'
       }
     })
 
@@ -329,7 +538,8 @@ describe('Submission client details page', () => {
       addressLine3: '',
       county: 'Merseyside',
       postcode: 'L20 6EC',
-      cph: '12/123/1234'
+      cph: '12/123/1234',
+      animalsAtClientAddress: 'yes'
     })
     expect(revisitResponse.payload).not.toContain('<p class="govuk-body">Edited Farm Name</p>')
     expect(revisitResponse.payload).not.toContain('<p class="govuk-body">2 Farm Road, Farmsville</p>')
@@ -480,7 +690,7 @@ describe('Submission client details page', () => {
       method: 'POST',
       url,
       headers: { cookie: getCookieHeader(response) },
-      payload: { clientId: '' }
+      payload: { clientId: '', animalsAtClientAddress: 'yes' }
     })
     expect(continueResponse.statusCode).toBe(302)
     expect(continueResponse.headers.location).toBe('/submission-02-species')
@@ -883,7 +1093,7 @@ describe('Submission client details page', () => {
     const selected = await server.inject({
       method: 'POST',
       url,
-      payload: { clientId: '101' }
+      payload: { clientId: '101', animalsAtClientAddress: 'yes' }
     })
     const cookie = getCookieHeader(selected)
 
@@ -936,7 +1146,7 @@ describe('Submission client details page', () => {
     const existingClientResponse = await server.inject({
       method: 'POST',
       url,
-      payload: { clientId: '101' }
+      payload: { clientId: '101', animalsAtClientAddress: 'yes' }
     })
 
     const response = await server.inject({
@@ -965,7 +1175,8 @@ describe('Submission client details page', () => {
       addressLine2: '',
       addressLine3: '',
       county: '',
-      postcode: ''
+      postcode: '',
+      animalsAtClientAddress: 'yes'
     })
   })
 
@@ -986,7 +1197,7 @@ describe('Submission client details page', () => {
     const response = await server.inject({
       method: 'POST',
       url,
-      payload: { clientId: '101' }
+      payload: { clientId: '101', animalsAtClientAddress: 'yes' }
     })
 
     expect(response.statusCode).toBe(400)

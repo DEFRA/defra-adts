@@ -2,8 +2,11 @@ import { format, isValid as isValidDate, parse } from 'date-and-time'
 import {
   BAD_REQUEST_STATUS,
   BAD_GATEWAY_STATUS,
-  loadClientSummary
+  loadClientSummary,
+  safeLoad
 } from './submissionViewHelpers.js'
+import { DRAFT_SAVE_ERROR, persistSubmissionDraft } from './submissionDrafts.js'
+import { getSubmissionReferences } from '../backend/submissionReferences.js'
 
 const pageName = 'submission-03-clinical-history'
 const nextPageName = 'submission-04-tests'
@@ -27,6 +30,22 @@ const savedValues = (submissionFormState) => {
 }
 
 const contactMethodOptions = ['phone', 'farmVisit']
+
+const submissionReferenceItems = (references, selectedReference) => {
+  const options = [...new Set([
+    ...references,
+    ...(selectedReference ? [selectedReference] : [])
+  ])]
+
+  return [
+    { value: '', text: 'Start typing a submission reference', selected: !selectedReference },
+    ...options.map((reference) => ({
+      value: reference,
+      text: reference,
+      selected: reference === selectedReference
+    }))
+  ]
+}
 
 const submittedValues = (payload) => ({
   day: text(payload['sampleTakenDate-day']),
@@ -65,8 +84,19 @@ const validate = (values, maxDate) => {
   return { values, sampleTakenDate, errors }
 }
 
-const renderPage = async (request, h, submissionFormState, values, errors = {}) => {
-  const clientSummaryResult = await loadClientSummary(submissionFormState, request)
+const renderPage = async (request, h, submissionFormState, values, { errors = {}, saveError } = {}) => {
+  const [clientSummaryResult, referencesResult] = await Promise.all([
+    loadClientSummary(
+      submissionFormState,
+      request,
+      'Error loading client summary:'
+    ),
+    safeLoad(
+      () => getSubmissionReferences(submissionFormState.formData?.clientDetails),
+      'Error loading previous submission references:'
+    )
+  ])
+  const references = referencesResult.data || []
   const errorList = errors.sampleTakenDate
     ? [{ text: errors.sampleTakenDate, href: '#sampleTakenDate-day' }]
     : []
@@ -76,15 +106,22 @@ const renderPage = async (request, h, submissionFormState, values, errors = {}) 
     ...clientSummaryResult,
     values,
     errors,
+    saveError,
+    submissionReferenceItems: submissionReferenceItems(references, values.previousSubmissionReference),
+    submissionReferencesError: Boolean(referencesResult.error),
     errorList
   })
 
-  if (clientSummaryResult.clientSummaryError) {
+  if (clientSummaryResult.clientSummaryError || referencesResult.error) {
     return view.code(BAD_GATEWAY_STATUS)
   }
 
   if (Object.keys(errors).length) {
     return view.code(BAD_REQUEST_STATUS)
+  }
+
+  if (saveError) {
+    return view.code(BAD_GATEWAY_STATUS)
   }
 
   return view
@@ -108,7 +145,7 @@ const submissionClinicalHistory = (server, submissionFormStateKey) => {
         const { values, sampleTakenDate, errors } = validate(submittedValues(request.payload || {}), today())
 
         if (Object.keys(errors).length) {
-          return renderPage(request, h, submissionFormState, values, errors)
+          return renderPage(request, h, submissionFormState, values, { errors })
         }
 
         const formData = submissionFormState.formData || {}
@@ -140,11 +177,21 @@ const submissionClinicalHistory = (server, submissionFormStateKey) => {
           delete updatedFormData.clinicalHistory
         }
 
-        request.yar.set(submissionFormStateKey, {
-          ...submissionFormState,
-          formData: updatedFormData
-        })
-        request.yar.touch()
+        const saved = await persistSubmissionDraft(
+          request,
+          submissionFormStateKey,
+          'clinicalHistory',
+          updatedFormData
+        )
+        if (!saved) {
+          return renderPage(
+            request,
+            h,
+            { ...submissionFormState, formData: updatedFormData },
+            values,
+            { saveError: DRAFT_SAVE_ERROR }
+          )
+        }
 
         return h.redirect(`/${nextPageName}`)
       }

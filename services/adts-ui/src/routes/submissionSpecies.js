@@ -5,8 +5,10 @@ import {
   loadClientSummary,
   safeLoad
 } from './submissionViewHelpers.js'
+import { DRAFT_SAVE_ERROR, persistSubmissionDraft } from './submissionDrafts.js'
 
 const pageName = 'submission-02-species'
+const VIEW_NAME = 'submission-species.njk'
 const nextPageName = 'submission-02-animal-details'
 const getSpeciesSelection = (selection) => {
   const errors = {}
@@ -35,7 +37,11 @@ const findSelectedSpecies = async (speciesName, errors, request) => {
   return matchedSpecies
 }
 
-const buildViewContext = async (submissionFormState, request, { selection, errors = {} } = {}) => {
+const buildViewContext = async (submissionFormState, request, {
+  selection,
+  errors = {},
+  saveError
+} = {}) => {
   const [speciesResult, clientSummaryResult] = await Promise.all([
     safeLoad(() => getSpecies(request)),
     loadClientSummary(submissionFormState, request)
@@ -57,6 +63,7 @@ const buildViewContext = async (submissionFormState, request, { selection, error
     ],
     selectedSpecies: currentSelection,
     errors,
+    saveError,
     speciesListUnavailable: Boolean(speciesResult.error)
   }
 }
@@ -69,7 +76,7 @@ const submissionSpecies = (server, submissionFormStateKey) => {
       handler: async (request, h) => {
         const submissionFormState = request.yar.get(submissionFormStateKey) || {}
         const context = await buildViewContext(submissionFormState, request)
-        const view = h.view('submission-species.njk', context)
+        const view = h.view(VIEW_NAME, context)
 
         return context.clientSummaryError ? view.code(BAD_GATEWAY_STATUS) : view
       }
@@ -85,7 +92,7 @@ const submissionSpecies = (server, submissionFormStateKey) => {
 
         if (Object.keys(errors).length > 0) {
           const context = await buildViewContext(submissionFormState, request, { selection, errors })
-          const view = h.view('submission-species.njk', context)
+          const view = h.view(VIEW_NAME, context)
 
           return context.clientSummaryError
             ? view.code(BAD_GATEWAY_STATUS)
@@ -97,18 +104,29 @@ const submissionSpecies = (server, submissionFormStateKey) => {
         // Changing species invalidates answers that depend on the previous species.
         const retained = previous?.speciesId === matchedSpecies.speciesId ? previous : {}
 
-        request.yar.set(submissionFormStateKey, {
-          ...submissionFormState,
-          formData: {
-            ...formData,
-            animalDetails: {
-              ...retained,
-              speciesId: matchedSpecies.speciesId,
-              species: matchedSpecies.name
-            }
+        const updatedFormData = {
+          ...formData,
+          animalDetails: {
+            ...retained,
+            speciesId: matchedSpecies.speciesId,
+            species: matchedSpecies.name
           }
-        })
-        request.yar.touch()
+        }
+        const saved = await persistSubmissionDraft(
+          request,
+          submissionFormStateKey,
+          'species',
+          updatedFormData
+        )
+
+        if (!saved) {
+          const context = await buildViewContext(
+            { ...submissionFormState, formData: updatedFormData },
+            request,
+            { selection, saveError: DRAFT_SAVE_ERROR }
+          )
+          return h.view(VIEW_NAME, context).code(BAD_GATEWAY_STATUS)
+        }
 
         return h.redirect(`/${nextPageName}`)
       }

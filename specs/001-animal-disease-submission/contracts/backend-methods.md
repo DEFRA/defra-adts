@@ -7,7 +7,11 @@ The UI calls methods provided by `adts-backend`. These names identify the curren
 Creates a draft on the first saved progression, or updates an existing draft on subsequent progressions.
 
 - **Input**: Current complete form snapshot, stable page key being saved, and draft ID/revision when updating an existing draft.
+- **Wire contract**: `POST /drafts` with `{ "lastSavedPage": "...", "formData": { ... } }` to create, or with `draftId` and `revision` added to update. The backend returns the draft ID, new revision, saved page, and update timestamp. Owner identity is never accepted in the request body.
+- **Allowed page keys**: `clientDetails`, `animalDetails`, `clinicalHistory`, `chooseTests`, `basket`, `deliveryAddress`, `reviewSubmit`, and `printDocuments`. These are stable identifiers, not display labels.
 - **Behavior**: Persist the full snapshot and current page; report a conflict rather than silently overwrite a newer revision.
+- **Continue behavior**: Each successful Continue on an implemented submission page saves its complete updated snapshot before redirecting. The UI updates its Yar state only after the backend confirms the write; on failure it stays on the page and displays an error.
+- **Local development**: The backend may use `LOCAL_DRAFT_OWNER_ID` when no authenticated principal is present and `NODE_ENV=development`. Other environments must derive the owner from the authenticated principal.
 - **Output**: Draft ID, updated revision, and saved page/state needed by the UI session.
 - **Errors**: Validation, revision conflict, unavailable backend/storage dependency, or oversized/unsupported draft.
 
@@ -95,7 +99,7 @@ Completes submission of the fully validated report and mandatory test-kit order 
 ## Cross-cutting behavior
 
 - The UI follows the backend's documented request and response types and does not infer routes from method names.
-- Draft ownership is derived from trusted server-side identity and is never accepted as a user-controlled owner ID.
+- Draft ownership is derived from the authenticated server-side principal, or from the explicit local-development owner setting; it is never accepted as a user-controlled owner ID.
 - The UI updates Yar session working state after confirmed backend success; it does not show a progression as saved when the backend call fails.
 - Backend storage technology, table keys/indexes, AWS credentials, and infrastructure configuration are outside this UI contract.
 - The method list is not exhaustive; additional backend methods may be added as the form and approved field set are refined.

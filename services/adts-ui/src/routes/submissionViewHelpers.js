@@ -3,11 +3,11 @@ import { getClients } from '../backend/clients.js'
 export const BAD_REQUEST_STATUS = 400
 export const BAD_GATEWAY_STATUS = 502
 
-export const safeLoad = async (loader) => {
+export const safeLoad = async (loader, logMessage = 'Error contacting backend server:') => {
   try {
     return { data: await loader() }
   } catch (error) {
-    console.error('Error contacting backend server:', error.message)
+    console.error(logMessage, error.message)
     return { error }
   }
 }
@@ -46,7 +46,11 @@ const getClientSummaryFromDetails = (clientDetails) => ({
 
 const CLIENT_DETAILS_UNAVAILABLE = 'Client details unavailable'
 
-export const loadClientSummary = async (submissionFormState, request) => {
+export const loadClientSummary = async (
+  submissionFormState,
+  request,
+  logMessage = 'Error contacting backend server:'
+) => {
   const clientDetails = submissionFormState.formData?.clientDetails
   const hasSubmittedClientDetails = clientDetails && [
     'name',
@@ -63,7 +67,7 @@ export const loadClientSummary = async (submissionFormState, request) => {
     return { clientSummary: getClientSummaryFromDetails(clientDetails) }
   }
 
-  const clientsResult = await safeLoad(() => getClients(request))
+  const clientsResult = await safeLoad(() => getClients(request), logMessage)
 
   if (clientsResult.error) {
     return {

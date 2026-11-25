@@ -10,8 +10,10 @@ import { getCounties } from './data/counties.js'
 import { getSpecies } from './data/species.js'
 import { getDraft } from './data/drafts.js'
 import { getSubmissions } from './data/submissions.js'
+import { getLimsSubmissionReferences, getLimsSubmissions } from './data/limsSubmissions.js'
 import { createClientsHandler } from './handlers/clients.js'
 import { registerAuthentication } from './auth.js'
+import registerDraftRoutes from './routes/drafts.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const authorizationUnavailable = (_request, h) =>
@@ -112,26 +114,49 @@ const registerConnectionHealthRoute = (server) => {
 }
 
 const createSubmissionsHandler = (getDynamoClient, authorizeDataAccess) => {
-  const proxySubmissions = createProxyGet('submissions')
+  const handler = async (request, h) => {
+    const status = request.query.status?.toLowerCase()
+    const ownerId = request.auth.credentials.ownerId
+    const shouldGetLims = status !== 'draft'
+    const shouldGetLocalDrafts = !status || status === 'show_all' || status === 'draft'
 
-  return async (request, h) => {
-    if (request.query.status?.toLowerCase() !== 'draft') {
-      return createAuthorizationGate(proxySubmissions, authorizeDataAccess)(request, h)
+    if (status === 'draft' && !ownerId) {
+      return h.response({ error: 'Local draft owner is not configured' })
+        .code(constants.HTTP_STATUS_SERVICE_UNAVAILABLE)
     }
 
     try {
-      const ownerId = request.auth.credentials.ownerId
-      if (!ownerId) {
-        return h.response({ error: 'Local draft owner is not configured' })
-          .code(constants.HTTP_STATUS_SERVICE_UNAVAILABLE)
-      }
+      const [limsResults, localDrafts] = await Promise.all([
+        shouldGetLims ? getLimsSubmissions(request.query) : Promise.resolve([]),
+        shouldGetLocalDrafts && ownerId
+          ? getSubmissions(getDynamoClient(), ownerId, request.query)
+          : { results: [] }
+      ])
+      const results = [...localDrafts.results, ...limsResults]
 
-      return h.response(await getSubmissions(getDynamoClient(), ownerId, request.query))
+      return h.response({ results, totalCount: results.length })
     } catch (error) {
       console.error('Error retrieving submissions:', error.message)
       return h.response({ error: 'Unable to retrieve submissions' })
         .code(constants.HTTP_STATUS_BAD_GATEWAY)
     }
+  }
+
+  return async (request, h) => {
+    if (request.query.status?.toLowerCase() === 'draft') {
+      return handler(request, h)
+    }
+    return createAuthorizationGate(handler, authorizeDataAccess)(request, h)
+  }
+}
+
+const createSubmissionReferencesHandler = async (request, h) => {
+  try {
+    return h.response(await getLimsSubmissionReferences(request.query))
+  } catch (error) {
+    console.error('Error retrieving submission references:', error.message)
+    return h.response({ error: 'Unable to retrieve submission references' })
+      .code(constants.HTTP_STATUS_BAD_GATEWAY)
   }
 }
 
@@ -175,6 +200,20 @@ const registerSubmissionsRoutes = (server, getDynamoClient, authorizeDataAccess)
       method: 'GET',
       path: '/submissions',
       handler: createSubmissionsHandler(getDynamoClient, authorizeDataAccess)
+    },
+    {
+      method: 'GET',
+      path: '/submission-references',
+      options: {
+        validate: {
+          query: Joi.object({
+            clientId: Joi.string().trim().min(1),
+            clientName: Joi.string().trim().min(1),
+            clientFarm: Joi.string().trim().min(1)
+          }).or('clientId', 'clientName', 'clientFarm').unknown(false)
+        }
+      },
+      handler: createAuthorizationGate(createSubmissionReferencesHandler, authorizeDataAccess)
     },
     {
       method: 'GET',
@@ -255,6 +294,7 @@ const createServer = async ({ docClient, authorizeDataAccess = () => false } = {
   registerStaticRoutes(server)
   registerConnectionHealthRoute(server)
   registerSubmissionsRoutes(server, getDynamoClient, authorizeDataAccess)
+  registerDraftRoutes(server, getDynamoClient)
   registerSpeciesRoute(server, getDynamoClient)
   registerCountiesRoute(server, getDynamoClient)
   registerAnimalDetailsRoute(server, getDynamoClient)

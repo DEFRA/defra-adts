@@ -82,8 +82,19 @@ describe('Dashboard Layout', () => {
       expect(html).not.toContain('>Clients<')
     })
 
+    describe('Result card styles', () => {
+      test('uses the accessible text colour for metadata labels', () => {
+        const { css } = sass.compile(
+          path.join(process.cwd(), 'src/assets/scss/application.scss'),
+          { loadPaths: [path.join(process.cwd(), 'node_modules')], style: 'compressed', quietDeps: true, silenceDeprecations: ['import', 'global-builtin', 'color-functions'] }
+        )
+
+        expect(css).toMatch(/\.app-result-card__meta-label\{[^}]*color:#0b0c0c/)
+      })
+    })
+
     test('renders the submission actions as GOV.UK styled link buttons', () => {
-      const actions = [...html.matchAll(/<a\b[^>]*href="\/submission-01-client-details\/start"[^>]*>[\s\S]*?<\/a>/g)]
+      const actions = [...html.matchAll(/<a\b[^>]*href="\/submission-01-client-details\/start\?type=(?:sick|healthy)"[^>]*>[\s\S]*?<\/a>/g)]
         .map(([link]) => link)
 
       expect(actions).toHaveLength(2)
@@ -125,12 +136,12 @@ describe('Dashboard Layout', () => {
     })
 
     test('both submission links navigate to the client details page', async () => {
-      for (const linkText of ['Sick animal submission', 'Healthy animal submission']) {
+      for (const [linkText, type] of [['Sick animal submission', 'sick'], ['Healthy animal submission', 'healthy']]) {
         const link = [...html.matchAll(/<a\b([^>]*)>([\s\S]*?)<\/a>/g)]
           .find(([, , content]) => content.includes(linkText))
 
         expect(link).toBeDefined()
-        expect(link[1]).toContain('href="/submission-01-client-details/start"')
+        expect(link[1]).toContain(`href="/submission-01-client-details/start?type=${type}"`)
       }
 
       const destinationResponse = await server.inject({
@@ -163,7 +174,9 @@ describe('Dashboard Layout', () => {
       })
 
       expect(clientDetailsResponse.statusCode).toBe(200)
-      expect(clientDetailsResponse.request.response.source.context.submissionFormState).toEqual({})
+      expect(clientDetailsResponse.request.response.source.context.submissionFormState).toEqual({
+        formData: { submissionType: 'sick' }
+      })
       expect(clientDetailsResponse.payload).not.toContain('Previous client')
       expect(clientDetailsResponse.payload).not.toContain('1 Previous Road')
     })

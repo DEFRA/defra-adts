@@ -7,27 +7,26 @@
 {% from "govuk/components/date-input/macro.njk" import govukDateInput %}
 {% from "govuk/components/radios/macro.njk" import govukRadios %}
 {% from "govuk/components/checkboxes/macro.njk" import govukCheckboxes %}
-{% from "govuk/components/input/macro.njk" import govukInput %}
+{% from "govuk/components/select/macro.njk" import govukSelect %}
 {% from "govuk/components/button/macro.njk" import govukButton %}
 {% from "macros/submissionProgress.njk" import submissionProgress %}
 {% from "macros/clientSummary.njk" import clientSummaryBar %}
 
 {% set contactedDetailsHtml %}
-  {{ govukInput({
+  {{ govukSelect({
     id: "previousSubmissionReference",
     name: "previousSubmissionReference",
-    label: { text: "Type the previous submission reference (optional)" },
-    classes: "govuk-!-width-one-half",
-    value: values.previousSubmissionReference,
-    placeholder: "start typing",
-    autocomplete: "off"
+    label: { text: "Find the previous submission reference (optional)" },
+    items: submissionReferenceItems,
+    attributes: { "data-default-value": "Start typing a submission reference" }
   }) }}
 {% endset %}
 
-{% block pageTitle %}{% if clientSummaryError or errors.sampleTakenDate %}Error: {% endif %}Clinical history – ADTS{% endblock %}
+{% block pageTitle %}{% if clientSummaryError or submissionReferencesError or errors.sampleTakenDate or saveError %}Error: {% endif %}Clinical history – ADTS{% endblock %}
 
 {% block head %}
   <link rel="stylesheet" href="/assets/css/application.css">
+  <link rel="stylesheet" href="/assets/css/accessible-autocomplete.min.css">
 {% endblock %}
 
 {% block header %}
@@ -46,11 +45,27 @@
   {{ submissionProgress(3) }}
   {{ clientSummaryBar(clientSummary) }}
 
+  {% if saveError %}
+    {{ govukNotificationBanner({
+      type: "important",
+      titleText: "Important",
+      text: saveError
+    }) }}
+  {% endif %}
+
   {% if clientSummaryError %}
     {{ govukNotificationBanner({
       type: "important",
       titleText: "Important",
       text: "Client details could not be loaded. Refresh the page to try again."
+    }) }}
+  {% endif %}
+
+  {% if submissionReferencesError %}
+    {{ govukNotificationBanner({
+      type: "important",
+      titleText: "Important",
+      text: "Previous submissions could not be loaded. Refresh the page to try again."
     }) }}
   {% endif %}
 

@@ -1,13 +1,26 @@
 import { ScanCommand } from '@aws-sdk/lib-dynamodb'
+import { submissionsTable } from './dynamo.js'
 
 const DAYS_IN_WEEK = 7
 const DAYS_IN_FORTNIGHT = 14
 const MONTHS_IN_HALF_YEAR = 6
 const MONTHS_IN_EIGHTEEN_MONTHS = 18
 
-const tableName = () => process.env.SUBMISSIONS_TABLE || 'adts-submissions'
+const subtractUtcMonths = (date, months) => {
+  const day = date.getUTCDate()
+  date.setUTCDate(1)
+  date.setUTCMonth(date.getUTCMonth() - months)
 
-const dateCutoff = (period, now = new Date()) => {
+  const lastDayOfMonth = new Date(Date.UTC(
+    date.getUTCFullYear(),
+    date.getUTCMonth() + 1,
+    0
+  )).getUTCDate()
+
+  date.setUTCDate(Math.min(day, lastDayOfMonth))
+}
+
+export const dateCutoff = (period, now = new Date()) => {
   if (!period) {
     return undefined
   }
@@ -17,10 +30,10 @@ const dateCutoff = (period, now = new Date()) => {
     '1_day': () => cutoff.setUTCDate(cutoff.getUTCDate() - 1),
     '1_week': () => cutoff.setUTCDate(cutoff.getUTCDate() - DAYS_IN_WEEK),
     '14_days': () => cutoff.setUTCDate(cutoff.getUTCDate() - DAYS_IN_FORTNIGHT),
-    '1_month': () => cutoff.setUTCMonth(cutoff.getUTCMonth() - 1),
-    '6_months': () => cutoff.setUTCMonth(cutoff.getUTCMonth() - MONTHS_IN_HALF_YEAR),
+    '1_month': () => subtractUtcMonths(cutoff, 1),
+    '6_months': () => subtractUtcMonths(cutoff, MONTHS_IN_HALF_YEAR),
     '1_year': () => cutoff.setUTCFullYear(cutoff.getUTCFullYear() - 1),
-    '18_months': () => cutoff.setUTCMonth(cutoff.getUTCMonth() - MONTHS_IN_EIGHTEEN_MONTHS)
+    '18_months': () => subtractUtcMonths(cutoff, MONTHS_IN_EIGHTEEN_MONTHS)
   }
 
   if (!Object.hasOwn(periods, period)) {
@@ -31,10 +44,10 @@ const dateCutoff = (period, now = new Date()) => {
   return cutoff
 }
 
-const matchesText = (value, filter) =>
+export const matchesText = (value, filter) =>
   !filter || String(value ?? '').toLocaleLowerCase().includes(filter.trim().toLocaleLowerCase())
 
-const formatDate = (value) => {
+export const formatDate = (value) => {
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) {
     return '---'
@@ -43,6 +56,24 @@ const formatDate = (value) => {
   const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
   const day = String(date.getUTCDate()).padStart(2, '0')
   return `${day}/${months[date.getUTCMonth()]}/${date.getUTCFullYear()}`
+}
+
+// Drafts saved by the submission flow keep their details inside formData.
+const normaliseItem = (item) => {
+  const draftId = item.draftId ?? item.submissionId
+  if (!draftId || !item.formData) {
+    return item
+  }
+
+  const { clientDetails, animalDetails } = item.formData || {}
+  return {
+    ...item,
+    submissionId: draftId,
+    client: clientDetails?.name ?? item.client,
+    clientFarm: clientDetails?.farmName ?? item.clientFarm,
+    species: animalDetails?.species ?? item.species,
+    submittedAt: item.updatedAt ?? item.submittedAt
+  }
 }
 
 const toSearchResult = (item) => ({
@@ -60,7 +91,7 @@ const toSearchResult = (item) => ({
 
 const getSubmissionItems = async (docClient, ownerId, exclusiveStartKey) => {
   const result = await docClient.send(new ScanCommand({
-    TableName: tableName(),
+    TableName: submissionsTable(),
     FilterExpression: '(#status = :draft OR #status = :draftLower) AND (#ownerId = :ownerId OR #userId = :ownerId)',
     ExpressionAttributeNames: {
       '#status': 'status',
@@ -87,7 +118,7 @@ export const getSubmissions = async (docClient, ownerId, filters = {}) => {
     throw new Error('Draft owner is required')
   }
 
-  const items = await getSubmissionItems(docClient, ownerId)
+  const items = (await getSubmissionItems(docClient, ownerId)).map(normaliseItem)
   const cutoff = dateCutoff(filters['submitted-date'])
   const results = items
     .filter((item) =>

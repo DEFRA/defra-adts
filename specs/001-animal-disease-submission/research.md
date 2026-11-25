@@ -22,7 +22,7 @@
 - **Decision**: Provide backend operations to create, list, load, and replace drafts. Derive ownership from a trusted server-side authenticated principal; scope every retrieval and mutation to that principal. Return the saved page key with draft data.
 - **Rationale**: Listing provides a way to find drafts in a new session; server-derived ownership prevents a caller from selecting another user's drafts by changing an identifier.
 - **Alternatives considered**: Accepting a user identifier from the form or URL was rejected because client-controlled ownership is unsafe. Session cookie state alone does not support a new session.
-- **Implementation gate**: The UI home route references `request.auth.credentials`, but the inspected HAPI startup does not register an authentication strategy, and no trusted identity contract is present in the backend. Before enabling draft access, confirm how the deployed UI/backend receive a trusted principal. Do not substitute an untrusted payload identifier.
+- **Implementation gate**: The UI home route references `request.auth.credentials`, but the inspected HAPI startup does not register an authentication strategy, and no trusted identity contract is present in the backend. Local development with `NODE_ENV=development` may use the explicit `LOCAL_DRAFT_OWNER_ID`; before enabling draft access elsewhere, confirm how the deployed UI/backend receive a trusted principal. Do not substitute an untrusted payload identifier.
 
 ### Backend method boundary
 

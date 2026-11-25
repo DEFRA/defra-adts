@@ -325,7 +325,6 @@ jobs:
           git tag \
             --annotate "${VERSION_TAG}" \
             --message "${SERVICE} ${VERSION} (${BUMP_TYPE} release)"
-
           git push origin "${VERSION_TAG}"
 
       - name: Write container build summary

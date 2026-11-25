@@ -35,7 +35,7 @@
   {% endif %}
 {% endfor %}
 
-{% block pageTitle %}{% if animalDetailsUnavailable or clientSummaryError or errorList.length %}Error: {% endif %}Animal details – ADTS{% endblock %}
+{% block pageTitle %}{% if animalDetailsUnavailable or clientSummaryError or errorList.length or saveError %}Error: {% endif %}Animal details – ADTS{% endblock %}
 
 {% block head %}
   <link rel="stylesheet" href="/assets/css/application.css">
@@ -57,6 +57,14 @@
   {{ govukBackLink({ text: "Back", href: "/submission-02-species" }) }}
   {{ submissionProgress(2) }}
   {{ clientSummaryBar(clientSummary) }}
+
+  {% if saveError %}
+    {{ govukNotificationBanner({
+      type: "important",
+      titleText: "Important",
+      text: saveError
+    }) }}
+  {% endif %}
 
   {% if clientSummaryError %}
     {{ govukNotificationBanner({

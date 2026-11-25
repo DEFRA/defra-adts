@@ -57,6 +57,11 @@ It should return the seeded species list. A `502` from this endpoint usually mea
 the backend is not configured to use the local DynamoDB or the local database is
 not running; restart the backend after changing its environment variables.
 
+`GET /submission-references?clientId=<id>&clientName=<name>&clientFarm=<farm>`
+returns matching submitted LIMS references as a string array for the clinical
+history autocomplete. `clientId` is forwarded to the submissions service when
+available; client name and farm are matched against the returned records.
+
 ## Running tests
 
 From the repository root:

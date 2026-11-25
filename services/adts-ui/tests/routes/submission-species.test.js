@@ -83,7 +83,7 @@ describe('Submission species page', () => {
       requestUrl === 'http://localhost:3200/drafts'
     )
     expect(JSON.parse(saveRequest[1].body)).toMatchObject({
-      lastSavedPage: 'animalDetails',
+      lastSavedPage: 'species',
       formData: { animalDetails: { speciesId: '2', species: 'Sheep' } }
     })
     expect(revisit.payload).toMatch(/<option value="Sheep" selected>Sheep<\/option>/)
@@ -158,7 +158,8 @@ describe('Submission species page', () => {
         addressLine3: '',
         county: 'Northshire',
         postcode: 'AB1 2CD',
-        cph: '48/234/2348'
+        cph: '48/234/2348',
+        animalsAtClientAddress: 'yes'
       }
     })
     globalThis.fetch.mockClear()
@@ -171,7 +172,7 @@ describe('Submission species page', () => {
     expect(JSON.parse(saveRequest[1].body)).toMatchObject({
       draftId: '123e4567-e89b-12d3-a456-426614174000',
       revision: 1,
-      lastSavedPage: 'animalDetails',
+      lastSavedPage: 'species',
       formData: {
         clientDetails: { name: 'Updated Client Name' },
         animalDetails: { speciesId: '4', species: 'Goat' }
@@ -186,7 +187,8 @@ describe('Submission species page', () => {
       addressLine2: 'New Village',
       addressLine3: '',
       county: 'Northshire',
-      postcode: 'AB1 2CD'
+      postcode: 'AB1 2CD',
+      animalsAtClientAddress: 'yes'
     })
     expect(revisit.payload).toContain('Updated Client Name')
     expect(revisit.payload).not.toContain('Updated Farm')
@@ -319,7 +321,7 @@ describe('Submission species page', () => {
       method: 'POST',
       url: '/submission-01-client-details',
       headers: { cookie: getCookieHeader(clientDetailsPage) || getCookieHeader(savedClientAddress) },
-      payload: { clientId: '' }
+      payload: { clientId: '', animalsAtClientAddress: 'yes' }
     })
 
     expect(clientDetails.statusCode).toBe(302)

@@ -169,6 +169,7 @@
       {{ govukRadios({
         name: "animalsAtClientAddress",
         fieldset: { legend: { text: "Are the animals at the client’s address?", classes: "govuk-fieldset__legend--m" } },
+        errorMessage: { text: errors.animalsAtClientAddress } if errors.animalsAtClientAddress,
         items: [
           { value: "yes", text: "Yes", checked: animalsAtClientAddress == "yes" },
           { value: "no", text: "No", checked: animalsAtClientAddress == "no" }
@@ -179,6 +180,7 @@
           id: "animalAddress",
           name: "animalAddressClientId",
           label: { text: "Animal address", classes: "govuk-visually-hidden" },
+          errorMessage: { text: errors.animalAddress } if errors.animalAddress,
           attributes: { "data-default-value": selectedAnimalAddressName },
           items: animalAddressOptions
         }) }}

@@ -76,7 +76,9 @@ describe('GET /submissions with local DynamoDB', () => {
     DYNAMODB_ENDPOINT: 'http://localhost:8000',
     AWS_REGION: 'eu-west-2',
     AWS_ACCESS_KEY_ID: 'local',
-    AWS_SECRET_ACCESS_KEY: 'local'
+    AWS_SECRET_ACCESS_KEY: 'local',
+    SUBMISSIONS_SERVICE_URL: 'http://localhost:3100',
+    LIMS_PVS_ID: 'PVS001'
   }
   const originalEnvironment = Object.fromEntries(
     Object.keys(testEnvironment).map((key) => [key, process.env[key]])

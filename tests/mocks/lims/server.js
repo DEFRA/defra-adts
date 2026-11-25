@@ -11,6 +11,7 @@ let nextDraftId = 100
 let nextSubmissionId = 1
 const drafts = new Map()
 const submissions = new Map()
+const requests = []
 
 const products = [
   {
@@ -30,15 +31,16 @@ const products = [
 
 const clients = [
   {
-    clientId: 'C-456',
-    name: 'Synthetic Client',
-    farm: 'Sample Farm',
-    address: 'Main Road, Sampleton',
+    clientId: 'client-001',
+    name: 'Example Farm',
+    farm: 'North Field',
+    address: '1 Test Lane, Teston',
     subCounty: '',
-    county: 'Test County',
-    postcode: 'AA1 1AA',
-    cphh: '00-000-0000'
-  }
+    county: 'DORS',
+    postcode: 'ZZ1 1ZZ',
+    cphh: '12/345/6789'
+  },
+  { clientId: 42, name: 'Second Example Farm' }
 ]
 
 const pvs = {
@@ -85,6 +87,7 @@ const resetState = () => {
   nextSubmissionId = 1
   drafts.clear()
   submissions.clear()
+  requests.length = 0
 }
 
 const findFailure = async (endpoint, response) => {
@@ -133,6 +136,10 @@ const handleGet = (endpoint, url, response) => {
       return sendJson(response, 200, matches)
     }
     case 'general/getClients': {
+      requests.push({
+        pvsId: url.searchParams.get('pvsId') ?? '',
+        filter: url.searchParams.get('filter') ?? ''
+      })
       if (url.searchParams.get('pvsId') !== pvs.pvsId) {
         return sendJson(response, 200, [])
       }
@@ -166,8 +173,13 @@ const handleGet = (endpoint, url, response) => {
           clientFarm: item.clientFarm,
           clinician: item.clinician,
           submittedDate: item.submittedDate ?? null,
+          changedStatusDate: item.changedStatusDate ?? item.submittedDate ?? null,
           isCancelable: item.status === 'Draft',
-          products: (item.products ?? []).map(({ productId, name = '' }) => ({ productId, name }))
+          samplesOverdue: item.samplesOverdue ?? false,
+          resultsAvailable: item.resultsAvailable ?? false,
+          isDigital: item.isDigital ?? true,
+          numberSamples: item.numberSamples ?? null,
+          products: (item.products ?? []).map(({ productId, name = '', productType = '' }) => ({ productId, name, productType }))
         }))
       return sendJson(response, 200, records)
     }
@@ -209,6 +221,10 @@ const server = createServer(async (request, response) => {
     return sendJson(response, 200, { status: 'RESET' })
   }
 
+  if (url.pathname === '/__requests' && request.method === 'GET') {
+    return sendJson(response, 200, requests)
+  }
+
   const prefixPath = `/${configuredPrefix}/`
   if (!url.pathname.startsWith(prefixPath)) {
     return sendJson(response, 404, { message: 'Unknown mock LIMS path' })
@@ -232,7 +248,17 @@ const server = createServer(async (request, response) => {
     }
 
     const draftSubmissionId = payload.draftSubmissionId || String(++nextDraftId)
-    drafts.set(draftSubmissionId, { ...payload, draftSubmissionId, status: 'Draft' })
+    const now = new Date().toISOString()
+    drafts.set(draftSubmissionId, {
+      ...payload,
+      draftSubmissionId,
+      status: 'Draft',
+      submittedDate: payload.submittedDate || null,
+      changedStatusDate: now,
+      samplesOverdue: false,
+      resultsAvailable: false,
+      isDigital: true
+    })
     return sendJson(response, 200, { draftSubmissionId })
   }
 
@@ -250,7 +276,17 @@ const server = createServer(async (request, response) => {
     }
 
     const submissionId = `VI-26-${String(nextSubmissionId++).padStart(6, '0')}`
-    const submission = { ...draft, submissionId, status: 'Submitted', submittedDate: new Date().toISOString() }
+    const now = new Date().toISOString()
+    const submission = {
+      ...draft,
+      submissionId,
+      status: 'Submitted',
+      submittedDate: now,
+      changedStatusDate: now,
+      samplesOverdue: false,
+      resultsAvailable: false,
+      isDigital: true
+    }
     submissions.set(submissionId, submission)
     drafts.set(payload.draftSubmissionId, submission)
     return sendJson(response, 200, { submissionId })

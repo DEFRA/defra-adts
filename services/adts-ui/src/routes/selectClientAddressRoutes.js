@@ -16,10 +16,12 @@ import {
   clientAddressSchema,
   CPH_ERROR,
   CPH_PATTERN,
-  saveClientDraftForAddress,
-  saveClientDraftForAnimalAddress,
   submissionClientSchema
 } from './selectClient.js'
+import {
+  saveClientDraftForAddress,
+  saveClientDraftForAnimalAddress
+} from './selectClientDrafts.js'
 
 const getRequiredAddressErrors = (details, requiredFields) => Object.fromEntries(
   requiredFields

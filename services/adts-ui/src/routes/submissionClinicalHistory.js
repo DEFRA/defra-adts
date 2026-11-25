@@ -2,9 +2,11 @@ import { format, isValid as isValidDate, parse } from 'date-and-time'
 import {
   BAD_REQUEST_STATUS,
   BAD_GATEWAY_STATUS,
-  loadClientSummary
+  loadClientSummary,
+  safeLoad
 } from './submissionViewHelpers.js'
 import { DRAFT_SAVE_ERROR, persistSubmissionDraft } from './submissionDrafts.js'
+import { getSubmissionReferences } from '../backend/submissionReferences.js'
 
 const pageName = 'submission-03-clinical-history'
 const nextPageName = 'submission-04-tests'
@@ -28,6 +30,22 @@ const savedValues = (submissionFormState) => {
 }
 
 const contactMethodOptions = ['phone', 'farmVisit']
+
+const submissionReferenceItems = (references, selectedReference) => {
+  const options = [...new Set([
+    ...references,
+    ...(selectedReference ? [selectedReference] : [])
+  ])]
+
+  return [
+    { value: '', text: 'Start typing a submission reference', selected: !selectedReference },
+    ...options.map((reference) => ({
+      value: reference,
+      text: reference,
+      selected: reference === selectedReference
+    }))
+  ]
+}
 
 const submittedValues = (payload) => ({
   day: text(payload['sampleTakenDate-day']),
@@ -67,7 +85,14 @@ const validate = (values, maxDate) => {
 }
 
 const renderPage = async (h, submissionFormState, values, { errors = {}, saveError } = {}) => {
-  const clientSummaryResult = await loadClientSummary(submissionFormState)
+  const [clientSummaryResult, referencesResult] = await Promise.all([
+    loadClientSummary(submissionFormState),
+    safeLoad(
+      () => getSubmissionReferences(submissionFormState.formData?.clientDetails),
+      'Error loading previous submission references:'
+    )
+  ])
+  const references = referencesResult.data || []
   const errorList = errors.sampleTakenDate
     ? [{ text: errors.sampleTakenDate, href: '#sampleTakenDate-day' }]
     : []
@@ -78,10 +103,12 @@ const renderPage = async (h, submissionFormState, values, { errors = {}, saveErr
     values,
     errors,
     saveError,
+    submissionReferenceItems: submissionReferenceItems(references, values.previousSubmissionReference),
+    submissionReferencesError: Boolean(referencesResult.error),
     errorList
   })
 
-  if (clientSummaryResult.clientSummaryError) {
+  if (clientSummaryResult.clientSummaryError || referencesResult.error) {
     return view.code(BAD_GATEWAY_STATUS)
   }
 

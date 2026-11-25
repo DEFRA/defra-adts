@@ -135,7 +135,8 @@ describe('Submission animal details page', () => {
         addressLine2: 'Village',
         county: 'Northshire',
         postcode: 'AB1 2CD',
-        cph: '48/234/2348'
+        cph: '48/234/2348',
+        animalsAtClientAddress: 'yes'
       }
     })
     track(session, clientResponse)

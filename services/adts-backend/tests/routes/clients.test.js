@@ -26,6 +26,7 @@ describe('GET /GetClients', () => {
   beforeAll(async () => {
     process.env.PORT = '3200'
     process.env.SUBMISSIONS_SERVICE_URL = 'http://localhost:3100'
+    process.env.LIMS_PVS_ID = 'PVS001'
     server = await createServer({ docClient })
   })
 
@@ -47,7 +48,7 @@ describe('GET /GetClients', () => {
 
     const response = await server.inject({ method: 'GET', url: '/GetClients' })
 
-    expect(globalThis.fetch).toHaveBeenCalledWith('http://localhost:3100/GetClients')
+    expect(globalThis.fetch).toHaveBeenCalledWith('http://localhost:3100/v1/clients?pvsId=PVS001')
     expect(response.statusCode).toBe(200)
     expect(response.result).toEqual([
       {
@@ -126,5 +127,21 @@ describe('GET /GetClients', () => {
     expect(response.statusCode).toBe(502)
     expect(response.result).toEqual({ error: 'Unable to reach submissions service' })
     expect(console.error).toHaveBeenCalledWith('Error contacting submissions service:', 'ECONNREFUSED')
+  })
+
+  test('returns 500 when the LIMS practice ID is not configured', async () => {
+    delete process.env.LIMS_PVS_ID
+    jest.spyOn(globalThis, 'fetch')
+    jest.spyOn(console, 'error').mockImplementation(() => {})
+
+    try {
+      const response = await server.inject({ method: 'GET', url: '/GetClients' })
+
+      expect(response.statusCode).toBe(500)
+      expect(response.result).toEqual({ error: 'LIMS client lookup is not configured' })
+      expect(globalThis.fetch).not.toHaveBeenCalled()
+    } finally {
+      process.env.LIMS_PVS_ID = 'PVS001'
+    }
   })
 })

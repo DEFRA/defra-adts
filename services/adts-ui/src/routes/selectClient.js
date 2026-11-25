@@ -2,6 +2,12 @@ import Joi from 'joi'
 import { BAD_GATEWAY_STATUS, BAD_REQUEST_STATUS } from './submissionViewHelpers.js'
 import { DRAFT_SAVE_ERROR, persistSubmissionDraft } from './submissionDrafts.js'
 import {
+  getAnimalLocation,
+  getSubmittedClientDetails,
+  hasSubmittedClientFields,
+  saveClientDraftForAnimalAddress
+} from './selectClientDrafts.js'
+import {
   animalAddressFieldNames,
   animalAddressPageName,
   clientAddressPageName,
@@ -147,6 +153,10 @@ const buildClientDetails = (payload, client, animalAddressClient, savedClientDet
     animalAddressClient,
     savedClientDetails
   )
+  const animalAddressData = {
+    ...getAnimalAddressDetailsToSave(payload, animalAddressClient, savedClientDetails),
+    ...getSavedAnimalAddressDetails(payload, animalAddressDetails)
+  }
 
   return {
     ...(client && { clientId: client.clientId }),
@@ -154,117 +164,8 @@ const buildClientDetails = (payload, client, animalAddressClient, savedClientDet
       clientFieldNames.map((fieldName) => [fieldName, String(details[fieldName] || '').trim()])
     ),
     ...(payload.animalsAtClientAddress && { animalsAtClientAddress: payload.animalsAtClientAddress }),
-    ...getAnimalAddressDetailsToSave(payload, animalAddressClient, savedClientDetails),
-    ...getSavedAnimalAddressDetails(payload, animalAddressDetails)
+    ...animalAddressData
   }
-}
-
-const hasSubmittedClientFields = (payload) =>
-  clientFieldNames.some((fieldName) => Object.hasOwn(payload, fieldName))
-
-const getAnimalAddressDetailsForLocation = (payload, savedDetails, animalAddressClient) => {
-  const hasSubmittedFields = animalAddressFieldNames.some((fieldName) => Object.hasOwn(payload, fieldName))
-  if (hasSubmittedFields) {
-    return getAnimalAddressFieldValues(payload)
-  }
-  return savedDetails.animalAddressDetails ||
-    (animalAddressClient ? getClientFieldValues(animalAddressClient) : getClientFieldValues())
-}
-
-const getAnimalLocation = (payload, formData, animalAddressClient) => {
-  const savedDetails = formData.clientDetails || {}
-
-  return {
-    animalsAtClientAddress: payload.animalsAtClientAddress ??
-      savedDetails.animalsAtClientAddress,
-    animalAddressClientId: payload.animalAddressClientId ??
-      savedDetails.animalAddressClientId ?? '',
-    animalAddress: payload.animalAddress ??
-      savedDetails.animalAddress ?? '',
-    animalAddressDetails: getAnimalAddressDetailsForLocation(payload, savedDetails, animalAddressClient)
-  }
-}
-
-const getSubmittedClientDetails = (payload, selectedClient, formData) => {
-  if (hasSubmittedClientFields(payload)) {
-    return {
-      ...getClientFieldValues(payload),
-      ...(selectedClient && { clientId: selectedClient.clientId })
-    }
-  }
-
-  if (!selectedClient) {
-    return formData.clientDetails || getClientFieldValues()
-  }
-
-  const savedDetails = formData.clientDetails
-  if (savedDetails?.clientId !== selectedClient.clientId) {
-    return getClientFieldValues(selectedClient)
-  }
-
-  return { ...getClientFieldValues(selectedClient), ...savedDetails }
-}
-
-export const saveClientDraftForAnimalAddress = ({
-  request,
-  submissionFormStateKey,
-  submissionFormState,
-  formData,
-  payload,
-  selectedClient,
-  selectedAnimalAddress,
-  startNewAnimalAddress = false
-}) => {
-  const clientDetails = { ...getSubmittedClientDetails(payload, selectedClient, formData) }
-  const animalLocation = selectedAnimalAddress
-    ? {
-        animalAddressClientId: String(selectedAnimalAddress.clientId),
-        animalAddress: getClientLabel(selectedAnimalAddress)
-      }
-    : {}
-  if (startNewAnimalAddress) {
-    delete clientDetails.animalAddressClientId
-    delete clientDetails.animalAddress
-    delete clientDetails.animalAddressDetails
-  }
-
-  request.yar.set(submissionFormStateKey, {
-    ...submissionFormState,
-    formData: {
-      ...formData,
-      clientDetails: {
-        ...clientDetails,
-        animalsAtClientAddress: 'no',
-        ...animalLocation
-      }
-    }
-  })
-  request.yar.touch()
-}
-
-export const saveClientDraftForAddress = (
-  request,
-  submissionFormStateKey,
-  submissionFormState,
-  formData,
-  payload,
-  selectedClient,
-  selectedAnimalAddress
-) => {
-  const clientDetails = {
-    ...getSubmittedClientDetails(payload, selectedClient, formData),
-    ...(selectedClient && { clientId: selectedClient.clientId })
-  }
-  const animalLocation = getAnimalLocation(payload, formData, selectedAnimalAddress)
-
-  request.yar.set(submissionFormStateKey, {
-    ...submissionFormState,
-    formData: {
-      ...formData,
-      clientDetails: { ...clientDetails, ...animalLocation }
-    }
-  })
-  request.yar.touch()
 }
 
 export const animalAddressSchema = Joi.object({
@@ -352,20 +253,18 @@ const handleClientPostIntent = ({
     : undefined
 }
 
-const createPostHandler = (submissionFormStateKey) => async (request, h) => {
-  const submissionFormState = request.yar.get(submissionFormStateKey) || {}
-  const formData = submissionFormState.formData || {}
-  const payload = request.payload
-  if (payload.intent === 'new') {
-    return h.redirect(`/${clientAddressPageName}?intent=new`)
-  }
-
-  const clients = await loadClients()
-  const counties = await loadCounties()
-  const selectedClient = clients.find((client) => client.clientId === payload.clientId)
-  const selectedAnimalAddress = clients.find((client) =>
-    String(client.clientId) === String(payload.animalAddressClientId)
-  )
+const handleClientSubmission = async ({
+  request,
+  h,
+  submissionFormStateKey,
+  submissionFormState,
+  formData,
+  payload,
+  clients,
+  counties,
+  selectedClient,
+  selectedAnimalAddress
+}) => {
   const savedClientDetails = formData.clientDetails || {}
   const hasSubmittedFields = hasSubmittedClientFields(payload) || isManualClientEntry(savedClientDetails)
   const intentResponse = handleClientPostIntent({
@@ -384,21 +283,19 @@ const createPostHandler = (submissionFormStateKey) => async (request, h) => {
     return intentResponse
   }
 
-  const cphErrors = getCphErrors(payload)
-  if (Object.keys(cphErrors).length) {
-    return renderCphValidationErrors(
-      h,
-      submissionFormState,
-      clients,
-      counties,
-      payload,
-      selectedClient,
-      cphErrors
-    )
-  }
-
-  if (shouldShowClientSelectionError(payload, selectedClient, hasSubmittedFields)) {
-    return renderClientSelectionError(h, submissionFormState, clients, counties, payload, selectedClient)
+  const validationError = renderClientSubmissionValidationError({
+    h,
+    submissionFormState,
+    clients,
+    counties,
+    payload,
+    selectedClient,
+    selectedAnimalAddress,
+    formData,
+    hasSubmittedFields
+  })
+  if (validationError) {
+    return validationError
   }
 
   const updatedFormData = {
@@ -424,6 +321,131 @@ const createPostHandler = (submissionFormStateKey) => async (request, h) => {
   }
 
   return h.redirect(`/${nextPageName}`)
+}
+
+const isAnimalAddressMissing = (payload, selectedAnimalAddress) =>
+  payload.animalsAtClientAddress === 'no' &&
+  !selectedAnimalAddress &&
+  !payload.animalAddress?.trim()
+
+const renderAnimalAddressRequiredError = ({
+  h,
+  submissionFormState,
+  clients,
+  counties,
+  payload,
+  selectedClient,
+  selectedAnimalAddress,
+  formData,
+  hasSubmittedClientFields
+}) => {
+  const error = 'Enter or select an animal address'
+  const clientDetails = formData.clientDetails || {}
+
+  return renderClientDetailsPage(
+    h,
+    submissionFormState,
+    clients,
+    counties,
+    {
+      selectedClientId: selectedClient?.clientId || clientDetails.clientId || '',
+      ...getAnimalLocation(payload, formData, selectedAnimalAddress),
+      ...(hasSubmittedClientFields && {
+        clientDetails: getSubmittedClientDetails(payload, selectedClient, formData),
+        editMode: true
+      }),
+      errors: { animalAddress: error },
+      errorList: [{ text: error, href: '#animalAddress' }]
+    }
+  ).code(BAD_REQUEST_STATUS)
+}
+
+const renderClientSubmissionValidationError = ({
+  h,
+  submissionFormState,
+  clients,
+  counties,
+  payload,
+  selectedClient,
+  selectedAnimalAddress,
+  formData,
+  hasSubmittedFields
+}) => {
+  const cphErrors = getCphErrors(payload)
+  if (Object.keys(cphErrors).length) {
+    return renderCphValidationErrors(
+      h,
+      submissionFormState,
+      clients,
+      counties,
+      payload,
+      selectedClient,
+      cphErrors
+    )
+  }
+
+  if (shouldShowClientSelectionError(payload, selectedClient, hasSubmittedFields)) {
+    return renderClientSelectionError(h, submissionFormState, clients, counties, payload, selectedClient)
+  }
+
+  if (!payload.animalsAtClientAddress) {
+    const error = 'Select whether the animals are at the client’s address'
+    return renderClientDetailsPage(
+      h,
+      submissionFormState,
+      clients,
+      counties,
+      {
+        animalsAtClientAddress: payload.animalsAtClientAddress,
+        errors: { animalsAtClientAddress: error },
+        errorList: [{ text: error, href: '#animalsAtClientAddress' }]
+      }
+    ).code(BAD_REQUEST_STATUS)
+  }
+
+  if (isAnimalAddressMissing(payload, selectedAnimalAddress)) {
+    return renderAnimalAddressRequiredError({
+      h,
+      submissionFormState,
+      clients,
+      counties,
+      payload,
+      selectedClient,
+      selectedAnimalAddress,
+      formData,
+      hasSubmittedClientFields: hasSubmittedClientFields(payload)
+    })
+  }
+
+  return undefined
+}
+
+const createPostHandler = (submissionFormStateKey) => async (request, h) => {
+  const submissionFormState = request.yar.get(submissionFormStateKey) || {}
+  const formData = submissionFormState.formData || {}
+  const payload = request.payload
+  if (payload.intent === 'new') {
+    return h.redirect(`/${clientAddressPageName}?intent=new`)
+  }
+
+  const clients = await loadClients()
+  const counties = await loadCounties()
+  const selectedClient = clients.find((client) => client.clientId === payload.clientId)
+  const selectedAnimalAddress = clients.find((client) =>
+    String(client.clientId) === String(payload.animalAddressClientId)
+  )
+  return handleClientSubmission({
+    request,
+    h,
+    submissionFormStateKey,
+    submissionFormState,
+    formData,
+    payload,
+    clients,
+    counties,
+    selectedClient,
+    selectedAnimalAddress
+  })
 }
 
 const getStartRoute = (submissionFormStateKey) => ({

@@ -105,6 +105,9 @@ if (speciesSelect) {
 }
 
 const enhanceAddressLookup = (selectElement, editButton) => {
+  const getOptionText = (option) => (option.textContent || option.innerText).trim()
+  const getAutocompleteInput = () =>
+    selectElement.previousElementSibling.querySelector('.autocomplete__input')
   const syncEditButton = () => {
     if (editButton) {
       editButton.hidden = !selectElement.value && editButton.dataset.manualAddress !== 'true'
@@ -116,12 +119,27 @@ const enhanceAddressLookup = (selectElement, editButton) => {
     selectElement,
     onConfirm: (query) => {
       const selectedOption = Array.from(selectElement.options)
-        .find((option) => (option.textContent || option.innerText) === query)
+        .find((option) => getOptionText(option) === query.trim())
 
       if (selectedOption) {
         selectedOption.selected = true
-        syncEditButton()
+        getAutocompleteInput().value = getOptionText(selectedOption)
+      } else {
+        selectElement.value = ''
       }
+      syncEditButton()
+    }
+  })
+
+  const autocompleteInput = getAutocompleteInput()
+  autocompleteInput.addEventListener('input', (event) => {
+    const selectedOption = Array.from(selectElement.options)
+      .find((option) => option.value === selectElement.value)
+    const selectedText = selectedOption && getOptionText(selectedOption)
+
+    if (selectedText !== event.target.value.trim()) {
+      selectElement.value = ''
+      syncEditButton()
     }
   })
 
@@ -132,7 +150,10 @@ const enhanceAddressLookup = (selectElement, editButton) => {
 }
 
 if (clientSelect) {
-  enhanceAddressLookup(clientSelect, document.querySelector('[data-client-edit-button]'))
+  enhanceAddressLookup(
+    clientSelect,
+    document.querySelector('[data-client-edit-button]')
+  )
 }
 
 if (animalAddressSelect) {
@@ -196,6 +217,16 @@ if (breedSelect) {
     defaultValue: '',
     inputClasses: HALF_WIDTH_INPUT_CLASS,
     selectElement: breedSelect
+  })
+}
+
+const previousSubmissionReference = document.querySelector('select#previousSubmissionReference')
+
+if (previousSubmissionReference) {
+  accessibleAutocomplete.enhanceSelectElement({
+    defaultValue: previousSubmissionReference.dataset.defaultValue,
+    inputClasses: HALF_WIDTH_INPUT_CLASS,
+    selectElement: previousSubmissionReference
   })
 }
 

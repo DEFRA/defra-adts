@@ -10,6 +10,7 @@ describe('Submissions route source integration', () => {
     process.env.NODE_ENV = 'development'
     process.env.PORT = '3200'
     process.env.SUBMISSIONS_SERVICE_URL = 'http://localhost:3100'
+    process.env.LIMS_PVS_ID = 'PVS001'
     server = await createServer({ docClient })
   })
 
@@ -47,12 +48,18 @@ describe('Submissions route source integration', () => {
     expect(response.result.results[0].id).toBe('draft-001')
   })
 
-  test('uses submissions-service proxy for non-Draft submissions and preserves downstream payload', async () => {
-    const downstreamPayload = {
-      results: [{ id: 'sub-001', statuses: ['Submitted'] }],
-      totalCount: 1
-    }
-    const fetchSpy = jest.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify(downstreamPayload), {
+  test('calls LIMS submissions service for non-Draft submissions with proper structure', async () => {
+    const limsPayload = [{
+      draftSubmissionId: '',
+      submissionId: 'sub-001',
+      status: 'Submitted',
+      clientName: 'Acme Farm',
+      clientFarm: 'Home Farm',
+      clinician: 'Dr Vet',
+      submittedDate: '2026-10-20T00:00:00.000Z',
+      products: []
+    }]
+    const fetchSpy = jest.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify(limsPayload), {
       status: 200,
       headers: { 'Content-Type': 'application/json' }
     }))
@@ -64,9 +71,16 @@ describe('Submissions route source integration', () => {
 
     expect(response.statusCode).toBe(200)
     expect(docClient.send).not.toHaveBeenCalled()
+    // Verify the call goes to the LIMS v1 endpoint
     expect(fetchSpy).toHaveBeenCalledWith(
-      'http://localhost:3100/submissions?status=submitted&client=Acme'
+      expect.stringContaining('http://localhost:3100/v1/submissions?pvsId=PVS001')
     )
-    expect(response.result).toEqual(downstreamPayload)
+    // Verify the response is mapped and filtered correctly
+    expect(response.result.totalCount).toBe(1)
+    expect(response.result.results[0]).toMatchObject({
+      id: 'sub-001',
+      statuses: ['Submitted'],
+      client: 'Acme Farm'
+    })
   })
 })

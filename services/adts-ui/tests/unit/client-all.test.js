@@ -35,25 +35,31 @@ describe('client initialization', () => {
   })
 
   test('enhances client and animal address lookups with selection-specific edit controls', async () => {
-    const clientOption = { textContent: 'Acme Farm', selected: false }
-    const animalAddressOption = { textContent: 'Green Acres', selected: false }
+    const clientOption = { value: '101', textContent: 'Acme Farm', selected: false }
+    const animalAddressOption = { value: '102', textContent: 'Green Acres', selected: false }
+    const clientInput = { value: '', addEventListener: jest.fn(), dispatchEvent: jest.fn() }
+    const animalAddressInput = { value: '', addEventListener: jest.fn(), dispatchEvent: jest.fn() }
     const clientSelect = {
       dataset: { defaultValue: 'Acme Farm' },
-      options: [clientOption]
+      options: [clientOption],
+      previousElementSibling: { querySelector: jest.fn(() => clientInput) }
     }
     const animalAddressSelect = {
       dataset: { defaultValue: 'Green Acres' },
-      options: [animalAddressOption]
+      options: [animalAddressOption],
+      previousElementSibling: { querySelector: jest.fn(() => animalAddressInput) }
     }
     Object.defineProperty(clientSelect, 'value', {
-      get: () => clientOption.selected ? '101' : ''
+      get: () => clientOption.selected ? '101' : '',
+      set: (value) => { clientOption.selected = value === '101' }
     })
     Object.defineProperty(animalAddressSelect, 'value', {
-      get: () => animalAddressOption.selected ? '102' : ''
+      get: () => animalAddressOption.selected ? '102' : '',
+      set: (value) => { animalAddressOption.selected = value === '102' }
     })
     const speciesSelect = { dataset: { defaultValue: 'Sheep' } }
     const editButton = { dataset: {}, hidden: false }
-    const animalAddressEditButton = { dataset: { manualAddress: 'true' }, hidden: false }
+    const animalAddressEditButton = { dataset: { manualAddress: 'false' }, hidden: false }
     const hint = { setAttribute: jest.fn() }
     globalThis.document = {
       body: {},
@@ -90,8 +96,12 @@ describe('client initialization', () => {
       selectElement: speciesSelect
     })
     expect(editButton.hidden).toBe(true)
-    expect(animalAddressEditButton.hidden).toBe(false)
+    expect(animalAddressEditButton.hidden).toBe(true)
     expect(clientSelect.addEventListener).toHaveBeenCalledWith('change', expect.any(Function))
+    expect(clientInput.addEventListener).toHaveBeenCalledWith('input', expect.any(Function))
+    expect(globalThis.document.querySelector).not.toHaveBeenCalledWith('[data-clear-client]')
+    expect(globalThis.document.querySelector).not.toHaveBeenCalledWith('[data-clear-animal-address]')
+    expect(animalAddressInput.addEventListener).toHaveBeenCalledWith('input', expect.any(Function))
     expect(hint.setAttribute).toHaveBeenCalledWith('aria-hidden', 'true')
     expect(mutationObserver).toHaveBeenCalledWith(expect.any(Function))
     expect(observe).toHaveBeenCalledWith(globalThis.document.body, { childList: true, subtree: true })
@@ -101,7 +111,16 @@ describe('client initialization', () => {
     )[0]
     clientLookupConfig.onConfirm('Acme Farm')
     expect(clientOption.selected).toBe(true)
+    expect(clientInput.value).toBe('Acme Farm')
     expect(editButton.hidden).toBe(false)
+    clientInput.value = ''
+    clientInput.addEventListener.mock.calls[0][1]({ target: clientInput })
+    expect(clientOption.selected).toBe(false)
+    expect(editButton.hidden).toBe(true)
+    clientLookupConfig.onConfirm('Acme Farm')
+    clientInput.value = 'Acme'
+    clientInput.addEventListener.mock.calls[0][1]({ target: clientInput })
+    expect(clientOption.selected).toBe(false)
 
     const animalAddressLookupConfig = enhanceSelectElement.mock.calls.find(([config]) =>
       config.selectElement === animalAddressSelect
@@ -109,6 +128,14 @@ describe('client initialization', () => {
     animalAddressLookupConfig.onConfirm('Green Acres')
     expect(animalAddressOption.selected).toBe(true)
     expect(animalAddressEditButton.hidden).toBe(false)
+    animalAddressLookupConfig.onConfirm('Green Acres')
+    expect(animalAddressOption.selected).toBe(true)
+    expect(animalAddressInput.value).toBe('Green Acres')
+    expect(animalAddressEditButton.hidden).toBe(false)
+    animalAddressInput.value = ''
+    animalAddressInput.addEventListener.mock.calls[0][1]({ target: animalAddressInput })
+    expect(animalAddressOption.selected).toBe(false)
+    expect(animalAddressEditButton.hidden).toBe(true)
 
     clientOption.selected = false
     clientSelect.addEventListener.mock.calls[0][1]()
@@ -440,6 +467,26 @@ describe('client initialization', () => {
       defaultValue: '',
       inputClasses: 'govuk-!-width-one-half',
       selectElement: breedSelect
+    })
+  })
+
+  test('enhances the previous submission reference select for autocomplete', async () => {
+    const submissionReferenceSelect = {
+      dataset: { defaultValue: 'Start typing a submission reference' }
+    }
+    globalThis.document = {
+      querySelector: jest.fn((selector) => selector === 'select#previousSubmissionReference'
+        ? submissionReferenceSelect
+        : null),
+      querySelectorAll: jest.fn().mockReturnValue([])
+    }
+
+    await import('../../src/client/all.js')
+
+    expect(enhanceSelectElement).toHaveBeenCalledWith({
+      defaultValue: 'Start typing a submission reference',
+      inputClasses: 'govuk-!-width-one-half',
+      selectElement: submissionReferenceSelect
     })
   })
 

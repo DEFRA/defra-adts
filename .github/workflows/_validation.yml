@@ -81,8 +81,6 @@ jobs:
     permissions:
       contents: read
 
-    env:
-      WORKFLOW_SCRIPTS_DIR: ../../.github/workflows/scripts
     defaults:
       run:
         shell: bash
@@ -96,7 +94,7 @@ jobs:
           fetch-depth: 0
 
       - name: Set up Node.js
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: ${{ inputs.node-version }}
           cache: npm

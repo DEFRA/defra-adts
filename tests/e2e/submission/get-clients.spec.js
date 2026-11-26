@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test'
 
-const limsUrl = 'http://localhost:8500'
+const limsUrl = 'http://127.0.0.1:8500'
 
 test.describe('Client lookup via LIMS', () => {
   test('renders LIMS clients as options and queries LIMS server-side', async ({ page }) => {

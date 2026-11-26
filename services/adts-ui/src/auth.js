@@ -48,6 +48,8 @@ const providers = {
 }
 
 const publicPaths = new Set(['/health', '/connection_health'])
+const FIRST_CLIENT_ERROR_STATUS_CODE = 400
+const STATUS_CODE_AFTER_SERVER_ERRORS = 600
 
 // Local-only exception so a local OIDC stub can be used over plain HTTP.
 const isLocalInsecureAllowed = (provider) => {
@@ -62,15 +64,21 @@ const isLocalInsecureAllowed = (provider) => {
   }
 }
 
-const getRuntimeConfig = () => {
+const getProvider = () => {
   const isProduction = process.env.NODE_ENV === 'production'
   const providerName = process.env.AUTH_PROVIDER || (isProduction ? '' : 'defra-id')
-  const mode = process.env.AUTH_MODE || (process.env.NODE_ENV === 'test' ? 'mock' : '')
   const provider = providers[providerName]
 
   if (!provider) {
     throw new Error('AUTH_PROVIDER must be set to "defra-id" or "entra"')
   }
+
+  return provider
+}
+
+const getMode = () => {
+  const isProduction = process.env.NODE_ENV === 'production'
+  const mode = process.env.AUTH_MODE || (process.env.NODE_ENV === 'test' ? 'mock' : '')
 
   if (mode !== 'mock' && mode !== 'live') {
     throw new Error('AUTH_MODE must be set to "mock" or "live"')
@@ -80,22 +88,33 @@ const getRuntimeConfig = () => {
     throw new Error('AUTH_MODE must be "live" in production')
   }
 
-  if (mode === 'live' && process.env.NODE_ENV === 'development' && !isLocalInsecureAllowed(provider)) {
+  return mode
+}
+
+const validateLiveConfiguration = (provider, mode) => {
+  if (mode !== 'live') {
+    return
+  }
+
+  if (process.env.NODE_ENV === 'development' && !isLocalInsecureAllowed(provider)) {
     throw new Error(
       'Live authentication requires secure cookies; use mock mode in development, ' +
         'or set AUTH_ALLOW_INSECURE_LOCAL=true with a localhost public base URL'
     )
   }
 
-  if (mode === 'live') {
-    const missing = provider.requiredLiveVariables.filter(
-      (name) => !process.env[name]
-    )
-    if (missing.length) {
-      throw new Error(`Missing live authentication configuration: ${missing.join(', ')}`)
-    }
+  const missing = provider.requiredLiveVariables.filter(
+    (name) => !process.env[name]
+  )
+  if (missing.length) {
+    throw new Error(`Missing live authentication configuration: ${missing.join(', ')}`)
   }
+}
 
+const getRuntimeConfig = () => {
+  const provider = getProvider()
+  const mode = getMode()
+  validateLiveConfiguration(provider, mode)
   return { provider, mode }
 }
 
@@ -134,8 +153,12 @@ export async function registerAuthentication (server) {
   server.ext('onPreResponse', (request, h) => {
     const response = request.response
     if (response?.isBoom) {
-      const intended = response.statusCode
-      if (Number.isInteger(intended) && intended >= 400 && intended < 600) {
+      const intended = response.output.statusCode
+      if (
+        Number.isInteger(intended) &&
+        intended >= FIRST_CLIENT_ERROR_STATUS_CODE &&
+        intended < STATUS_CODE_AFTER_SERVER_ERRORS
+      ) {
         return h
           .response(response.message || 'Error')
           .code(intended)

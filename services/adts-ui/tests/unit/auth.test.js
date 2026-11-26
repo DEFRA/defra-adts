@@ -1,4 +1,5 @@
 import { describe, test, expect, afterEach } from '@jest/globals'
+import Joi from 'joi'
 import createServer from '../../src/app.js'
 
 const liveEnv = {
@@ -19,7 +20,9 @@ describe('unauthenticated access', () => {
 
   const setEnv = (values) => {
     for (const [key, value] of Object.entries(values)) {
-      original[key] = process.env[key]
+      if (!(key in original)) {
+        original[key] = process.env[key]
+      }
       process.env[key] = value
     }
   }
@@ -65,6 +68,28 @@ describe('unauthenticated access', () => {
     await expect(createServer()).rejects.toThrow('AUTH_MODE must be set to "mock" or "live"')
   })
 
+  test.each([
+    [
+      'an unsupported provider',
+      { ...liveEnv, NODE_ENV: 'development', AUTH_PROVIDER: 'unknown', AUTH_MODE: 'mock' },
+      'AUTH_PROVIDER must be set to "defra-id" or "entra"'
+    ],
+    [
+      'an unsupported mode',
+      { ...liveEnv, NODE_ENV: 'development', AUTH_MODE: 'disabled' },
+      'AUTH_MODE must be set to "mock" or "live"'
+    ],
+    [
+      'mock mode in production',
+      { ...liveEnv, NODE_ENV: 'production', AUTH_MODE: 'mock' },
+      'AUTH_MODE must be "live" in production'
+    ]
+  ])('rejects %s', async (_description, environment, error) => {
+    setEnv(environment)
+
+    await expect(createServer()).rejects.toThrow(error)
+  })
+
   test('rejects live mode in development unless the local HTTP exception is set', async () => {
     setEnv({ ...liveEnv, NODE_ENV: 'development' })
     await expect(createServer()).rejects.toThrow('Live authentication requires secure cookies')
@@ -74,5 +99,79 @@ describe('unauthenticated access', () => {
       DEFRA_ID_PUBLIC_BASE_URL: 'https://adts.example.test'
     })
     await expect(createServer()).rejects.toThrow('Live authentication requires secure cookies')
+  })
+
+  test('allows live authentication with the explicit localhost exception', async () => {
+    setEnv({
+      ...liveEnv,
+      NODE_ENV: 'development',
+      AUTH_ALLOW_INSECURE_LOCAL: 'true',
+      DEFRA_ID_PUBLIC_BASE_URL: 'http://localhost:3000'
+    })
+
+    server = await createServer()
+
+    expect(server).toBeDefined()
+  })
+
+  test('supports live Entra authentication configuration', async () => {
+    setEnv({
+      ...liveEnv,
+      NODE_ENV: 'test',
+      AUTH_PROVIDER: 'entra',
+      ENTRA_TENANT_ID: 'tenant-id',
+      ENTRA_CLIENT_ID: 'client-id',
+      ENTRA_CLIENT_SECRET: 'client-secret',
+      ENTRA_PUBLIC_BASE_URL: 'https://adts.example.test',
+      ENTRA_API_SCOPE: 'api://adts-api/access_as_user'
+    })
+
+    server = await createServer()
+
+    expect(server).toBeDefined()
+  })
+
+  test('rejects invalid local public URLs when insecure development auth is enabled', async () => {
+    setEnv({
+      ...liveEnv,
+      NODE_ENV: 'development',
+      AUTH_ALLOW_INSECURE_LOCAL: 'true',
+      DEFRA_ID_PUBLIC_BASE_URL: 'not-a-url'
+    })
+
+    await expect(createServer()).rejects.toThrow('Live authentication requires secure cookies')
+  })
+
+  test('rejects incomplete live authentication configuration', async () => {
+    setEnv({ ...liveEnv, NODE_ENV: 'test' })
+    delete process.env.DEFRA_ID_POLICY
+
+    await expect(createServer()).rejects.toThrow(
+      'Missing live authentication configuration: DEFRA_ID_POLICY'
+    )
+  })
+
+  test('returns Boom errors with their intended HTTP status', async () => {
+    setEnv({
+      AUTH_MODE: 'mock',
+      NODE_ENV: 'test',
+      SESSION_SECRET: liveEnv.SESSION_SECRET
+    })
+    server = await createServer()
+    server.route({
+      method: 'GET',
+      path: '/test-error',
+      options: {
+        validate: {
+          query: Joi.object({ name: Joi.string().required() })
+        }
+      },
+      handler: () => 'ok'
+    })
+
+    const response = await server.inject({ method: 'GET', url: '/test-error' })
+
+    expect(response.statusCode).toBe(400)
+    expect(typeof response.result).toBe('string')
   })
 })

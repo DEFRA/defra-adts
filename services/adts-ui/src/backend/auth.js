@@ -1,14 +1,11 @@
 export const getBackendHeaders = (request) => {
   const session = request.server.app.getAuthSession(request)
-  const headers = {}
 
-  if (session.token) {
-    headers.Authorization = `Bearer ${session.token}`
-  } else if (request.server.app.authMode === 'live') {
+  if (!session.token && request.server.app.authMode === 'live') {
     throw new Error('Authenticated access token is missing')
   }
 
-  return headers
+  return session.token ? { Authorization: `Bearer ${session.token}` } : {}
 }
 
 export const fetchFromBackend = (url, request, additionalHeaders = {}) => {

@@ -1,6 +1,33 @@
 import Boom from '@hapi/boom'
 import { createRemoteJWKSet, decodeJwt, jwtVerify } from 'jose'
 
+const AUTH_STRATEGY = 'oidc-bearer'
+
+const parseBearerToken = (authorization) => {
+  if (typeof authorization !== 'string') {
+    return undefined
+  }
+
+  const header = authorization.trim()
+  const separator = header.indexOf(' ')
+  if (separator <= 0) {
+    return undefined
+  }
+
+  const scheme = header.slice(0, separator)
+  const token = header.slice(separator).trim()
+  if (
+    scheme.toLowerCase() !== 'bearer' ||
+    !token ||
+    token.includes(' ') ||
+    token.includes('\t')
+  ) {
+    return undefined
+  }
+
+  return token
+}
+
 const loadProvider = async ({ name, discoveryUrl, audience, requiredScope }) => {
   if (new URL(discoveryUrl).protocol !== 'https:') {
     throw new Error(`${name} OIDC discovery URL must use HTTPS`)
@@ -102,7 +129,7 @@ export const registerAuthentication = async (server) => {
   const providers = mode === 'live' ? await loadProviders() : []
   const isNonProduction = process.env.NODE_ENV !== 'production'
 
-  server.auth.scheme('oidc-bearer', () => ({
+  server.auth.scheme(AUTH_STRATEGY, () => ({
     async authenticate (request, h) {
       if (mode === 'mock') {
         const ownerId = isNonProduction
@@ -118,20 +145,20 @@ export const registerAuthentication = async (server) => {
         })
       }
 
-      const match = /^Bearer\s+(.+)$/i.exec(request.headers.authorization || '')
-      if (!match) {
+      const token = parseBearerToken(request.headers.authorization)
+      if (!token) {
         throw Boom.unauthorized('Bearer access token is required')
       }
 
       try {
         return h.authenticated({
-          credentials: await verifyAccessToken(match[1], providers)
+          credentials: await verifyAccessToken(token, providers)
         })
       } catch {
         throw Boom.unauthorized('Access token is invalid')
       }
     }
   }))
-  server.auth.strategy('oidc-bearer', 'oidc-bearer')
-  server.auth.default('oidc-bearer')
+  server.auth.strategy(AUTH_STRATEGY, AUTH_STRATEGY)
+  server.auth.default(AUTH_STRATEGY)
 }

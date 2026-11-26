@@ -43,7 +43,7 @@ curl http://127.0.0.1:9182/health
 curl 'http://127.0.0.1:9182/v1/products?filter=mastitis&species=CATTLE'
 ```
 
-Reset in-memory drafts and submissions:
+The mock starts with seeded sample records covering each status: In progress (`VI-26-900001`), Submitted (`-900002`), Cancelled (`-900003`), Samples overdue (`-900004`), All tests complete (`-900005`) and a Draft (`900`), all for client `Example Farm`. Reset clears all drafts and submissions and re-seeds them:
 
 ```sh
 curl -X POST http://127.0.0.1:8500/__admin/reset

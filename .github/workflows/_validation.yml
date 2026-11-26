@@ -49,6 +49,12 @@ on:
         default: true
         type: boolean
 
+      sonarqube-scan-directory:
+        description: Base directory for SonarQube scanning
+        required: false
+        default: ""
+        type: string
+
       test-command:
         description: Command used to run tests
         required: false
@@ -75,8 +81,6 @@ jobs:
     permissions:
       contents: read
 
-    env:
-      WORKFLOW_SCRIPTS_DIR: ../../.github/workflows/scripts
     defaults:
       run:
         shell: bash
@@ -90,7 +94,7 @@ jobs:
           fetch-depth: 0
 
       - name: Set up Node.js
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: ${{ inputs.node-version }}
           cache: npm
@@ -157,7 +161,7 @@ jobs:
         env:
           SONAR_TOKEN: ${{ secrets.SQ_ACCESS_TOKEN }}
         with:
-          projectBaseDir: ${{ inputs.service-directory }}
+          projectBaseDir: ${{ inputs.sonarqube-scan-directory }}
 
       - name: Write validation summary
         env:

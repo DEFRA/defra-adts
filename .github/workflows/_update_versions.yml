@@ -22,7 +22,7 @@ jobs:
         id: tag-collection
         shell: bash
         run: |
-          set -euo pipefail
+          set -euox pipefail
           
           get_latest_tag() {
             prefix=""

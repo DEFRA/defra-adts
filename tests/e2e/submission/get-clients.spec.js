@@ -17,6 +17,28 @@ test.describe('Client lookup via LIMS', () => {
     expect(limsRequests).toContainEqual({ pvsId: 'PVS001', filter: '' })
   })
 
+  test('creates a manual client, returns to client details, and continues to species', async ({ page }) => {
+    await page.goto('/submission-01-client-details')
+    await page.getByRole('link', { name: /create a new client/i }).click()
+    await expect(page).toHaveURL(/\/submission-01-client-address\?intent=new$/)
+
+    await page.getByRole('textbox', { name: 'Client name', exact: true }).fill('Manual E2E Client')
+    await page.getByRole('textbox', { name: 'Farm name', exact: true }).fill('Synthetic Farm')
+    await page.getByRole('textbox', { name: 'Address line 1', exact: true }).fill('1 Synthetic Road')
+    await page.getByRole('textbox', { name: 'Postcode', exact: true }).fill('AB1 2CD')
+    await page.getByRole('button', { name: 'Save' }).click()
+
+    await expect(page).toHaveURL(/\/submission-01-client-details$/)
+    await expect(page.getByRole('combobox', { name: 'Client' }))
+      .toHaveValue('Manual E2E Client, Synthetic Farm, 1 Synthetic Road, AB1 2CD')
+    await expect(page.getByRole('link', { name: 'Edit', exact: true }))
+      .toHaveAttribute('href', '/submission-01-client-address?intent=edit')
+
+    await page.getByRole('radio', { name: 'Yes', exact: true }).check()
+    await page.getByRole('button', { name: 'Continue' }).click()
+    await expect(page).toHaveURL(/\/submission-02-species$/)
+  })
+
   test('requires a client selection after returning from species', async ({ page }) => {
     await page.goto('/submission-01-client-details')
     await page.getByRole('combobox', { name: 'Client' }).fill('Example Farm')
@@ -35,6 +57,21 @@ test.describe('Client lookup via LIMS', () => {
 
     await expect(page).toHaveURL(/\/submission-01-client-details$/)
     await expect(page.getByText('Select a client from the list, or enter client details manually.'))
+      .toBeVisible()
+  })
+
+  test('requires an animal address when animals are not at the client address', async ({ page }) => {
+    await page.goto('/submission-01-client-details')
+    await page.getByRole('combobox', { name: 'Client' }).fill('Example Farm')
+    await page.getByRole('option', {
+      name: 'Example Farm, North Field, 1 Test Lane, Teston, Dorset, ZZ1 1ZZ, 12/345/6789',
+      exact: true
+    }).click()
+    await page.getByRole('radio', { name: 'No', exact: true }).check()
+    await page.getByRole('button', { name: 'Continue' }).click()
+
+    await expect(page).toHaveURL(/\/submission-01-client-details$/)
+    await expect(page.getByRole('link', { name: 'Enter or select an animal address' }))
       .toBeVisible()
   })
 
@@ -93,3 +130,4 @@ test.describe('Client lookup via LIMS', () => {
     await expect(page.getByRole('heading', { name: 'Edit animal address' })).toBeVisible()
   })
 })
+ 

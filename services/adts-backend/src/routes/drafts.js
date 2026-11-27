@@ -7,6 +7,7 @@ import {
   DraftValidationError,
   draftPageKeys
 } from '../client/drafts.js'
+import { getLimsIdForCiId } from '../data/ciLimsMapping.js'
 
 const saveDraftSchema = Joi.object({
   draftId: Joi.string().uuid(),
@@ -39,6 +40,20 @@ const registerDraftRoutes = (server, getDynamoClient) => {
       if (!ownerId) {
         return h.response({ error: 'An authenticated user is required to save drafts' })
           .code(constants.HTTP_STATUS_UNAUTHORIZED)
+      }
+
+      let pvsId
+      try {
+        pvsId = await getLimsIdForCiId(getDynamoClient(), request.auth.credentials.subject)
+      } catch (error) {
+        console.error('Error retrieving CI-to-LIMS mapping:', error.message)
+        return h.response({ error: 'Unable to retrieve LIMS ID mapping' })
+          .code(constants.HTTP_STATUS_BAD_GATEWAY)
+      }
+
+      if (!pvsId) {
+        return h.response({ error: 'No LIMS practice is associated with this account' })
+          .code(constants.HTTP_STATUS_FORBIDDEN)
       }
 
       try {

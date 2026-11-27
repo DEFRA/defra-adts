@@ -37,7 +37,7 @@ const getClientAddressPageRoute = (submissionFormStateKey) => ({
     const savedDetails = submissionFormState.formData?.clientDetails || {}
     const isEditing = request.query.intent === 'edit'
     const clientDetails = isEditing ? getClientFieldValues(savedDetails) : getClientFieldValues()
-    const counties = await loadCounties()
+    const counties = await loadCounties(request)
 
     return renderClientAddressPage(h, submissionFormState, counties, clientDetails, isEditing)
   }
@@ -53,7 +53,7 @@ const postClientAddressStartRoute = (submissionFormStateKey) => ({
     const submissionFormState = request.yar.get(submissionFormStateKey) || {}
     const formData = submissionFormState.formData || {}
     const payload = request.payload
-    const clients = await loadClients()
+    const clients = await loadClients(request)
     const selectedClient = clients.find((client) => String(client.clientId) === String(payload.clientId))
     const selectedAnimalAddress = clients.find((client) =>
       String(client.clientId) === String(payload.animalAddressClientId)
@@ -97,7 +97,7 @@ const postClientAddressRoute = (submissionFormStateKey) => ({
     }
 
     if (Object.keys(errors).length) {
-      const counties = await loadCounties()
+      const counties = await loadCounties(request)
       return renderClientAddressPage(
         h,
         submissionFormState,
@@ -134,8 +134,8 @@ const getAnimalAddressPageRoute = (submissionFormStateKey) => ({
   handler: async (request, h) => {
     const submissionFormState = request.yar.get(submissionFormStateKey) || {}
     const savedDetails = submissionFormState.formData?.clientDetails || {}
-    const clients = await loadClients()
-    const counties = await loadCounties()
+    const clients = await loadClients(request)
+    const counties = await loadCounties(request)
     const animalAddressClientId = request.query.animalAddressClientId || savedDetails.animalAddressClientId || ''
     const selectedAnimalAddress = clients.find((client) =>
       String(client.clientId) === String(animalAddressClientId)
@@ -162,7 +162,7 @@ const postAnimalAddressStartRoute = (submissionFormStateKey) => ({
     const submissionFormState = request.yar.get(submissionFormStateKey) || {}
     const formData = submissionFormState.formData || {}
     const payload = request.payload
-    const clients = await loadClients()
+    const clients = await loadClients(request)
     const selectedClient = clients.find((client) => String(client.clientId) === String(payload.clientId))
     const selectedAnimalAddress = clients.find((client) =>
       String(client.clientId) === String(payload.animalAddressClientId)
@@ -205,7 +205,7 @@ const postAnimalAddressRoute = (submissionFormStateKey) => ({
     }
 
     if (Object.keys(errors).length) {
-      const counties = await loadCounties()
+      const counties = await loadCounties(request)
       return renderAnimalAddressPage(h, submissionFormState, counties, details, {
         animalAddressClientId: request.payload.animalAddressClientId,
         isEditing: Boolean(request.payload.animalAddressClientId),

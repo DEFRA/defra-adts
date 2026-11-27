@@ -7,13 +7,10 @@ describe('LIMS Backend Proxy - Network Mock Tests', () => {
   let server
   let limsClient
   let originalLimsApiUrl
-  let originalPvsId
 
   beforeAll(async () => {
     originalLimsApiUrl = process.env.LIMS_API_URL
-    originalPvsId = process.env.LIMS_PVS_ID
     process.env.LIMS_API_URL = 'https://mock-lims.local'
-    process.env.LIMS_PVS_ID = 'TEST-PVS-001'
     process.env.PORT = 3100
     limsClient = { request: jest.fn() }
     server = await createServer({
@@ -33,11 +30,6 @@ describe('LIMS Backend Proxy - Network Mock Tests', () => {
     } else {
       process.env.LIMS_API_URL = originalLimsApiUrl
     }
-    if (originalPvsId === undefined) {
-      delete process.env.LIMS_PVS_ID
-    } else {
-      process.env.LIMS_PVS_ID = originalPvsId
-    }
   })
 
   afterEach(() => {
@@ -55,14 +47,17 @@ describe('LIMS Backend Proxy - Network Mock Tests', () => {
     expect(res.result).toEqual({ message: 'You have hit the landing page' })
   })
 
-  test('should request clients from the v1 LIMS route with the configured PVS ID and empty filter', async () => {
+  test('should request clients from the v1 LIMS route using the provided PVS ID', async () => {
     const clients = [{ clientId: 'client-001', name: 'Example Farm' }]
     const fetch = jest.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify(clients), {
       status: 200,
       headers: { 'Content-Type': 'application/json' }
     }))
 
-    const response = await server.inject({ method: 'GET', url: '/GetClients' })
+    const response = await server.inject({
+      method: 'GET',
+      url: '/GetClients?pvsId=TEST-PVS-001'
+    })
 
     expect(fetch).toHaveBeenCalledWith(
       'https://mock-lims.local/general/getClients?pvsId=TEST-PVS-001&filter='
@@ -74,44 +69,59 @@ describe('LIMS Backend Proxy - Network Mock Tests', () => {
   test('should return an integration error status from the v1 LIMS clients route', async () => {
     jest.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('Unavailable', { status: 503 }))
 
-    const response = await server.inject({ method: 'GET', url: '/GetClients' })
+    const response = await server.inject({
+      method: 'GET',
+      url: '/GetClients?pvsId=TEST-PVS-001'
+    })
 
     expect(response.statusCode).toBe(503)
     expect(response.result).toEqual({ error: 'LIMS integration error' })
   })
 
-  test.each(['LIMS_API_URL', 'LIMS_PVS_ID'])(
-    'should reject the clients lookup when %s is not configured',
-    async (environmentVariable) => {
-      const original = process.env[environmentVariable]
-      delete process.env[environmentVariable]
-      jest.spyOn(globalThis, 'fetch')
-      jest.spyOn(console, 'error').mockImplementation(() => {})
+  test('should reject the clients lookup when LIMS_API_URL is not configured', async () => {
+    const original = process.env.LIMS_API_URL
+    delete process.env.LIMS_API_URL
+    jest.spyOn(globalThis, 'fetch')
+    jest.spyOn(console, 'error').mockImplementation(() => {})
 
-      try {
-        const response = await server.inject({ method: 'GET', url: '/GetClients' })
+    try {
+      const response = await server.inject({
+        method: 'GET',
+        url: '/GetClients?pvsId=TEST-PVS-001'
+      })
 
-        expect(response.statusCode).toBe(500)
-        expect(response.result).toEqual({ error: 'LIMS client lookup is not configured' })
-        expect(globalThis.fetch).not.toHaveBeenCalled()
-        expect(console.error).toHaveBeenCalledWith(
-          'LIMS_API_URL and LIMS_PVS_ID must be configured to retrieve clients'
-        )
-      } finally {
-        if (original === undefined) {
-          delete process.env[environmentVariable]
-        } else {
-          process.env[environmentVariable] = original
-        }
+      expect(response.statusCode).toBe(500)
+      expect(response.result).toEqual({ error: 'LIMS client lookup is not configured' })
+      expect(globalThis.fetch).not.toHaveBeenCalled()
+      expect(console.error).toHaveBeenCalledWith(
+        'LIMS_API_URL must be configured to retrieve clients'
+      )
+    } finally {
+      if (original === undefined) {
+        delete process.env.LIMS_API_URL
+      } else {
+        process.env.LIMS_API_URL = original
       }
     }
-  )
+  })
+
+  test('requires a PVS ID for client lookup', async () => {
+    const fetch = jest.spyOn(globalThis, 'fetch')
+
+    const response = await server.inject({ method: 'GET', url: '/GetClients' })
+
+    expect(response.statusCode).toBe(400)
+    expect(fetch).not.toHaveBeenCalled()
+  })
 
   test('should return a bad gateway when the LIMS clients request fails', async () => {
     jest.spyOn(globalThis, 'fetch').mockRejectedValue(new Error('LIMS connection failed'))
     jest.spyOn(console, 'error').mockImplementation(() => {})
 
-    const response = await server.inject({ method: 'GET', url: '/GetClients' })
+    const response = await server.inject({
+      method: 'GET',
+      url: '/GetClients?pvsId=TEST-PVS-001'
+    })
 
     expect(response.statusCode).toBe(constants.HTTP_STATUS_BAD_GATEWAY)
     expect(response.result).toEqual({ error: 'LIMS connectivity failure' })
@@ -128,7 +138,10 @@ describe('LIMS Backend Proxy - Network Mock Tests', () => {
     })
     jest.spyOn(console, 'error').mockImplementation(() => {})
 
-    const response = await server.inject({ method: 'GET', url: '/GetClients' })
+    const response = await server.inject({
+      method: 'GET',
+      url: '/GetClients?pvsId=TEST-PVS-001'
+    })
 
     expect(response.statusCode).toBe(constants.HTTP_STATUS_BAD_GATEWAY)
     expect(response.result).toEqual({ error: 'LIMS connectivity failure' })

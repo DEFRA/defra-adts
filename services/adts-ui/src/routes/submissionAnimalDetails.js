@@ -188,7 +188,7 @@ const buildFields = (details, values, errors) => ({
   }))
 })
 
-const renderAnimalDetails = async (h, submissionFormState, {
+const renderAnimalDetails = async (request, h, submissionFormState, {
   details,
   values,
   errors = {},
@@ -197,6 +197,7 @@ const renderAnimalDetails = async (h, submissionFormState, {
 }) => {
   const clientSummaryResult = await loadClientSummary(
     submissionFormState,
+    request,
     'Error loading client summary:'
   )
   const { species } = submissionFormState.formData.animalDetails
@@ -245,11 +246,11 @@ const getAnimalDetailsPage = async (request, h, submissionFormStateKey) => {
   }
 
   const result = await safeLoad(
-    () => getAnimalDetails(speciesId),
+    () => getAnimalDetails(speciesId, request),
     'Error loading animal details:'
   )
 
-  return renderAnimalDetails(h, submissionFormState, {
+  return renderAnimalDetails(request, h, submissionFormState, {
     details: result.data,
     detailsError: result.error,
     values: savedValues(submissionFormState.formData.animalDetails)
@@ -296,14 +297,14 @@ const postAnimalDetails = async (request, h, submissionFormStateKey) => {
   }
 
   const result = await safeLoad(
-    () => getAnimalDetails(speciesId),
+    () => getAnimalDetails(speciesId, request),
     'Error loading animal details:'
   )
   const previousDetails = submissionFormState.formData.animalDetails
   const values = savedValues(previousDetails)
 
   if (result.error) {
-    return renderAnimalDetails(h, submissionFormState, {
+    return renderAnimalDetails(request, h, submissionFormState, {
       detailsError: result.error,
       values
     })
@@ -311,7 +312,7 @@ const postAnimalDetails = async (request, h, submissionFormStateKey) => {
 
   const { values: submittedValues, errors } = validate(request.payload || {}, result.data)
   if (Object.keys(errors).length > 0) {
-    return renderAnimalDetails(h, submissionFormState, {
+    return renderAnimalDetails(request, h, submissionFormState, {
       details: result.data,
       values: submittedValues,
       errors
@@ -328,7 +329,7 @@ const postAnimalDetails = async (request, h, submissionFormStateKey) => {
   )
 
   if (!saved) {
-    return renderAnimalDetails(h, {
+    return renderAnimalDetails(request, h, {
       ...submissionFormState,
       formData: updatedFormData
     }, {

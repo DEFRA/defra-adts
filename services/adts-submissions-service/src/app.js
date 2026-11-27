@@ -3,6 +3,7 @@ import { constants } from 'node:http2'
 import { fileURLToPath } from 'node:url'
 import Hapi from '@hapi/hapi'
 import Inert from '@hapi/inert'
+import Joi from 'joi'
 import { loadConfig } from './config.js'
 import { createLimsClient } from './clients/lims-client.js'
 import { registerHealthRoutes } from './routes/health.js'
@@ -35,16 +36,17 @@ const registerFailureLogging = (server) => {
   })
 }
 
-const getClientsHandler = async (_request, h) => {
-  const { LIMS_API_URL, LIMS_PVS_ID } = process.env
-  if (!LIMS_API_URL || !LIMS_PVS_ID) {
-    console.error('LIMS_API_URL and LIMS_PVS_ID must be configured to retrieve clients')
+const getClientsHandler = async (request, h) => {
+  const { LIMS_API_URL } = process.env
+  const { pvsId } = request.query
+  if (!LIMS_API_URL) {
+    console.error('LIMS_API_URL must be configured to retrieve clients')
     return h.response({ error: 'LIMS client lookup is not configured' })
       .code(constants.HTTP_STATUS_INTERNAL_SERVER_ERROR)
   }
 
   try {
-    const query = new URLSearchParams({ pvsId: LIMS_PVS_ID, filter: '' })
+    const query = new URLSearchParams({ pvsId, filter: '' })
     const response = await fetch(`${LIMS_API_URL}/general/getClients?${query}`)
     if (!response.ok) {
       return h.response({ error: 'LIMS integration error' }).code(response.status)
@@ -135,7 +137,18 @@ const createServer = async ({ config = loadConfig(), limsClient = createLimsClie
   registerDraftRoutes(server, limsClient)
   registerSubmissionActionRoutes(server, limsClient)
 
-  server.route({ method: 'GET', path: '/GetClients', handler: getClientsHandler })
+  server.route({
+    method: 'GET',
+    path: '/GetClients',
+    options: {
+      validate: {
+        query: Joi.object({
+          pvsId: Joi.string().trim().required()
+        }).required()
+      }
+    },
+    handler: getClientsHandler
+  })
   server.route({ method: 'GET', path: '/submissions', handler: createSubmissionsHandler(limsClient) })
 
   return server

@@ -84,9 +84,13 @@ const validate = (values, maxDate) => {
   return { values, sampleTakenDate, errors }
 }
 
-const renderPage = async (h, submissionFormState, values, { errors = {}, saveError } = {}) => {
+const renderPage = async (request, h, submissionFormState, values, { errors = {}, saveError } = {}) => {
   const [clientSummaryResult, referencesResult] = await Promise.all([
-    loadClientSummary(submissionFormState),
+    loadClientSummary(
+      submissionFormState,
+      request,
+      'Error loading client summary:'
+    ),
     safeLoad(
       () => getSubmissionReferences(submissionFormState.formData?.clientDetails),
       'Error loading previous submission references:'
@@ -130,7 +134,7 @@ const submissionClinicalHistory = (server, submissionFormStateKey) => {
       path: `/${pageName}`,
       handler: (request, h) => {
         const submissionFormState = request.yar.get(submissionFormStateKey) || { formData: {} }
-        return renderPage(h, submissionFormState, savedValues(submissionFormState))
+        return renderPage(request, h, submissionFormState, savedValues(submissionFormState))
       }
     },
     {
@@ -141,7 +145,7 @@ const submissionClinicalHistory = (server, submissionFormStateKey) => {
         const { values, sampleTakenDate, errors } = validate(submittedValues(request.payload || {}), today())
 
         if (Object.keys(errors).length) {
-          return renderPage(h, submissionFormState, values, { errors })
+          return renderPage(request, h, submissionFormState, values, { errors })
         }
 
         const formData = submissionFormState.formData || {}
@@ -181,6 +185,7 @@ const submissionClinicalHistory = (server, submissionFormStateKey) => {
         )
         if (!saved) {
           return renderPage(
+            request,
             h,
             { ...submissionFormState, formData: updatedFormData },
             values,

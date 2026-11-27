@@ -1,28 +1,13 @@
 {% extends "govuk/template.njk" %}
 
-{% from "govuk/components/header/macro.njk" import govukHeader %}
 {% from "govuk/components/button/macro.njk" import govukButton %}
 {% from "macros/submissionSearchForm.njk" import submissionSearchForm %}
+{% from "macros/serviceHeader.njk" import appServiceHeader %}
 
 {% block pageTitle %}Home – ADTS{% endblock %}
 
 {% block header %}
-  {{ govukHeader({
-    serviceName: "Animal Disease Testing Service",
-    serviceUrl: "/",
-    navigation: [
-      {
-        text: "My Account",
-        href: "/",
-        active: true
-      },
-      {
-        text: "Sign out",
-        href: "/",
-        active: true
-      }
-    ]
-  }) }}
+  {{ appServiceHeader() }}
 {% endblock %}
 
 {% block head %}
@@ -32,7 +17,9 @@
 {% block content %}
   <div class="govuk-grid-row">
     <div class="govuk-grid-column-full">
-      <p class="govuk-body">Signed in as Test User 2</p>
+      {% if account %}
+        <p class="govuk-body">Signed in as {{ account.name }}</p>
+      {% endif %}
       <h2 class="govuk-heading-m">New submission</h2>
       <p class="govuk-body">Start a new sick animal submission or healthy animal submission.</p>
       <div class="app-button-stack">

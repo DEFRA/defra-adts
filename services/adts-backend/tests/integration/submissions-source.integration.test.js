@@ -10,7 +10,6 @@ describe('Submissions route source integration', () => {
     process.env.NODE_ENV = 'development'
     process.env.PORT = '3200'
     process.env.SUBMISSIONS_SERVICE_URL = 'http://localhost:3100'
-    process.env.LIMS_PVS_ID = 'PVS001'
     server = await createServer({ docClient })
   })
 
@@ -25,14 +24,19 @@ describe('Submissions route source integration', () => {
   })
 
   test('uses DynamoDB path for Draft submissions and bypasses the submissions-service proxy', async () => {
-    docClient.send.mockResolvedValue({
-      Items: [{
-        submissionId: 'draft-001',
-        status: 'Draft',
-        userId: 'user-456',
-        submittedAt: '2026-10-20T00:00:00.000Z',
-        client: 'Acme Farm'
-      }]
+    docClient.send.mockImplementation(({ input }) => {
+      if (input.TableName === 'adts-ci-lims-mapping') {
+        return Promise.resolve({ Item: { PK: 'user-456', limsId: 'PVS001' } })
+      }
+      return Promise.resolve({
+        Items: [{
+          submissionId: 'draft-001',
+          status: 'Draft',
+          userId: 'user-456',
+          submittedAt: '2026-10-20T00:00:00.000Z',
+          client: 'Acme Farm'
+        }]
+      })
     })
     const fetchSpy = jest.spyOn(globalThis, 'fetch')
 
@@ -63,6 +67,7 @@ describe('Submissions route source integration', () => {
       status: 200,
       headers: { 'Content-Type': 'application/json' }
     }))
+    docClient.send.mockResolvedValue({ Item: { PK: 'mock-user', limsId: 'PVS001' } })
 
     const response = await server.inject({
       method: 'GET',
@@ -70,7 +75,7 @@ describe('Submissions route source integration', () => {
     })
 
     expect(response.statusCode).toBe(200)
-    expect(docClient.send).not.toHaveBeenCalled()
+    expect(docClient.send).toHaveBeenCalledTimes(1)
     // Verify the call goes to the LIMS v1 endpoint
     expect(fetchSpy).toHaveBeenCalledWith(
       expect.stringContaining('http://localhost:3100/v1/submissions?pvsId=PVS001')

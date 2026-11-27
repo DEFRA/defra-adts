@@ -1,0 +1,14 @@
+{% from "govuk/components/header/macro.njk" import govukHeader %}
+{% from "govuk/components/service-navigation/macro.njk" import govukServiceNavigation %}
+
+{% macro appServiceHeader() %}
+  {{ govukHeader({ homepageUrl: "/" }) }}
+  {{ govukServiceNavigation({
+    serviceName: "Animal Disease Testing Service",
+    serviceUrl: "/",
+    navigation: [{ text: "My Account", href: "/auth/account" }],
+    slots: {
+      navigationEnd: '<li class="govuk-service-navigation__item"><form class="app-sign-out" method="post" action="/auth/sign-out"><button type="submit" class="govuk-link">Sign out</button></form></li>'
+    }
+  }) }}
+{% endmacro %}

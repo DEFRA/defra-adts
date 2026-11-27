@@ -428,8 +428,8 @@ const createPostHandler = (submissionFormStateKey) => async (request, h) => {
     return h.redirect(`/${clientAddressPageName}?intent=new`)
   }
 
-  const clients = await loadClients()
-  const counties = await loadCounties()
+  const clients = await loadClients(request)
+  const counties = await loadCounties(request)
   const selectedClient = clients.find((client) => client.clientId === payload.clientId)
   const selectedAnimalAddress = clients.find((client) =>
     String(client.clientId) === String(payload.animalAddressClientId)
@@ -464,8 +464,8 @@ const getClientDetailsRoute = (submissionFormStateKey) => ({
   path: `/${pageName}`,
   handler: async (request, h) => {
     const submissionFormState = request.yar.get(submissionFormStateKey) || {}
-    const clients = await loadClients()
-    const counties = await loadCounties()
+    const clients = await loadClients(request)
+    const counties = await loadCounties(request)
     const intent = request.query.intent
     if (intent === 'newAnimalAddress') {
       return h.redirect(`/${animalAddressPageName}?intent=new`)

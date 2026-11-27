@@ -412,7 +412,7 @@ describe('Submission animal details page', () => {
     const page = await get(selection)
     expect(page.statusCode).toBe(502)
     expect(page.payload).toContain('could not be loaded')
-    expect(page.payload).not.toContain('<form')
+    expect(page.payload).not.toMatch(/<form(?![^>]*app-sign-out)/)
     expect(console.error).toHaveBeenCalledWith(
       'Error loading animal details:',
       'GetAnimalDetails failed with status 500'

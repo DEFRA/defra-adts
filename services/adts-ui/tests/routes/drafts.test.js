@@ -8,7 +8,6 @@ describe('Continue draft route', () => {
 
   beforeAll(async () => {
     process.env.PORT = '3000'
-    process.env.NODE_ENV = 'development'
     process.env.LOCAL_DRAFT_OWNER_ID = 'user-456'
     process.env.BACKEND_SERVICE_URL = 'http://localhost:3200'
     process.env.SESSION_SECRET = 'test-session-secret-with-at-least-32-characters'
@@ -70,6 +69,29 @@ describe('Continue draft route', () => {
       lastSavedPage: 'species',
       formData
     })
+  })
+
+  test.each([
+    ['submission-01-client-details', '/submission-01-client-details'],
+    ['submission-02-species', '/submission-02-species'],
+    ['submission-02-animal-details', '/submission-02-animal-details'],
+    ['submission-03-clinical-history', '/submission-03-clinical-history']
+  ])('resumes a draft saved with legacy page name %s', async (lastSavedPage, resumePath) => {
+    jest.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify({
+      draftId: 'draft-001',
+      status: 'Draft',
+      revision: 1,
+      lastSavedPage,
+      formData: { animalDetails: { speciesId: '7' } }
+    }), { status: 200, headers: { 'Content-Type': 'application/json' } }))
+
+    const response = await server.inject({
+      method: 'GET',
+      url: '/drafts/draft-001/continue'
+    })
+
+    expect(response.statusCode).toBe(302)
+    expect(response.headers.location).toBe(resumePath)
   })
 
   test('continues saving a resumed draft with its current revision', async () => {
@@ -155,6 +177,8 @@ describe('Continue draft route', () => {
 
     expect(response.statusCode).toBe(422)
     expect(response.payload).toContain('saved progress is unavailable')
+    expect(response.payload).toContain('href="/assets/css/application.css"')
+    expect(response.payload).toContain('src="/assets/js/all.js"')
   })
 
   test('does not fall back to an earlier step when required saved context is missing', async () => {

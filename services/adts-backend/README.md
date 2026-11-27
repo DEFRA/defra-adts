@@ -5,6 +5,38 @@ Changes to this directory trigger the service's CI build.
 The UI calls this service using `BACKEND_SERVICE_URL`. The backend forwards
 submission and client lookup requests to `SUBMISSIONS_SERVICE_URL`.
 
+## API authentication
+
+The UI performs the browser-facing OIDC sign-in and sends its access token to
+this API as a bearer token. In production, set `AUTH_MODE=live`. The backend
+loads OIDC discovery metadata and validates the token signature, issuer,
+audience, expiry, subject, and the Entra API scope before using its subject as
+the draft owner. The backend accepts both providers:
+
+| Provider | Required live configuration |
+| --- | --- |
+| Defra ID | `DEFRA_ID_WELL_KNOWN_URL`, `DEFRA_ID_API_AUDIENCE` |
+| Entra ID | `ENTRA_WELL_KNOWN_URL`, `ENTRA_API_AUDIENCE`, `ENTRA_API_SCOPE` |
+
+These are API resource identifiers, not client secrets. The Entra UI deployment
+must request the configured `ENTRA_API_SCOPE`. Configure audience/scope values
+from the corresponding API registrations; do not use placeholder values in a
+live deployment.
+
+Tests use mock authentication, while the repository's local full-stack setup
+validates the Defra ID stub's signed access token. Production rejects mock mode.
+The development-only `AUTH_ALLOW_INSECURE_LOCAL=true` setting permits HTTP
+identity URLs only when their hostname is `localhost`; production continues to
+require HTTPS and both provider configurations. Health and connection-health
+routes remain unauthenticated.
+
+After authentication, the backend resolves the token's CI subject to a LIMS ID
+using the CI-to-LIMS mapping table. Users without a mapping receive `403` and
+cannot look up clients, view submissions, or create drafts. The UI also stores
+the resolved PVS ID in the authenticated session; backend requests resolve the
+mapping independently and never trust a browser-supplied PVS identifier. Draft
+reads and writes remain scoped to the validated issuer-and-subject pair.
+
 For local development, start the seeded local DynamoDB from the repository root:
 
 ```bash
@@ -15,6 +47,7 @@ Then start the submissions service on port 3100 and the backend on port 3200:
 
 ```bash
 PORT=3100 npm start --prefix services/adts-submissions-service
+NODE_ENV=development AUTH_MODE=mock \
 DYNAMODB_ENDPOINT=http://localhost:8000 \
 AWS_ACCESS_KEY_ID=local \
 AWS_SECRET_ACCESS_KEY=local \
@@ -87,6 +120,7 @@ unknown species, and `502` if DynamoDB can't be reached.
 | `DYNAMODB_ENDPOINT` | AWS default | Set to `http://localhost:8000` to use the [local DynamoDB](../../local/dynamodb/README.md). |
 | `AWS_REGION` | `eu-west-2` | AWS region. |
 | `REFERENCE_DATA_TABLE` | `adts-reference-data` | Reference data table name. |
+| `CI_LIMS_MAPPING_TABLE` | `adts-ci-lims-mapping` | Maps an authenticated CI subject (`PK`) to its LIMS ID (`limsId`). |
 
 The local DynamoDB SDK connection requires dummy credentials, provided in the
 backend start command above. These credentials are for DynamoDB Local only; do

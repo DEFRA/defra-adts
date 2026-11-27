@@ -48,6 +48,7 @@ const CLIENT_DETAILS_UNAVAILABLE = 'Client details unavailable'
 
 export const loadClientSummary = async (
   submissionFormState,
+  request,
   logMessage = 'Error contacting backend server:'
 ) => {
   const clientDetails = submissionFormState.formData?.clientDetails
@@ -66,7 +67,7 @@ export const loadClientSummary = async (
     return { clientSummary: getClientSummaryFromDetails(clientDetails) }
   }
 
-  const clientsResult = await safeLoad(getClients, logMessage)
+  const clientsResult = await safeLoad(() => getClients(request), logMessage)
 
   if (clientsResult.error) {
     return {

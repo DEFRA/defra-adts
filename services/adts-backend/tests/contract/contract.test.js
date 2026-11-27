@@ -10,7 +10,6 @@ describe('Backend API contracts', () => {
     process.env.NODE_ENV = 'development'
     process.env.PORT = '3200'
     process.env.SUBMISSIONS_SERVICE_URL = 'http://localhost:3100'
-    process.env.LIMS_PVS_ID = 'PVS001'
     server = await createServer({ docClient })
   })
 
@@ -55,16 +54,21 @@ describe('Backend API contracts', () => {
   })
 
   test('GET /submissions?status=draft returns the Draft search contract', async () => {
-    docClient.send.mockResolvedValue({
-      Items: [{
-        submissionId: 'draft-001',
-        status: 'Draft',
-        userId: 'user-456',
-        submittedAt: '2026-10-20T00:00:00.000Z',
-        client: 'Acme Farm',
-        clinician: 'Dr Alice Morgan',
-        tests: []
-      }]
+    docClient.send.mockImplementation(({ input }) => {
+      if (input.TableName === 'adts-ci-lims-mapping') {
+        return Promise.resolve({ Item: { PK: 'user-456', limsId: 'PVS001' } })
+      }
+      return Promise.resolve({
+        Items: [{
+          submissionId: 'draft-001',
+          status: 'Draft',
+          userId: 'user-456',
+          submittedAt: '2026-10-20T00:00:00.000Z',
+          client: 'Acme Farm',
+          clinician: 'Dr Alice Morgan',
+          tests: []
+        }]
+      })
     })
 
     const response = await server.inject({
@@ -99,6 +103,7 @@ describe('Backend API contracts', () => {
       status: 200,
       headers: { 'Content-Type': 'application/json' }
     }))
+    docClient.send.mockResolvedValue({ Item: { PK: 'mock-user', limsId: 'PVS001' } })
 
     const response = await server.inject({ method: 'GET', url: '/submissions?status=submitted' })
 

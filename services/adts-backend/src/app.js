@@ -12,7 +12,10 @@ import { getDraft } from './data/drafts.js'
 import { getSubmissions } from './data/submissions.js'
 import { getLimsSubmissionReferences, getLimsSubmissions } from './data/limsSubmissions.js'
 import { createClientsHandler } from './handlers/clients.js'
+import { createPvsIdHandler } from './handlers/pvs-id.js'
+import { registerAuthentication } from './auth.js'
 import registerDraftRoutes from './routes/drafts.js'
+import { getLimsIdForCiId } from './data/ciLimsMapping.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -41,10 +44,34 @@ const createProxyGet = (routePath) => async (request, h) => {
   }
 }
 
+const resolvePvsId = async (request, h, getDynamoClient) => {
+  try {
+    const pvsId = await getLimsIdForCiId(
+      getDynamoClient(),
+      request.auth.credentials.subject
+    )
+    if (pvsId) {
+      return { pvsId }
+    }
+
+    return {
+      response: h.response({ error: 'No LIMS practice is associated with this account' })
+        .code(constants.HTTP_STATUS_FORBIDDEN)
+    }
+  } catch (error) {
+    console.error('Error retrieving CI-to-LIMS mapping:', error.message)
+    return {
+      response: h.response({ error: 'Unable to retrieve LIMS ID mapping' })
+        .code(constants.HTTP_STATUS_BAD_GATEWAY)
+    }
+  }
+}
+
 const registerStaticRoutes = (server) => {
   server.route({
     method: 'GET',
     path: '/assets/js/{param*}',
+    options: { auth: false },
     handler: {
       directory: {
         path: path.join(__dirname, 'public/js')
@@ -56,11 +83,13 @@ const registerStaticRoutes = (server) => {
     {
       method: 'GET',
       path: '/',
+      options: { auth: false },
       handler: async () => ({ message: 'You have hit the backend page' })
     },
     {
       method: 'GET',
       path: '/health',
+      options: { auth: false },
       handler: (_request, h) => h.response({ status: 'UP' })
     }
   ])
@@ -71,6 +100,7 @@ const registerConnectionHealthRoute = (server) => {
     method: 'GET',
     path: '/connection_health',
     options: {
+      auth: false,
       validate: {
         query: Joi.object({
           protocol: Joi.string().trim().required(),
@@ -101,22 +131,24 @@ const registerConnectionHealthRoute = (server) => {
 
 const createSubmissionsHandler = (getDynamoClient) => async (request, h) => {
   const status = request.query.status?.toLowerCase()
-  const ownerId = process.env.NODE_ENV === 'development'
-    ? request.headers['x-local-draft-owner-id']
-    : undefined
+  const ownerId = request.auth.credentials.ownerId
+  const shouldGetLims = status !== 'draft'
+  const shouldGetLocalDrafts = !status || status === 'show_all' || status === 'draft'
 
   if (status === 'draft' && !ownerId) {
     return h.response({ error: 'Local draft owner is not configured' })
       .code(constants.HTTP_STATUS_SERVICE_UNAVAILABLE)
   }
 
-  try {
-    // Determine whether to call LIMS and fetch local drafts based on status
-    const shouldGetLims = status !== 'draft'
-    const shouldGetLocalDrafts = !status || status === 'show_all' || status === 'draft'
+  const mapping = await resolvePvsId(request, h, getDynamoClient)
+  if ('response' in mapping) {
+    return mapping.response
+  }
+  const { pvsId } = mapping
 
+  try {
     const [limsResults, localDrafts] = await Promise.all([
-      shouldGetLims ? getLimsSubmissions(request.query) : Promise.resolve([]),
+      shouldGetLims ? getLimsSubmissions(pvsId, request.query) : Promise.resolve([]),
       shouldGetLocalDrafts && ownerId
         ? getSubmissions(getDynamoClient(), ownerId, request.query)
         : { results: [] }
@@ -131,9 +163,15 @@ const createSubmissionsHandler = (getDynamoClient) => async (request, h) => {
   }
 }
 
-const createSubmissionReferencesHandler = async (request, h) => {
+const createSubmissionReferencesHandler = (getDynamoClient) => async (request, h) => {
+  const mapping = await resolvePvsId(request, h, getDynamoClient)
+  if ('response' in mapping) {
+    return mapping.response
+  }
+  const { pvsId } = mapping
+
   try {
-    return h.response(await getLimsSubmissionReferences(request.query))
+    return h.response(await getLimsSubmissionReferences(pvsId, request.query))
   } catch (error) {
     console.error('Error retrieving submission references:', error.message)
     return h.response({ error: 'Unable to retrieve submission references' })
@@ -142,12 +180,15 @@ const createSubmissionReferencesHandler = async (request, h) => {
 }
 
 const createDraftHandler = (getDynamoClient) => async (request, h) => {
-  const ownerId = process.env.NODE_ENV === 'development'
-    ? request.headers['x-local-draft-owner-id']
-    : undefined
+  const ownerId = request.auth.credentials.ownerId
   if (!ownerId) {
     return h.response({ error: 'Local draft owner is not configured' })
       .code(constants.HTTP_STATUS_SERVICE_UNAVAILABLE)
+  }
+
+  const mapping = await resolvePvsId(request, h, getDynamoClient)
+  if ('response' in mapping) {
+    return mapping.response
   }
 
   try {
@@ -178,6 +219,11 @@ const registerSubmissionsRoutes = (server, getDynamoClient) => {
     },
     {
       method: 'GET',
+      path: '/GetPvsId',
+      handler: createPvsIdHandler(getDynamoClient)
+    },
+    {
+      method: 'GET',
       path: '/submissions',
       handler: createSubmissionsHandler(getDynamoClient)
     },
@@ -193,7 +239,7 @@ const registerSubmissionsRoutes = (server, getDynamoClient) => {
           }).or('clientId', 'clientName', 'clientFarm').unknown(false)
         }
       },
-      handler: createSubmissionReferencesHandler
+      handler: createSubmissionReferencesHandler(getDynamoClient)
     },
     {
       method: 'GET',
@@ -270,6 +316,7 @@ const createServer = async ({ docClient } = {}) => {
   const getDynamoClient = createDynamoClientGetter(docClient)
 
   await server.register([Inert])
+  await registerAuthentication(server)
   registerStaticRoutes(server)
   registerConnectionHealthRoute(server)
   registerSubmissionsRoutes(server, getDynamoClient)

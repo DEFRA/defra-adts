@@ -89,10 +89,9 @@ const filterSubmissions = (records, filters) => {
     .map(({ result }) => result)
 }
 
-export const getLimsSubmissionReferences = async ({ clientId, clientName, clientFarm } = {}) => {
-  const pvsId = process.env.LIMS_PVS_ID
+export const getLimsSubmissionReferences = async (pvsId, { clientId, clientName, clientFarm } = {}) => {
   if (!pvsId) {
-    throw new Error('LIMS_PVS_ID must be configured to retrieve submissions')
+    throw new Error('A PVS ID is required to retrieve submissions')
   }
   if (!clientId && !clientName && !clientFarm) {
     throw new Error('A client ID, name, or farm is required to retrieve submission references')
@@ -121,10 +120,9 @@ export const getLimsSubmissionReferences = async ({ clientId, clientName, client
 }
 
 // LIMS filters by client ID and its status vocabulary is unconfirmed, so client name and status are matched here.
-export const getLimsSubmissions = async (filters = {}) => {
-  const pvsId = process.env.LIMS_PVS_ID
+export const getLimsSubmissions = async (pvsId, filters = {}) => {
   if (!pvsId) {
-    throw new Error('LIMS_PVS_ID must be configured to retrieve submissions')
+    throw new Error('A PVS ID is required to retrieve submissions')
   }
 
   const response = await fetch(

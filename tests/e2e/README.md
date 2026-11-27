@@ -112,7 +112,7 @@ tests.
 The shared helper in `utils/axe.js` runs WCAG 2.0 A, 2.0 AA, 2.1 A, 2.1 AA, and 2.2 AA rulesets,
 fails on any `critical` or `serious` violation, and reports findings by axe rule ID.
 
-**Known exceptions:** the known GOV.UK Frontend 5.14.0 header-link WCAG 2.5.8 target-size finding is ignored only for targets inside `.govuk-header`. Its conditional-radios module also adds `aria-expanded` to the animal-address radio, which axe flags; only that exact attribute finding on that radio is ignored. Other rules and findings on these components remain checked.
+**Known exceptions:** the header-link WCAG 2.5.8 target-size finding is ignored only for targets inside `.govuk-header`. Its conditional-radios module also adds `aria-expanded` to the animal-address radio, which axe flags; only that exact attribute finding on that radio is ignored. Other rules and findings on these components remain checked.
 
 ## Mocks and test data
 

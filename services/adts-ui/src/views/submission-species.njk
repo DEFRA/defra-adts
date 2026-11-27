@@ -1,6 +1,6 @@
 {% extends "govuk/template.njk" %}
 
-{% from "govuk/components/header/macro.njk" import govukHeader %}
+{% from "macros/serviceHeader.njk" import appServiceHeader %}
 {% from "govuk/components/back-link/macro.njk" import govukBackLink %}
 {% from "govuk/components/notification-banner/macro.njk" import govukNotificationBanner %}
 {% from "govuk/components/notification-banner/macro.njk" import govukNotificationBanner %}
@@ -18,14 +18,7 @@
 {% endblock %}
 
 {% block header %}
-  {{ govukHeader({
-    serviceName: "Animal Disease Testing Service",
-    serviceUrl: "/",
-    navigation: [
-      { text: "My Account", href: "#" },
-      { text: "Sign out", href: "#" }
-    ]
-  }) }}
+  {{ appServiceHeader() }}
 {% endblock %}
 
 {% block content %}

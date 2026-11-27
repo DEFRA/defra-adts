@@ -582,7 +582,7 @@ describe('Submission client details page', () => {
     expect(globalThis.fetch).toHaveBeenCalledWith('http://localhost:3200/GetCounties')
   })
 
-  test('renders account navigation on the client and animal address forms', async () => {
+  test('renders account navigation without a GET sign-out link on address forms', async () => {
     for (const addressUrl of [
       '/submission-01-client-address?intent=new',
       '/submission-01-animal-address?intent=new'
@@ -590,8 +590,8 @@ describe('Submission client details page', () => {
       const response = await server.inject({ method: 'GET', url: addressUrl })
 
       expect(response.statusCode).toBe(200)
-      expect(response.payload).toMatch(/>\s*My Account\s*<\/a>/)
-      expect(response.payload).toMatch(/>\s*Sign out\s*<\/a>/)
+      expect(response.payload).toMatch(/href="\/auth\/account"[^>]*>\s*My Account\s*<\/a>/)
+      expect(response.payload).not.toMatch(/<a\b[^>]*>\s*Sign out\s*<\/a>/)
     }
   })
 

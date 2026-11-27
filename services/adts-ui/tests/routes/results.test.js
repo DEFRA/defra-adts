@@ -95,9 +95,26 @@ describe('UI Results Card Rendering Integration Pipeline', () => {
       results: [],
       totalCount: 0
     }), { status: 200, headers: { 'Content-Type': 'application/json' } }))
+    let route
+    results({
+      route: (registeredRoute) => {
+        route = registeredRoute
+      }
+    })
 
     try {
-      await server.inject({ method: 'GET', url: '/results?status=show_all' })
+      await route.handler({
+        query: { client: '', clinician: '', status: 'show_all', 'submitted-date': '' },
+        yar: { set: jest.fn(), touch: jest.fn() },
+        server: {
+          app: {
+            authMode: 'mock',
+            getAuthSession: () => ({})
+          }
+        }
+      }, {
+        view: jest.fn()
+      })
     } finally {
       process.env.NODE_ENV = originalEnv.NODE_ENV
       if (originalEnv.owner === undefined) {

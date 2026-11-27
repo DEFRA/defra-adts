@@ -5,7 +5,11 @@ const resumePaths = {
   clientDetails: '/submission-01-client-details',
   species: '/submission-02-species',
   animalDetails: '/submission-02-animal-details',
-  clinicalHistory: '/submission-03-clinical-history'
+  clinicalHistory: '/submission-03-clinical-history',
+  'submission-01-client-details': '/submission-01-client-details',
+  'submission-02-species': '/submission-02-species',
+  'submission-02-animal-details': '/submission-02-animal-details',
+  'submission-03-clinical-history': '/submission-03-clinical-history'
 }
 
 const NOT_FOUND = 404
@@ -44,7 +48,7 @@ const drafts = (server, submissionFormStateKey) => {
     method: 'GET',
     path: '/drafts/{draftId}/continue',
     handler: async (request, h) => {
-      const result = await safeLoad(() => getDraft(request.params.draftId))
+      const result = await safeLoad(() => getDraft(request.params.draftId, request))
       if (result.error) {
         const statusCode = result.error.statusCode === NOT_FOUND ? NOT_FOUND : BAD_GATEWAY
         return draftError(h, statusCode, 'We could not load this draft. Try again later.')

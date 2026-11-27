@@ -8,37 +8,47 @@ describe('Backend to Submission Service integration', () => {
   let submissionServer
   let limsClient
   let fetchSpy
+  let originalFetch
   let originalPort
   let originalServiceUrl
-  let originalPvsId
-  let originalFetch
+  let originalLocalDraftOwnerId
 
   beforeAll(async () => {
     originalPort = process.env.PORT
     originalServiceUrl = process.env.SUBMISSIONS_SERVICE_URL
-    originalPvsId = process.env.LIMS_PVS_ID
+    originalLocalDraftOwnerId = process.env.LOCAL_DRAFT_OWNER_ID
     originalFetch = globalThis.fetch
     process.env.PORT = '0'
-    process.env.LIMS_PVS_ID = 'PVS001'
+    process.env.LOCAL_DRAFT_OWNER_ID = 'mock-user'
 
     const config = loadConfig({
       LIMS_BASE_URL: 'https://lims.example.test',
       LIMS_PREFIX: 'api',
       LIMS_TIMEOUT_MS: '1000'
     })
-    const products = [{ productId: 'PC0203', name: 'Synthetic product', price: 1 }]
     limsClient = {
-      request: jest.fn().mockResolvedValue(new Response(JSON.stringify(products), {
-        status: 200,
-        headers: { 'content-type': 'application/json' }
-      }))
+      request: jest.fn()
     }
 
     submissionServer = await createSubmissionServer({ config, limsClient })
     await submissionServer.start()
     process.env.SUBMISSIONS_SERVICE_URL = `http://127.0.0.1:${submissionServer.listener.address().port}`
 
-    backendServer = await createBackendServer({ docClient: { send: jest.fn() } })
+    const docClient = {
+      send: jest.fn().mockResolvedValue({
+        Item: { PK: 'mock-user', limsId: 'PVS001' }
+      })
+    }
+    backendServer = await createBackendServer({ docClient })
+  })
+
+  beforeEach(() => {
+    limsClient.request.mockReset()
+    fetchSpy = jest.spyOn(globalThis, 'fetch').mockImplementation((...args) => originalFetch(...args))
+  })
+
+  afterEach(() => {
+    jest.restoreAllMocks()
   })
 
   afterAll(async () => {
@@ -57,20 +67,12 @@ describe('Backend to Submission Service integration', () => {
     } else {
       process.env.SUBMISSIONS_SERVICE_URL = originalServiceUrl
     }
-    if (originalPvsId === undefined) {
-      delete process.env.LIMS_PVS_ID
+
+    if (originalLocalDraftOwnerId === undefined) {
+      delete process.env.LOCAL_DRAFT_OWNER_ID
     } else {
-      process.env.LIMS_PVS_ID = originalPvsId
+      process.env.LOCAL_DRAFT_OWNER_ID = originalLocalDraftOwnerId
     }
-  })
-
-  beforeEach(() => {
-    limsClient.request.mockReset()
-    fetchSpy = jest.spyOn(globalThis, 'fetch').mockImplementation((...args) => originalFetch(...args))
-  })
-
-  afterEach(() => {
-    jest.restoreAllMocks()
   })
 
   test('routes product search through the Submission Service to LIMS without LIMS credentials in Backend request', async () => {

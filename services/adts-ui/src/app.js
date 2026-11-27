@@ -15,6 +15,11 @@ import submissionSpecies from './routes/submissionSpecies.js'
 import submissionAnimalDetails from './routes/submissionAnimalDetails.js'
 import submissionClinicalHistory from './routes/submissionClinicalHistory.js'
 import drafts from './routes/drafts.js'
+import { registerAuthentication } from './auth.js'
+import {
+  clearPvsIdSessionAfterSignOut,
+  createPvsIdSessionHook
+} from './auth/pvsIdSession.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const SUBMISSION_FORM_STATE_KEY = 'submissionFormState'
@@ -36,17 +41,25 @@ const createServer = async () => {
     {
       plugin: Yar,
       options: {
+        name: 'adts-ui-session',
         maxCookieSize: 4096,
         cookieOptions: {
           password: sessionSecret,
           isSecure: process.env.NODE_ENV !== 'development',
           isHttpOnly: true,
-          isSameSite: 'Lax',
+          isSameSite:
+            process.env.AUTH_MODE === 'live' && process.env.NODE_ENV !== 'development'
+              ? 'None'
+              : 'Lax',
           path: '/'
         }
       }
     }
   ])
+
+  const authentication = await registerAuthentication(server)
+  server.ext('onPostAuth', createPvsIdSessionHook(authentication.getAuthSession))
+  server.ext('onPreResponse', clearPvsIdSessionAfterSignOut(authentication.getAuthSession))
 
   server.views({
     engines: {
@@ -54,7 +67,11 @@ const createServer = async () => {
         compile: (src, options) => (context) => options.environment.renderString(src, context),
         prepare: (options, next) => {
           options.compileOptions.environment = nunjucks.configure(
-            [path.join(__dirname, 'views'), path.join(__dirname, '../node_modules/govuk-frontend/dist')],
+            [
+              path.join(__dirname, 'views'),
+              path.join(__dirname, '../node_modules/govuk-frontend/dist'),
+              authentication.viewsPath
+            ],
             { autoescape: true }
           )
           return next()
@@ -62,11 +79,11 @@ const createServer = async () => {
       }
     },
     relativeTo: __dirname,
-    path: 'views'
+    path: ['views', authentication.viewsPath]
   })
 
   staticAssets(server)
-  home(server)
+  home(server, authentication.buildAccount)
   selectClient(server, SUBMISSION_FORM_STATE_KEY)
   selectClientAddressRoutes(server, SUBMISSION_FORM_STATE_KEY)
   submissionSpecies(server, SUBMISSION_FORM_STATE_KEY)
@@ -75,6 +92,10 @@ const createServer = async () => {
   drafts(server, SUBMISSION_FORM_STATE_KEY)
   results(server)
   health(server)
+
+  server.app.buildAccount = authentication.buildAccount
+  server.app.getAuthSession = authentication.getAuthSession
+  server.app.authMode = authentication.mode
 
   return server
 }

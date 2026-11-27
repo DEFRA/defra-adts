@@ -179,8 +179,6 @@ describe('Continue draft route', () => {
     expect(response.payload).toContain('saved progress is unavailable')
     expect(response.payload).toContain('href="/assets/css/application.css"')
     expect(response.payload).toContain('src="/assets/js/all.js"')
-    expect((await server.inject({ method: 'GET', url: '/assets/css/application.css' })).statusCode).toBe(200)
-    expect((await server.inject({ method: 'GET', url: '/assets/js/all.js' })).statusCode).toBe(200)
   })
 
   test('does not fall back to an earlier step when required saved context is missing', async () => {

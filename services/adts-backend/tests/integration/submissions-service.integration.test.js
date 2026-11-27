@@ -129,4 +129,3 @@ describe('Backend to Submission Service integration', () => {
     })
   })
 })
- 

@@ -41,6 +41,15 @@ patch(
   ".filter((s) => !oidcConfig.scopesSupported.includes(s))\n    // bareClientId\n    .filter((s) => !/^[0-9a-f-]{36}$/i.test(s))"
 )
 
+// Safari rejects the local HTTP Secure cookie needed by the plugin's form_post callback.
+// The app accepts query callbacks, so the local stub returns the code through a top-level GET.
+patch(
+  'src/server/oidc/controllers/authorize-controller.js',
+  'LOCAL_OIDC_USE_GET_CALLBACK',
+  "if (request.query.response_mode === 'form_post') {",
+  "if (request.query.response_mode === 'form_post' && process.env.LOCAL_OIDC_USE_GET_CALLBACK !== 'true') {"
+)
+
 // Give the documented mapped demo email a stable OIDC subject; other registrations stay random.
 patch(
   'src/server/registration/controllers/register-api-controller.js',
@@ -49,4 +58,31 @@ patch(
   "userId = payload.email?.toLowerCase() === 'demo.mapped@example.com'\n" +
     "          ? 'b198e14c-19e4-4a94-8953-72b4a1f2c835'\n" +
     '          : crypto.randomUUID()'
+)
+
+patch(
+  'src/server/registration/controllers/registration-controller.js',
+  'import { removeRegistration }',
+  "import { findRegistration } from '#server/registration/helpers/find-registration.js'",
+  "import { findRegistration, findRegistrationByEmail } from '#server/registration/helpers/find-registration.js'\n" +
+    "import { removeRegistration } from '#server/registration/helpers/remove-registration.js'"
+)
+
+patch(
+  'src/server/registration/controllers/registration-controller.js',
+  "const isMappedDemoEmail = payload.email?.toLowerCase() === 'demo.mapped@example.com'",
+  '    const { userId } = payload',
+  "    const isMappedDemoEmail = payload.email?.toLowerCase() === 'demo.mapped@example.com'\n" +
+    '    if (isMappedDemoEmail) {\n' +
+    '      const existingRegistration = await findRegistrationByEmail(\n' +
+    '        payload.email,\n' +
+    '        request.registrationsStore\n' +
+    '      )\n' +
+    '      if (existingRegistration) {\n' +
+    '        await removeRegistration(existingRegistration.userId, request.registrationsStore)\n' +
+    '      }\n' +
+    '    }\n' +
+    '    const userId = isMappedDemoEmail\n' +
+    "      ? 'b198e14c-19e4-4a94-8953-72b4a1f2c835'\n" +
+    '      : payload.userId'
 )

@@ -54,6 +54,40 @@
       "GSI2SK": { "S": "UPDATED#2026-10-20T10:00:00Z#draft-001" }
     } } },
     { "PutRequest": { "Item": {
+      "PK": { "S": "DRAFT#oidc-demo-draft" },
+      "submissionId": { "S": "oidc-demo-draft" },
+      "practiceId": { "S": "PVS001" },
+      "userId": { "S": "b198e14c-19e4-4a94-8953-72b4a1f2c835" },
+      "ownerId": { "S": "http://localhost:3400/cdp-defra-id-stub|b198e14c-19e4-4a94-8953-72b4a1f2c835" },
+      "status": { "S": "Draft" },
+      "revision": { "N": "2" },
+      "lastSavedPage": { "S": "species" },
+      "client": { "S": "OIDC Demo Farm" },
+      "clientFarm": { "S": "North Field" },
+      "species": { "S": "Cattle" },
+      "clinician": { "S": "Dr Alice Morgan" },
+      "submittedAt": { "S": "2026-11-27T10:00:00Z" },
+      "createdAt": { "S": "2026-11-27T09:45:00Z" },
+      "updatedAt": { "S": "2026-11-27T10:00:00Z" },
+      "formData": { "M": {
+        "clientDetails": { "M": {
+          "name": { "S": "OIDC Demo Farm" },
+          "farmName": { "S": "North Field" },
+          "addressLine1": { "S": "1 Test Lane" },
+          "county": { "S": "DORS" },
+          "postcode": { "S": "ZZ1 1ZZ" },
+          "cph": { "S": "12/345/6789" }
+        } },
+        "animalDetails": { "M": {
+          "species": { "S": "Cattle" }
+        } }
+      } },
+      "GSI1PK": { "S": "USER#http://localhost:3400/cdp-defra-id-stub|b198e14c-19e4-4a94-8953-72b4a1f2c835" },
+      "GSI1SK": { "S": "UPDATED#2026-11-27T10:00:00Z#oidc-demo-draft" },
+      "GSI2PK": { "S": "PRACTICE#PVS001" },
+      "GSI2SK": { "S": "UPDATED#2026-11-27T10:00:00Z#oidc-demo-draft" }
+    } } },
+    { "PutRequest": { "Item": {
       "PK": { "S": "DRAFT#draft-002" },
       "submissionId": { "S": "draft-002" },
       "practiceId": { "S": "practice-123" },

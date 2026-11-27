@@ -5,7 +5,11 @@ const resumePaths = {
   clientDetails: '/submission-01-client-details',
   species: '/submission-02-species',
   animalDetails: '/submission-02-animal-details',
-  clinicalHistory: '/submission-03-clinical-history'
+  clinicalHistory: '/submission-03-clinical-history',
+  'submission-01-client-details': '/submission-01-client-details',
+  'submission-02-species': '/submission-02-species',
+  'submission-02-animal-details': '/submission-02-animal-details',
+  'submission-03-clinical-history': '/submission-03-clinical-history'
 }
 
 const NOT_FOUND = 404

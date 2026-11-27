@@ -4,6 +4,10 @@
 
 {% block pageTitle %}Unable to continue draft – ADTS{% endblock %}
 
+{% block head %}
+  <link rel="stylesheet" href="/assets/css/application.css">
+{% endblock %}
+
 {% block header %}
   {{ appServiceHeader() }}
 {% endblock %}
@@ -16,4 +20,8 @@
       <a class="govuk-link" href="/">Return to your submissions</a>
     </div>
   </div>
+{% endblock %}
+
+{% block bodyEnd %}
+  <script type="module" src="/assets/js/all.js"></script>
 {% endblock %}

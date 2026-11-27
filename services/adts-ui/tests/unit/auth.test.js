@@ -210,6 +210,22 @@ describe('unauthenticated access', () => {
     expect(server).toBeDefined()
   })
 
+  test('uses a localhost-compatible session cookie for local live authentication', async () => {
+    setEnv({
+      ...liveEnv,
+      NODE_ENV: 'development',
+      AUTH_ALLOW_INSECURE_LOCAL: 'true',
+      DEFRA_ID_PUBLIC_BASE_URL: 'http://localhost:3000'
+    })
+    server = await createServer()
+
+    const response = await server.inject({ method: 'GET', url: '/' })
+    const cookie = response.headers['set-cookie'].join(';')
+
+    expect(cookie).toContain('SameSite=Lax')
+    expect(cookie).not.toContain('Secure')
+  })
+
   test('supports live Entra authentication configuration', async () => {
     setEnv({
       ...liveEnv,

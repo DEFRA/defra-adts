@@ -3,78 +3,80 @@ import { fetchFromBackend } from '../backend/auth.js'
 
 export const PVS_ID_SESSION_KEY = 'pvsId'
 const publicPaths = new Set(['/health', '/connection_health'])
+const practiceDetailsError = 'Unable to retrieve your practice details'
 
-export const createPvsIdSessionHook = (getAuthSession) => async (request, h) => {
+const shouldSkipPvsIdLookup = (request) => {
   const pathname = request.url.pathname
-  if (
+  return (
     !request.route ||
     publicPaths.has(pathname) ||
     pathname.startsWith('/assets/') ||
     pathname.startsWith('/auth/')
-  ) {
-    return h.continue
-  }
+  )
+}
 
+const getSessionNeedingPvsId = (request, getAuthSession) => {
   const authSession = getAuthSession(request)
   const saved = request.yar.get(PVS_ID_SESSION_KEY)
 
   if (!authSession.isAuthenticated) {
-    if (saved) {
-      request.yar.clear(PVS_ID_SESSION_KEY)
-    }
-    return h.continue
+    if (saved) request.yar.clear(PVS_ID_SESSION_KEY)
+    return undefined
   }
 
   if (saved?.subject === authSession.subject && saved.pvsId) {
-    return h.continue
+    return undefined
   }
 
-  let response
+  return authSession
+}
+
+const fetchPvsId = async (request) => {
+  const response = await fetchFromBackend(
+    `${process.env.BACKEND_SERVICE_URL}/GetPvsId`,
+    request
+  )
+
+  if (response.status === constants.HTTP_STATUS_FORBIDDEN) {
+    return { forbidden: true }
+  }
+  if (!response.ok) {
+    throw new Error(`LIMS ID lookup failed with status: ${response.status}`)
+  }
+
+  const result = await response.json()
+  if (!result || typeof result.pvsId !== 'string' || !result.pvsId.trim()) {
+    throw new Error('LIMS ID lookup response did not contain a PVS ID')
+  }
+
+  return { pvsId: result.pvsId }
+}
+
+export const createPvsIdSessionHook = (getAuthSession) => async (request, h) => {
+  if (shouldSkipPvsIdLookup(request)) return h.continue
+
+  const authSession = getSessionNeedingPvsId(request, getAuthSession)
+  if (!authSession) return h.continue
+
+  let lookup
   try {
-    response = await fetchFromBackend(
-      `${process.env.BACKEND_SERVICE_URL}/GetPvsId`,
-      request
-    )
+    lookup = await fetchPvsId(request)
   } catch (error) {
     console.error('Error retrieving LIMS ID for authenticated user:', error.message)
-    return h.response({ error: 'Unable to retrieve your practice details' })
+    return h.response({ error: practiceDetailsError })
       .code(constants.HTTP_STATUS_BAD_GATEWAY)
       .takeover()
   }
 
-  if (response.status === 403) {
+  if (lookup.forbidden) {
     return h.response({ error: 'Your account is not associated with a LIMS practice' })
       .code(constants.HTTP_STATUS_FORBIDDEN)
       .takeover()
   }
 
-  if (!response.ok) {
-    console.error('LIMS ID lookup failed with status:', response.status)
-    return h.response({ error: 'Unable to retrieve your practice details' })
-      .code(constants.HTTP_STATUS_BAD_GATEWAY)
-      .takeover()
-  }
-
-  let result
-  try {
-    result = await response.json()
-  } catch (error) {
-    console.error('Invalid LIMS ID lookup response:', error.message)
-    return h.response({ error: 'Unable to retrieve your practice details' })
-      .code(constants.HTTP_STATUS_BAD_GATEWAY)
-      .takeover()
-  }
-
-  if (!result || typeof result.pvsId !== 'string' || !result.pvsId.trim()) {
-    console.error('LIMS ID lookup response did not contain a PVS ID')
-    return h.response({ error: 'Unable to retrieve your practice details' })
-      .code(constants.HTTP_STATUS_BAD_GATEWAY)
-      .takeover()
-  }
-
   request.yar.set(PVS_ID_SESSION_KEY, {
     subject: authSession.subject,
-    pvsId: result.pvsId
+    pvsId: lookup.pvsId
   })
 
   return h.continue

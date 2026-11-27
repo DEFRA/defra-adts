@@ -20,7 +20,9 @@ const getSessionNeedingPvsId = (request, getAuthSession) => {
   const saved = request.yar.get(PVS_ID_SESSION_KEY)
 
   if (!authSession.isAuthenticated) {
-    if (saved) request.yar.clear(PVS_ID_SESSION_KEY)
+    if (saved) {
+      request.yar.clear(PVS_ID_SESSION_KEY)
+    }
     return undefined
   }
 
@@ -53,10 +55,14 @@ const fetchPvsId = async (request) => {
 }
 
 export const createPvsIdSessionHook = (getAuthSession) => async (request, h) => {
-  if (shouldSkipPvsIdLookup(request)) return h.continue
+  if (shouldSkipPvsIdLookup(request)) {
+    return h.continue
+  }
 
   const authSession = getSessionNeedingPvsId(request, getAuthSession)
-  if (!authSession) return h.continue
+  if (!authSession) {
+    return h.continue
+  }
 
   let lookup
   try {

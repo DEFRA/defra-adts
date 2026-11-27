@@ -50,7 +50,9 @@ const resolvePvsId = async (request, h, getDynamoClient) => {
       getDynamoClient(),
       request.auth.credentials.subject
     )
-    if (pvsId) return { pvsId }
+    if (pvsId) {
+      return { pvsId }
+    }
 
     return {
       response: h.response({ error: 'No LIMS practice is associated with this account' })
@@ -139,7 +141,9 @@ const createSubmissionsHandler = (getDynamoClient) => async (request, h) => {
   }
 
   const mapping = await resolvePvsId(request, h, getDynamoClient)
-  if ('response' in mapping) return mapping.response
+  if ('response' in mapping) {
+    return mapping.response
+  }
   const { pvsId } = mapping
 
   try {
@@ -161,7 +165,9 @@ const createSubmissionsHandler = (getDynamoClient) => async (request, h) => {
 
 const createSubmissionReferencesHandler = (getDynamoClient) => async (request, h) => {
   const mapping = await resolvePvsId(request, h, getDynamoClient)
-  if ('response' in mapping) return mapping.response
+  if ('response' in mapping) {
+    return mapping.response
+  }
   const { pvsId } = mapping
 
   try {
@@ -181,7 +187,9 @@ const createDraftHandler = (getDynamoClient) => async (request, h) => {
   }
 
   const mapping = await resolvePvsId(request, h, getDynamoClient)
-  if ('response' in mapping) return mapping.response
+  if ('response' in mapping) {
+    return mapping.response
+  }
 
   try {
     const draft = await getDraft(getDynamoClient(), request.params.draftId, ownerId)

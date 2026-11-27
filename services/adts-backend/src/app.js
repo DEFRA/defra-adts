@@ -12,19 +12,12 @@ import { getDraft } from './data/drafts.js'
 import { getSubmissions } from './data/submissions.js'
 import { getLimsSubmissionReferences, getLimsSubmissions } from './data/limsSubmissions.js'
 import { createClientsHandler } from './handlers/clients.js'
+import { createPvsIdHandler } from './handlers/pvs-id.js'
 import { registerAuthentication } from './auth.js'
 import registerDraftRoutes from './routes/drafts.js'
+import { getLimsIdForCiId } from './data/ciLimsMapping.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
-const authorizationUnavailable = (_request, h) =>
-  h.response({ error: 'Data access policy is not configured' })
-    .code(constants.HTTP_STATUS_SERVICE_UNAVAILABLE)
-const createAuthorizationGate = (handler, authorizeDataAccess) => async (request, h) => {
-  if (!await authorizeDataAccess(request)) {
-    return authorizationUnavailable(request, h)
-  }
-  return handler(request, h)
-}
 
 const createDynamoClientGetter = (docClient) => {
   let dynamoClient = docClient
@@ -113,46 +106,65 @@ const registerConnectionHealthRoute = (server) => {
   })
 }
 
-const createSubmissionsHandler = (getDynamoClient, authorizeDataAccess) => {
-  const handler = async (request, h) => {
-    const status = request.query.status?.toLowerCase()
-    const ownerId = request.auth.credentials.ownerId
-    const shouldGetLims = status !== 'draft'
-    const shouldGetLocalDrafts = !status || status === 'show_all' || status === 'draft'
+const createSubmissionsHandler = (getDynamoClient) => async (request, h) => {
+  const status = request.query.status?.toLowerCase()
+  const ownerId = request.auth.credentials.ownerId
+  const shouldGetLims = status !== 'draft'
+  const shouldGetLocalDrafts = !status || status === 'show_all' || status === 'draft'
 
-    if (status === 'draft' && !ownerId) {
-      return h.response({ error: 'Local draft owner is not configured' })
-        .code(constants.HTTP_STATUS_SERVICE_UNAVAILABLE)
-    }
-
-    try {
-      const [limsResults, localDrafts] = await Promise.all([
-        shouldGetLims ? getLimsSubmissions(request.query) : Promise.resolve([]),
-        shouldGetLocalDrafts && ownerId
-          ? getSubmissions(getDynamoClient(), ownerId, request.query)
-          : { results: [] }
-      ])
-      const results = [...localDrafts.results, ...limsResults]
-
-      return h.response({ results, totalCount: results.length })
-    } catch (error) {
-      console.error('Error retrieving submissions:', error.message)
-      return h.response({ error: 'Unable to retrieve submissions' })
-        .code(constants.HTTP_STATUS_BAD_GATEWAY)
-    }
+  if (status === 'draft' && !ownerId) {
+    return h.response({ error: 'Local draft owner is not configured' })
+      .code(constants.HTTP_STATUS_SERVICE_UNAVAILABLE)
   }
 
-  return async (request, h) => {
-    if (request.query.status?.toLowerCase() === 'draft') {
-      return handler(request, h)
-    }
-    return createAuthorizationGate(handler, authorizeDataAccess)(request, h)
+  let pvsId
+  try {
+    pvsId = await getLimsIdForCiId(getDynamoClient(), request.auth.credentials.subject)
+  } catch (error) {
+    console.error('Error retrieving CI-to-LIMS mapping:', error.message)
+    return h.response({ error: 'Unable to retrieve LIMS ID mapping' })
+      .code(constants.HTTP_STATUS_BAD_GATEWAY)
+  }
+
+  if (!pvsId) {
+    return h.response({ error: 'No LIMS practice is associated with this account' })
+      .code(constants.HTTP_STATUS_FORBIDDEN)
+  }
+
+  try {
+    const [limsResults, localDrafts] = await Promise.all([
+      shouldGetLims ? getLimsSubmissions(pvsId, request.query) : Promise.resolve([]),
+      shouldGetLocalDrafts && ownerId
+        ? getSubmissions(getDynamoClient(), ownerId, request.query)
+        : { results: [] }
+    ])
+    const results = [...localDrafts.results, ...limsResults]
+
+    return h.response({ results, totalCount: results.length })
+  } catch (error) {
+    console.error('Error retrieving submissions:', error.message)
+    return h.response({ error: 'Unable to retrieve submissions' })
+      .code(constants.HTTP_STATUS_BAD_GATEWAY)
   }
 }
 
-const createSubmissionReferencesHandler = async (request, h) => {
+const createSubmissionReferencesHandler = (getDynamoClient) => async (request, h) => {
+  let pvsId
   try {
-    return h.response(await getLimsSubmissionReferences(request.query))
+    pvsId = await getLimsIdForCiId(getDynamoClient(), request.auth.credentials.subject)
+  } catch (error) {
+    console.error('Error retrieving CI-to-LIMS mapping:', error.message)
+    return h.response({ error: 'Unable to retrieve LIMS ID mapping' })
+      .code(constants.HTTP_STATUS_BAD_GATEWAY)
+  }
+
+  if (!pvsId) {
+    return h.response({ error: 'No LIMS practice is associated with this account' })
+      .code(constants.HTTP_STATUS_FORBIDDEN)
+  }
+
+  try {
+    return h.response(await getLimsSubmissionReferences(pvsId, request.query))
   } catch (error) {
     console.error('Error retrieving submission references:', error.message)
     return h.response({ error: 'Unable to retrieve submission references' })
@@ -165,6 +177,20 @@ const createDraftHandler = (getDynamoClient) => async (request, h) => {
   if (!ownerId) {
     return h.response({ error: 'Local draft owner is not configured' })
       .code(constants.HTTP_STATUS_SERVICE_UNAVAILABLE)
+  }
+
+  let pvsId
+  try {
+    pvsId = await getLimsIdForCiId(getDynamoClient(), request.auth.credentials.subject)
+  } catch (error) {
+    console.error('Error retrieving CI-to-LIMS mapping:', error.message)
+    return h.response({ error: 'Unable to retrieve LIMS ID mapping' })
+      .code(constants.HTTP_STATUS_BAD_GATEWAY)
+  }
+
+  if (!pvsId) {
+    return h.response({ error: 'No LIMS practice is associated with this account' })
+      .code(constants.HTTP_STATUS_FORBIDDEN)
   }
 
   try {
@@ -181,7 +207,7 @@ const createDraftHandler = (getDynamoClient) => async (request, h) => {
   }
 }
 
-const registerSubmissionsRoutes = (server, getDynamoClient, authorizeDataAccess) => {
+const registerSubmissionsRoutes = (server, getDynamoClient) => {
   server.route([
     {
       method: 'GET',
@@ -191,15 +217,17 @@ const registerSubmissionsRoutes = (server, getDynamoClient, authorizeDataAccess)
     {
       method: 'GET',
       path: '/GetClients',
-      handler: createAuthorizationGate(
-        createClientsHandler(getDynamoClient),
-        authorizeDataAccess
-      )
+      handler: createClientsHandler(getDynamoClient)
+    },
+    {
+      method: 'GET',
+      path: '/GetPvsId',
+      handler: createPvsIdHandler(getDynamoClient)
     },
     {
       method: 'GET',
       path: '/submissions',
-      handler: createSubmissionsHandler(getDynamoClient, authorizeDataAccess)
+      handler: createSubmissionsHandler(getDynamoClient)
     },
     {
       method: 'GET',
@@ -213,7 +241,7 @@ const registerSubmissionsRoutes = (server, getDynamoClient, authorizeDataAccess)
           }).or('clientId', 'clientName', 'clientFarm').unknown(false)
         }
       },
-      handler: createAuthorizationGate(createSubmissionReferencesHandler, authorizeDataAccess)
+      handler: createSubmissionReferencesHandler(getDynamoClient)
     },
     {
       method: 'GET',
@@ -283,7 +311,7 @@ const registerAnimalDetailsRoute = (server, getDynamoClient) => {
   })
 }
 
-const createServer = async ({ docClient, authorizeDataAccess = () => false } = {}) => {
+const createServer = async ({ docClient } = {}) => {
   const server = Hapi.server({
     port: process.env.PORT
   })
@@ -293,7 +321,7 @@ const createServer = async ({ docClient, authorizeDataAccess = () => false } = {
   await registerAuthentication(server)
   registerStaticRoutes(server)
   registerConnectionHealthRoute(server)
-  registerSubmissionsRoutes(server, getDynamoClient, authorizeDataAccess)
+  registerSubmissionsRoutes(server, getDynamoClient)
   registerDraftRoutes(server, getDynamoClient)
   registerSpeciesRoute(server, getDynamoClient)
   registerCountiesRoute(server, getDynamoClient)

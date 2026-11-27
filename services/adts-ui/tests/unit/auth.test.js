@@ -1,6 +1,7 @@
-import { describe, test, expect, afterEach } from '@jest/globals'
+import { describe, test, expect, afterEach, jest } from '@jest/globals'
 import Joi from 'joi'
 import createServer from '../../src/app.js'
+import { PVS_ID_SESSION_KEY } from '../../src/auth/pvsIdSession.js'
 
 const liveEnv = {
   AUTH_PROVIDER: 'defra-id',
@@ -32,6 +33,7 @@ describe('unauthenticated access', () => {
       await server.stop()
       server = undefined
     }
+    jest.restoreAllMocks()
     for (const [key, value] of Object.entries(original)) {
       if (value === undefined) {
         delete process.env[key]
@@ -50,6 +52,100 @@ describe('unauthenticated access', () => {
     expect(response.statusCode).toBe(302)
     expect(response.headers.location).toBe('/auth/defra-id/start')
     expect(response.headers['set-cookie']).toBeDefined()
+  })
+
+  test('loads the signed-in user LIMS ID once and stores it in the session', async () => {
+    setEnv({
+      NODE_ENV: 'development',
+      AUTH_PROVIDER: 'defra-id',
+      AUTH_MODE: 'mock',
+      SESSION_SECRET: liveEnv.SESSION_SECRET,
+      BACKEND_SERVICE_URL: 'http://localhost:3200'
+    })
+    server = await createServer()
+    server.route([
+      {
+        method: 'GET',
+        path: '/auth/test-login',
+        handler: (request, h) => {
+          request.yar.set('auth', {
+            isAuthenticated: true,
+            subject: 'ci-user-123',
+            token: 'test-access-token'
+          })
+          return h.response('signed in')
+        }
+      },
+      {
+        method: 'GET',
+        path: '/auth/test-pvs-id',
+        handler: (request) => request.yar.get(PVS_ID_SESSION_KEY)
+      }
+    ])
+    const fetch = jest.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify({ pvsId: 'PVS001' }), { status: 200 })
+    )
+    const login = await server.inject({ method: 'GET', url: '/auth/test-login' })
+    const loginCookie = login.headers['set-cookie'].map((value) => value.split(';')[0]).join('; ')
+    const landing = await server.inject({
+      method: 'GET',
+      url: '/',
+      headers: { cookie: loginCookie }
+    })
+    const landingCookie = landing.headers['set-cookie'].map((value) => value.split(';')[0]).join('; ')
+    const session = await server.inject({
+      method: 'GET',
+      url: '/auth/test-pvs-id',
+      headers: { cookie: landingCookie }
+    })
+
+    expect(fetch).toHaveBeenCalledTimes(1)
+    expect(fetch).toHaveBeenCalledWith(
+      'http://localhost:3200/GetPvsId',
+      { headers: { Authorization: 'Bearer test-access-token' } }
+    )
+    expect(landing.statusCode).toBe(200)
+    expect(session.result).toEqual({ subject: 'ci-user-123', pvsId: 'PVS001' })
+  })
+
+  test('blocks the application when the signed-in user has no LIMS mapping', async () => {
+    setEnv({
+      NODE_ENV: 'development',
+      AUTH_PROVIDER: 'defra-id',
+      AUTH_MODE: 'mock',
+      SESSION_SECRET: liveEnv.SESSION_SECRET,
+      BACKEND_SERVICE_URL: 'http://localhost:3200'
+    })
+    server = await createServer()
+    server.route({
+      method: 'GET',
+      path: '/auth/test-login',
+      handler: (request, h) => {
+        request.yar.set('auth', {
+          isAuthenticated: true,
+          subject: 'ci-user-without-mapping',
+          token: 'test-access-token'
+        })
+        return h.response('signed in')
+      }
+    })
+    jest.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify({ error: 'No LIMS practice is associated with this account' }), {
+        status: 403
+      })
+    )
+    const login = await server.inject({ method: 'GET', url: '/auth/test-login' })
+    const loginCookie = login.headers['set-cookie'].map((value) => value.split(';')[0]).join('; ')
+    const landing = await server.inject({
+      method: 'GET',
+      url: '/',
+      headers: { cookie: loginCookie }
+    })
+
+    expect(landing.statusCode).toBe(403)
+    expect(landing.result).toEqual({
+      error: 'Your account is not associated with a LIMS practice'
+    })
   })
 
   test.each(['/health', '/assets/css/application.css'])('does not redirect %s', async (url) => {

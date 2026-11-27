@@ -16,6 +16,10 @@ import submissionAnimalDetails from './routes/submissionAnimalDetails.js'
 import submissionClinicalHistory from './routes/submissionClinicalHistory.js'
 import drafts from './routes/drafts.js'
 import { registerAuthentication } from './auth.js'
+import {
+  clearPvsIdSessionAfterSignOut,
+  createPvsIdSessionHook
+} from './auth/pvsIdSession.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const SUBMISSION_FORM_STATE_KEY = 'submissionFormState'
@@ -54,6 +58,8 @@ const createServer = async () => {
   ])
 
   const authentication = await registerAuthentication(server)
+  server.ext('onPostAuth', createPvsIdSessionHook(authentication.getAuthSession))
+  server.ext('onPreResponse', clearPvsIdSessionAfterSignOut(authentication.getAuthSession))
 
   server.views({
     engines: {

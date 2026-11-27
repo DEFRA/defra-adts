@@ -36,7 +36,10 @@ routes remain public. The initial policy does not check identity roles. This UI
 forwards the session's access token to `adts-backend` as a bearer token; the
 Backend validates it before processing API requests. Entra live mode requires
 `ENTRA_API_SCOPE` so the requested access token is intended for the Backend API.
-The Backend keeps client lookups and non-draft submission searches disabled
-until the applicant organization-to-PVS mapping and staff role policy are
-defined. Draft ownership uses the validated issuer-and-subject pair.
+The Backend resolves the authenticated CI subject through its CI-to-LIMS
+mapping table. Users without a mapping cannot access clients, submissions, or
+drafts; mapped users can proceed. The UI stores the resolved PVS ID in the
+authenticated session, while the Backend independently checks the mapping and
+does not trust a browser-supplied ID. Draft ownership uses the validated
+issuer-and-subject pair.
 

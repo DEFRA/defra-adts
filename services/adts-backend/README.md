@@ -28,12 +28,12 @@ mode. Health and connection-health routes remain unauthenticated.
 When running the backend in live Entra mode locally, provide its
 `ENTRA_WELL_KNOWN_URL` along with the audience and scope configuration.
 
-Client lookups and non-draft submission searches return `503` until an
-authorization policy is implemented. The applicant organization-to-PVS mapping
-and staff role values are not yet defined, so a valid token alone does not grant
-access to those records. Draft reads/searches are scoped to the validated
-issuer-and-subject pair. Do not remove the fail-closed data policy or trust a
-browser-supplied PVS identifier.
+After authentication, the backend resolves the token's CI subject to a LIMS ID
+using the CI-to-LIMS mapping table. Users without a mapping receive `403` and
+cannot look up clients, view submissions, or create drafts. The UI also stores
+the resolved PVS ID in the authenticated session; backend requests resolve the
+mapping independently and never trust a browser-supplied PVS identifier. Draft
+reads and writes remain scoped to the validated issuer-and-subject pair.
 
 For local development, start the seeded local DynamoDB from the repository root:
 
@@ -118,6 +118,7 @@ unknown species, and `502` if DynamoDB can't be reached.
 | `DYNAMODB_ENDPOINT` | AWS default | Set to `http://localhost:8000` to use the [local DynamoDB](../../local/dynamodb/README.md). |
 | `AWS_REGION` | `eu-west-2` | AWS region. |
 | `REFERENCE_DATA_TABLE` | `adts-reference-data` | Reference data table name. |
+| `CI_LIMS_MAPPING_TABLE` | `adts-ci-lims-mapping` | Maps an authenticated CI subject (`PK`) to its LIMS ID (`limsId`). |
 
 The local DynamoDB SDK connection requires dummy credentials, provided in the
 backend start command above. These credentials are for DynamoDB Local only; do

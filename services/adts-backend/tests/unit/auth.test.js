@@ -334,8 +334,9 @@ describe('backend OIDC authentication', () => {
     }
   })
 
-  test('keeps client and non-draft submission data unavailable without policy', async () => {
-    const server = await createServer({ docClient: { send: jest.fn() } })
+  test('denies clients and submissions when the CI user has no LIMS mapping', async () => {
+    const docClient = { send: jest.fn().mockResolvedValue({}) }
+    const server = await createServer({ docClient })
 
     try {
       const clients = await server.inject({ method: 'GET', url: '/GetClients' })
@@ -344,10 +345,14 @@ describe('backend OIDC authentication', () => {
         url: '/submissions?status=submitted'
       })
 
-      expect(clients.statusCode).toBe(503)
-      expect(clients.result).toEqual({ error: 'Data access policy is not configured' })
-      expect(submissions.statusCode).toBe(503)
-      expect(submissions.result).toEqual({ error: 'Data access policy is not configured' })
+      expect(clients.statusCode).toBe(403)
+      expect(clients.result).toEqual({
+        error: 'No LIMS practice is associated with this account'
+      })
+      expect(submissions.statusCode).toBe(403)
+      expect(submissions.result).toEqual({
+        error: 'No LIMS practice is associated with this account'
+      })
     } finally {
       await server.stop()
     }

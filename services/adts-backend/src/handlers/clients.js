@@ -1,13 +1,21 @@
 import { constants } from 'node:http2'
 import { getCountyNames } from '../data/counties.js'
+import { getLimsIdForCiId } from '../data/ciLimsMapping.js'
 import { mapLimsClient } from '../data/limsClients.js'
 
-export const createClientsHandler = (getDynamoClient) => async (_request, h) => {
-  const pvsId = process.env.LIMS_PVS_ID
+export const createClientsHandler = (getDynamoClient) => async (request, h) => {
+  let pvsId
+  try {
+    pvsId = await getLimsIdForCiId(getDynamoClient(), request.auth.credentials.subject)
+  } catch (error) {
+    console.error('Error retrieving CI-to-LIMS mapping:', error.message)
+    return h.response({ error: 'Unable to retrieve LIMS ID mapping' })
+      .code(constants.HTTP_STATUS_BAD_GATEWAY)
+  }
+
   if (!pvsId) {
-    console.error('LIMS_PVS_ID must be configured to retrieve clients')
-    return h.response({ error: 'LIMS client lookup is not configured' })
-      .code(constants.HTTP_STATUS_INTERNAL_SERVER_ERROR)
+    return h.response({ error: 'No LIMS practice is associated with this account' })
+      .code(constants.HTTP_STATUS_FORBIDDEN)
   }
 
   const url = `${process.env.SUBMISSIONS_SERVICE_URL}/v1/clients?${new URLSearchParams({ pvsId })}`

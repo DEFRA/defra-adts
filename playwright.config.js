@@ -55,8 +55,7 @@ webServer: [
       LIMS_PREFIX: '/LIMSRestAPi/',
       LIMS_TIMEOUT_MS: '1000',
       LIMS_ALLOW_HTTP: 'true',
-      LIMS_API_URL: 'http://127.0.0.1:3300',
-      LIMS_PVS_ID: 'E2E-PVS-001'
+      LIMS_API_URL: 'http://127.0.0.1:3300'
     }
   },
   {
@@ -69,7 +68,6 @@ webServer: [
       NODE_ENV: 'development',
       SUBMISSIONS_SERVICE_URL: 'http://127.0.0.1:3100',
       LOCAL_DRAFT_OWNER_ID: 'local-e2e',
-      LIMS_PVS_ID: 'PVS001',
       DYNAMODB_ENDPOINT: 'http://localhost:8000',
       AWS_REGION: 'eu-west-2',
       AWS_ACCESS_KEY_ID: 'local',

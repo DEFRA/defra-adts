@@ -14,3 +14,6 @@ export const createDocumentClient = () => {
 export const referenceDataTable = () => process.env.REFERENCE_DATA_TABLE || 'adts-reference-data'
 
 export const submissionsTable = () => process.env.SUBMISSIONS_TABLE || 'adts-submissions'
+
+export const ciLimsMappingTable = () =>
+  process.env.CI_LIMS_MAPPING_TABLE || 'adts-ci-lims-mapping'

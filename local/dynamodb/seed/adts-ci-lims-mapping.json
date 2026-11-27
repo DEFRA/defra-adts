@@ -9,6 +9,16 @@
       "PK": { "S": "USER-456" },
       "ciID": { "S": "USER-456" },
       "limsId": { "S": "LIMS-987654" }
+    } } },
+    { "PutRequest": { "Item": {
+      "PK": { "S": "user-456" },
+      "ciID": { "S": "user-456" },
+      "limsId": { "S": "PVS001" }
+    } } },
+    { "PutRequest": { "Item": {
+      "PK": { "S": "local-e2e" },
+      "ciID": { "S": "local-e2e" },
+      "limsId": { "S": "PVS001" }
     } } }
   ]
 }

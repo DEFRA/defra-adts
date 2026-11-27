@@ -22,16 +22,31 @@ const countyItems = [
 describe('GET /GetClients', () => {
   let server
   const docClient = { send: jest.fn() }
+  const originalLocalDraftOwnerId = process.env.LOCAL_DRAFT_OWNER_ID
+
+  const mockMappingAndCountyData = (counties = countyItems) => {
+    docClient.send.mockImplementation(({ input }) => {
+      if (input.Key) {
+        return Promise.resolve({ Item: { PK: 'USER-456', limsId: 'PVS001' } })
+      }
+      return Promise.resolve({ Items: counties })
+    })
+  }
 
   beforeAll(async () => {
     process.env.PORT = '3200'
     process.env.SUBMISSIONS_SERVICE_URL = 'http://localhost:3100'
-    process.env.LIMS_PVS_ID = 'PVS001'
-    server = await createServer({ docClient, authorizeDataAccess: () => true })
+    process.env.LOCAL_DRAFT_OWNER_ID = 'USER-456'
+    server = await createServer({ docClient })
   })
 
   afterAll(async () => {
     await server.stop()
+    if (originalLocalDraftOwnerId === undefined) {
+      delete process.env.LOCAL_DRAFT_OWNER_ID
+    } else {
+      process.env.LOCAL_DRAFT_OWNER_ID = originalLocalDraftOwnerId
+    }
   })
 
   afterEach(() => {
@@ -39,12 +54,25 @@ describe('GET /GetClients', () => {
     docClient.send.mockReset()
   })
 
+  test('returns the authenticated user PVS ID from the mapping table', async () => {
+    mockMappingAndCountyData()
+
+    const response = await server.inject({ method: 'GET', url: '/GetPvsId' })
+
+    expect(response.statusCode).toBe(200)
+    expect(response.result).toEqual({ pvsId: 'PVS001' })
+    expect(docClient.send.mock.calls[0][0].input).toEqual({
+      TableName: 'adts-ci-lims-mapping',
+      Key: { PK: 'USER-456' }
+    })
+  })
+
   test('maps LIMS clients to form field names and resolves county names', async () => {
     jest.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify(limsClients), {
       status: 200,
       headers: { 'Content-Type': 'application/json' }
     }))
-    docClient.send.mockResolvedValue({ Items: countyItems })
+    mockMappingAndCountyData()
 
     const response = await server.inject({ method: 'GET', url: '/GetClients' })
 
@@ -75,7 +103,7 @@ describe('GET /GetClients', () => {
       }
     ])
 
-    const { input } = docClient.send.mock.calls[0][0]
+    const { input } = docClient.send.mock.calls[1][0]
     expect(input.ExpressionAttributeValues).toEqual({ ':pk': 'REF#COUNTY' })
   })
 
@@ -84,7 +112,7 @@ describe('GET /GetClients', () => {
       status: 200,
       headers: { 'Content-Type': 'application/json' }
     }))
-    docClient.send.mockResolvedValue({ Items: countyItems })
+    mockMappingAndCountyData()
 
     const response = await server.inject({ method: 'GET', url: '/GetClients' })
 
@@ -96,12 +124,13 @@ describe('GET /GetClients', () => {
       status: 502,
       headers: { 'Content-Type': 'application/json' }
     }))
+    mockMappingAndCountyData()
 
     const response = await server.inject({ method: 'GET', url: '/GetClients' })
 
     expect(response.statusCode).toBe(502)
     expect(response.result).toEqual({ error: 'LIMS integration error' })
-    expect(docClient.send).not.toHaveBeenCalled()
+    expect(docClient.send).toHaveBeenCalledTimes(1)
   })
 
   test('returns 502 when reference data for counties cannot be read', async () => {
@@ -110,7 +139,12 @@ describe('GET /GetClients', () => {
       status: 200,
       headers: { 'Content-Type': 'application/json' }
     }))
-    docClient.send.mockRejectedValue(new Error('DynamoDB unavailable'))
+    docClient.send.mockImplementation(({ input }) => {
+      if (input.Key) {
+        return Promise.resolve({ Item: { PK: 'USER-456', limsId: 'PVS001' } })
+      }
+      return Promise.reject(new Error('DynamoDB unavailable'))
+    })
 
     const response = await server.inject({ method: 'GET', url: '/GetClients' })
 
@@ -121,6 +155,7 @@ describe('GET /GetClients', () => {
   test('returns 502 when the submissions service cannot be reached', async () => {
     jest.spyOn(globalThis, 'fetch').mockRejectedValue(new Error('ECONNREFUSED'))
     jest.spyOn(console, 'error').mockImplementation(() => {})
+    mockMappingAndCountyData()
 
     const response = await server.inject({ method: 'GET', url: '/GetClients' })
 
@@ -129,19 +164,16 @@ describe('GET /GetClients', () => {
     expect(console.error).toHaveBeenCalledWith('Error contacting submissions service:', 'ECONNREFUSED')
   })
 
-  test('returns 500 when the LIMS practice ID is not configured', async () => {
-    delete process.env.LIMS_PVS_ID
+  test('denies access when the CI user has no LIMS mapping', async () => {
+    docClient.send.mockResolvedValue({})
     jest.spyOn(globalThis, 'fetch')
-    jest.spyOn(console, 'error').mockImplementation(() => {})
 
-    try {
-      const response = await server.inject({ method: 'GET', url: '/GetClients' })
+    const response = await server.inject({ method: 'GET', url: '/GetClients' })
 
-      expect(response.statusCode).toBe(500)
-      expect(response.result).toEqual({ error: 'LIMS client lookup is not configured' })
-      expect(globalThis.fetch).not.toHaveBeenCalled()
-    } finally {
-      process.env.LIMS_PVS_ID = 'PVS001'
-    }
+    expect(response.statusCode).toBe(403)
+    expect(response.result).toEqual({
+      error: 'No LIMS practice is associated with this account'
+    })
+    expect(globalThis.fetch).not.toHaveBeenCalled()
   })
 })

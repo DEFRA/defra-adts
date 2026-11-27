@@ -21,6 +21,17 @@ describe('Draft save route', () => {
   const originalOwner = process.env.LOCAL_DRAFT_OWNER_ID
   const originalNodeEnv = process.env.NODE_ENV
 
+  const mockMappingThen = (...responses) => {
+    const remaining = [...responses]
+    docClient.send.mockImplementation(({ input }) => {
+      if (input.TableName === 'adts-ci-lims-mapping') {
+        return Promise.resolve({ Item: { PK: 'local-test-owner', limsId: 'PVS001' } })
+      }
+      const response = remaining.shift()
+      return response instanceof Error ? Promise.reject(response) : Promise.resolve(response || {})
+    })
+  }
+
   beforeAll(async () => {
     process.env.PORT = '3200'
     process.env.LOCAL_DRAFT_OWNER_ID = 'local-test-owner'
@@ -52,7 +63,7 @@ describe('Draft save route', () => {
   const post = (payload) => server.inject({ method: 'POST', url: '/drafts', payload })
 
   test('creates a DynamoDB draft using the local development owner', async () => {
-    docClient.send.mockResolvedValue({})
+    mockMappingThen({})
 
     const response = await post({
       lastSavedPage: 'clientDetails',
@@ -65,7 +76,7 @@ describe('Draft save route', () => {
       lastSavedPage: 'clientDetails'
     })
     expect(response.result.draftId).toMatch(/^[\da-f-]{36}$/i)
-    expect(docClient.send.mock.calls[0][0].input.Item).toMatchObject({
+    expect(docClient.send.mock.calls[1][0].input.Item).toMatchObject({
       ownerId: 'local-test-owner',
       lastSavedPage: 'clientDetails',
       formData: { clientDetails: { name: 'Acme Farm' } }
@@ -73,9 +84,9 @@ describe('Draft save route', () => {
   })
 
   test('updates an existing draft with its expected revision', async () => {
-    docClient.send
-      .mockResolvedValueOnce({ Item: existingDraft })
-      .mockResolvedValueOnce({
+    mockMappingThen(
+      { Item: existingDraft },
+      {
         Attributes: {
           ...existingDraft,
           lastSavedPage: 'clinicalHistory',
@@ -83,7 +94,8 @@ describe('Draft save route', () => {
           revision: 2,
           updatedAt: '2026-11-18T11:00:00.000Z'
         }
-      })
+      }
+    )
 
     const response = await post({
       draftId: existingDraft.draftId,
@@ -98,7 +110,7 @@ describe('Draft save route', () => {
       revision: 2,
       lastSavedPage: 'clinicalHistory'
     })
-    expect(docClient.send).toHaveBeenCalledTimes(2)
+    expect(docClient.send).toHaveBeenCalledTimes(3)
   })
 
   test('rejects invalid snapshots and client-supplied owner IDs', async () => {
@@ -130,7 +142,7 @@ describe('Draft save route', () => {
   })
 
   test('returns a gateway error when DynamoDB cannot save the draft', async () => {
-    docClient.send.mockRejectedValue(new Error('DynamoDB unavailable'))
+    mockMappingThen(new Error('DynamoDB unavailable'))
     jest.spyOn(console, 'error').mockImplementation(() => {})
 
     const response = await post({
@@ -141,5 +153,20 @@ describe('Draft save route', () => {
     expect(response.statusCode).toBe(502)
     expect(response.result).toEqual({ error: 'Unable to save draft' })
     expect(console.error).toHaveBeenCalledWith('Error saving draft:', 'DynamoDB unavailable')
+  })
+
+  test('denies draft creation when the CI user has no LIMS mapping', async () => {
+    docClient.send.mockResolvedValue({})
+
+    const response = await post({
+      lastSavedPage: 'clientDetails',
+      formData: { clientDetails: { name: 'Acme Farm' } }
+    })
+
+    expect(response.statusCode).toBe(403)
+    expect(response.result).toEqual({
+      error: 'No LIMS practice is associated with this account'
+    })
+    expect(docClient.send).toHaveBeenCalledTimes(1)
   })
 })

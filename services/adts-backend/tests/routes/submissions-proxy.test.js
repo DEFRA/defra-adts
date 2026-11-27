@@ -1,4 +1,4 @@
-import { afterAll, afterEach, beforeAll, describe, expect, jest, test } from '@jest/globals'
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, jest, test } from '@jest/globals'
 import createServer from '../../src/app.js'
 
 const jsonResponse = (body) => new Response(JSON.stringify(body), {
@@ -29,13 +29,23 @@ describe('Submissions service proxy routes', () => {
   let server
   const docClient = { send: jest.fn() }
 
+  const mockMappingAndDraftResult = (draftResult = { Items: [] }) => {
+    docClient.send.mockImplementation(({ input }) => {
+      if (input.TableName === 'adts-ci-lims-mapping') {
+        return Promise.resolve({ Item: { PK: 'USER-456', limsId: 'PVS001' } })
+      }
+      return Promise.resolve(draftResult)
+    })
+  }
+
   beforeAll(async () => {
     process.env.PORT = '3200'
     process.env.NODE_ENV = 'development'
     process.env.SUBMISSIONS_SERVICE_URL = 'http://localhost:3100'
-    process.env.LIMS_PVS_ID = 'PVS001'
-    server = await createServer({ docClient, authorizeDataAccess: () => true })
+    server = await createServer({ docClient })
   })
+
+  beforeEach(() => mockMappingAndDraftResult())
 
   afterAll(async () => {
     await server.stop()
@@ -87,7 +97,7 @@ describe('Submissions service proxy routes', () => {
       hasTests: true,
       tests: [expect.objectContaining({ name: 'Test A' })]
     })
-    expect(docClient.send).not.toHaveBeenCalled()
+    expect(docClient.send).toHaveBeenCalledTimes(1)
   })
 
   test('returns only matching submission references for the requested client and farm', async () => {
@@ -135,7 +145,7 @@ describe('Submissions service proxy routes', () => {
 
   test('combines local drafts with LIMS submissions when showing all', async () => {
     jest.spyOn(globalThis, 'fetch').mockResolvedValue(jsonResponse([limsSubmission]))
-    docClient.send.mockResolvedValue({ Items: [localDraft] })
+    mockMappingAndDraftResult({ Items: [localDraft] })
 
     const response = await server.inject({
       method: 'GET',
@@ -150,12 +160,24 @@ describe('Submissions service proxy routes', () => {
 
   test('returns LIMS submissions without local drafts when no draft owner is configured', async () => {
     jest.spyOn(globalThis, 'fetch').mockResolvedValue(jsonResponse([limsSubmission]))
+    const localDraftOwnerId = process.env.LOCAL_DRAFT_OWNER_ID
+    delete process.env.LOCAL_DRAFT_OWNER_ID
+    mockMappingAndDraftResult()
 
-    const response = await server.inject({ method: 'GET', url: '/submissions' })
+    let response
+    try {
+      response = await server.inject({ method: 'GET', url: '/submissions' })
+    } finally {
+      if (localDraftOwnerId === undefined) {
+        delete process.env.LOCAL_DRAFT_OWNER_ID
+      } else {
+        process.env.LOCAL_DRAFT_OWNER_ID = localDraftOwnerId
+      }
+    }
 
     expect(response.statusCode).toBe(200)
     expect(response.result.results.map(({ id }) => id)).toEqual(['SUB-1'])
-    expect(docClient.send).not.toHaveBeenCalled()
+    expect(docClient.send).toHaveBeenCalledTimes(1)
   })
 
   test('returns a gateway error when the submissions service search fails', async () => {
@@ -170,7 +192,7 @@ describe('Submissions service proxy routes', () => {
 
   test('retrieves only local drafts when filtering by Draft status without calling LIMS', async () => {
     const fetchSpy = jest.spyOn(globalThis, 'fetch')
-    docClient.send.mockResolvedValue({
+    mockMappingAndDraftResult({
       Items: [{
         submissionId: 'draft-001',
         status: 'Draft',
@@ -198,7 +220,12 @@ describe('Submissions service proxy routes', () => {
 
   test('returns a gateway error when a Draft search fails in DynamoDB', async () => {
     jest.spyOn(globalThis, 'fetch').mockResolvedValue(jsonResponse([]))
-    docClient.send.mockRejectedValue(new Error('DynamoDB unavailable'))
+    docClient.send.mockImplementation(({ input }) => {
+      if (input.TableName === 'adts-ci-lims-mapping') {
+        return Promise.resolve({ Item: { PK: 'USER-456', limsId: 'PVS001' } })
+      }
+      return Promise.reject(new Error('DynamoDB unavailable'))
+    })
     jest.spyOn(console, 'error').mockImplementation(() => {})
 
     const response = await server.inject({
@@ -221,7 +248,7 @@ describe('Submissions service proxy routes', () => {
       lastSavedPage: 'submission-02-species',
       formData: { animalDetails: { species: 'Sheep' } }
     }
-    docClient.send.mockResolvedValue({ Item: draft })
+    mockMappingAndDraftResult({ Item: draft })
 
     const response = await server.inject({
       method: 'GET',
@@ -229,7 +256,7 @@ describe('Submissions service proxy routes', () => {
       headers: { 'x-local-draft-owner-id': 'user-456' }
     })
 
-    expect(docClient.send.mock.calls[0][0].input).toEqual({
+    expect(docClient.send.mock.calls[1][0].input).toEqual({
       TableName: 'adts-submissions',
       Key: { PK: 'DRAFT#draft-001' }
     })
@@ -244,7 +271,7 @@ describe('Submissions service proxy routes', () => {
   })
 
   test('does not reveal a draft owned by another user', async () => {
-    docClient.send.mockResolvedValue({
+    mockMappingAndDraftResult({
       Item: { submissionId: 'draft-001', status: 'Draft', userId: 'user-789' }
     })
 
@@ -277,7 +304,12 @@ describe('Submissions service proxy routes', () => {
   })
 
   test('returns a gateway error when loading a draft fails in DynamoDB', async () => {
-    docClient.send.mockRejectedValue(new Error('DynamoDB unavailable'))
+    docClient.send.mockImplementation(({ input }) => {
+      if (input.TableName === 'adts-ci-lims-mapping') {
+        return Promise.resolve({ Item: { PK: 'USER-456', limsId: 'PVS001' } })
+      }
+      return Promise.reject(new Error('DynamoDB unavailable'))
+    })
     jest.spyOn(console, 'error').mockImplementation(() => {})
 
     const response = await server.inject({

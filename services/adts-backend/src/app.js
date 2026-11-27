@@ -44,6 +44,27 @@ const createProxyGet = (routePath) => async (request, h) => {
   }
 }
 
+const resolvePvsId = async (request, h, getDynamoClient) => {
+  try {
+    const pvsId = await getLimsIdForCiId(
+      getDynamoClient(),
+      request.auth.credentials.subject
+    )
+    if (pvsId) return { pvsId }
+
+    return {
+      response: h.response({ error: 'No LIMS practice is associated with this account' })
+        .code(constants.HTTP_STATUS_FORBIDDEN)
+    }
+  } catch (error) {
+    console.error('Error retrieving CI-to-LIMS mapping:', error.message)
+    return {
+      response: h.response({ error: 'Unable to retrieve LIMS ID mapping' })
+        .code(constants.HTTP_STATUS_BAD_GATEWAY)
+    }
+  }
+}
+
 const registerStaticRoutes = (server) => {
   server.route({
     method: 'GET',
@@ -117,19 +138,9 @@ const createSubmissionsHandler = (getDynamoClient) => async (request, h) => {
       .code(constants.HTTP_STATUS_SERVICE_UNAVAILABLE)
   }
 
-  let pvsId
-  try {
-    pvsId = await getLimsIdForCiId(getDynamoClient(), request.auth.credentials.subject)
-  } catch (error) {
-    console.error('Error retrieving CI-to-LIMS mapping:', error.message)
-    return h.response({ error: 'Unable to retrieve LIMS ID mapping' })
-      .code(constants.HTTP_STATUS_BAD_GATEWAY)
-  }
-
-  if (!pvsId) {
-    return h.response({ error: 'No LIMS practice is associated with this account' })
-      .code(constants.HTTP_STATUS_FORBIDDEN)
-  }
+  const mapping = await resolvePvsId(request, h, getDynamoClient)
+  if ('response' in mapping) return mapping.response
+  const { pvsId } = mapping
 
   try {
     const [limsResults, localDrafts] = await Promise.all([
@@ -149,19 +160,9 @@ const createSubmissionsHandler = (getDynamoClient) => async (request, h) => {
 }
 
 const createSubmissionReferencesHandler = (getDynamoClient) => async (request, h) => {
-  let pvsId
-  try {
-    pvsId = await getLimsIdForCiId(getDynamoClient(), request.auth.credentials.subject)
-  } catch (error) {
-    console.error('Error retrieving CI-to-LIMS mapping:', error.message)
-    return h.response({ error: 'Unable to retrieve LIMS ID mapping' })
-      .code(constants.HTTP_STATUS_BAD_GATEWAY)
-  }
-
-  if (!pvsId) {
-    return h.response({ error: 'No LIMS practice is associated with this account' })
-      .code(constants.HTTP_STATUS_FORBIDDEN)
-  }
+  const mapping = await resolvePvsId(request, h, getDynamoClient)
+  if ('response' in mapping) return mapping.response
+  const { pvsId } = mapping
 
   try {
     return h.response(await getLimsSubmissionReferences(pvsId, request.query))
@@ -179,19 +180,8 @@ const createDraftHandler = (getDynamoClient) => async (request, h) => {
       .code(constants.HTTP_STATUS_SERVICE_UNAVAILABLE)
   }
 
-  let pvsId
-  try {
-    pvsId = await getLimsIdForCiId(getDynamoClient(), request.auth.credentials.subject)
-  } catch (error) {
-    console.error('Error retrieving CI-to-LIMS mapping:', error.message)
-    return h.response({ error: 'Unable to retrieve LIMS ID mapping' })
-      .code(constants.HTTP_STATUS_BAD_GATEWAY)
-  }
-
-  if (!pvsId) {
-    return h.response({ error: 'No LIMS practice is associated with this account' })
-      .code(constants.HTTP_STATUS_FORBIDDEN)
-  }
+  const mapping = await resolvePvsId(request, h, getDynamoClient)
+  if ('response' in mapping) return mapping.response
 
   try {
     const draft = await getDraft(getDynamoClient(), request.params.draftId, ownerId)

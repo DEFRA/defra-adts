@@ -115,6 +115,9 @@ jobs:
 
           TAG_PREFIX="${SERVICE}-v"
 
+          # grep removes tags with underscores in them
+          # sed and cut cater for tags like 'adts-ui-v1.0.0' and 'adts-ui-v1.0.0release'
+          # both of which will return 'adts-ui-v1.0.0' as the latest tag
           LAST_TAG="$(
             git tag \
               --list "${TAG_PREFIX}[0-9]*.[0-9]*.[0-9]*" \

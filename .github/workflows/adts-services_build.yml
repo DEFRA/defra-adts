@@ -265,24 +265,24 @@ jobs:
     name: Versions
     needs:
       - detect_changes
-      #- e2e_testing
-      #- build_containers
+      - e2e_testing
+      - build_containers
 
     permissions:
       contents: write
 
-    #if: |
-    #  ${{
-    #    always() &&
-    #    github.event_name != 'pull_request' &&
-    #    needs.e2e_testing.result == 'success' &&
-    #    (
-    #      needs.build_containers.result == 'success' ||
-    #      (
-    #        needs.build_containers.result == 'skipped' &&
-    #        needs.detect_changes.outputs.e2e_tests == 'true'
-    #      )
-    #    )
-    #  }}
+    if: |
+      ${{
+        always() &&
+        github.event_name != 'pull_request' &&
+        needs.e2e_testing.result == 'success' &&
+        (
+          needs.build_containers.result == 'success' ||
+          (
+            needs.build_containers.result == 'skipped' &&
+            needs.detect_changes.outputs.e2e_tests == 'true'
+          )
+        )
+      }}
 
     uses: ./.github/workflows/_update_versions.yml

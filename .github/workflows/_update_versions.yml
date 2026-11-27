@@ -22,7 +22,7 @@ jobs:
         id: tag-collection
         shell: bash
         run: |
-          set -euox pipefail
+          set -euo pipefail
           
           get_latest_tag() {
             prefix=""
@@ -53,10 +53,10 @@ jobs:
           git config user.email \
             "${{ github.actor_id }}+${{ github.actor }}@users.noreply.github.com"
           
-          #git tag \
-          #  --annotate "${ALL_VERSIONS_TAG}" \
-          #  --message "Service versions in this build: ${ALL_VERSIONS_TAG}"
-          #git push origin "${ALL_VERSIONS_TAG}"
+          git tag \
+            --annotate "${ALL_VERSIONS_TAG}" \
+            --message "Service versions in this build: ${ALL_VERSIONS_TAG}"
+          git push origin "${ALL_VERSIONS_TAG}"
           
           echo "all_versions=${ALL_VERSIONS_TAG}" >> ${GITHUB_OUTPUT}
 

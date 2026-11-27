@@ -23,10 +23,12 @@ must request the configured `ENTRA_API_SCOPE`. Configure audience/scope values
 from the corresponding API registrations; do not use placeholder values in a
 live deployment.
 
-Local development and tests use mock authentication. Production rejects mock
-mode. Health and connection-health routes remain unauthenticated.
-When running the backend in live Entra mode locally, provide its
-`ENTRA_WELL_KNOWN_URL` along with the audience and scope configuration.
+Tests use mock authentication, while the repository's local full-stack setup
+validates the Defra ID stub's signed access token. Production rejects mock mode.
+The development-only `AUTH_ALLOW_INSECURE_LOCAL=true` setting permits HTTP
+identity URLs only when their hostname is `localhost`; production continues to
+require HTTPS and both provider configurations. Health and connection-health
+routes remain unauthenticated.
 
 After authentication, the backend resolves the token's CI subject to a LIMS ID
 using the CI-to-LIMS mapping table. Users without a mapping receive `403` and

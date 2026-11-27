@@ -16,6 +16,11 @@
       "limsId": { "S": "PVS001" }
     } } },
     { "PutRequest": { "Item": {
+      "PK": { "S": "b198e14c-19e4-4a94-8953-72b4a1f2c835" },
+      "ciID": { "S": "b198e14c-19e4-4a94-8953-72b4a1f2c835" },
+      "limsId": { "S": "PVS001" }
+    } } },
+    { "PutRequest": { "Item": {
       "PK": { "S": "local-e2e" },
       "ciID": { "S": "local-e2e" },
       "limsId": { "S": "PVS001" }

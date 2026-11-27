@@ -3,6 +3,16 @@ import { createRemoteJWKSet, decodeJwt, jwtVerify } from 'jose'
 
 const AUTH_STRATEGY = 'oidc-bearer'
 
+const isLocalStubMode = () =>
+  process.env.NODE_ENV === 'development' &&
+  process.env.AUTH_ALLOW_INSECURE_LOCAL === 'true'
+
+const isAllowedIdentityUrl = (value) => {
+  const url = new URL(value)
+  return url.protocol === 'https:' ||
+    (isLocalStubMode() && url.protocol === 'http:' && url.hostname === 'localhost')
+}
+
 const parseBearerToken = (authorization) => {
   if (typeof authorization !== 'string') {
     return undefined
@@ -29,7 +39,7 @@ const parseBearerToken = (authorization) => {
 }
 
 const loadProvider = async ({ name, discoveryUrl, audience, requiredScope }) => {
-  if (new URL(discoveryUrl).protocol !== 'https:') {
+  if (!isAllowedIdentityUrl(discoveryUrl)) {
     throw new Error(`${name} OIDC discovery URL must use HTTPS`)
   }
 
@@ -42,10 +52,7 @@ const loadProvider = async ({ name, discoveryUrl, audience, requiredScope }) => 
   if (!metadata.issuer || !metadata.jwks_uri) {
     throw new Error(`${name} OIDC discovery response is missing issuer or jwks_uri`)
   }
-  if (
-    new URL(metadata.issuer).protocol !== 'https:' ||
-    new URL(metadata.jwks_uri).protocol !== 'https:'
-  ) {
+  if (!isAllowedIdentityUrl(metadata.issuer) || !isAllowedIdentityUrl(metadata.jwks_uri)) {
     throw new Error(`${name} OIDC issuer and JWKS URL must use HTTPS`)
   }
 
@@ -59,24 +66,35 @@ const loadProvider = async ({ name, discoveryUrl, audience, requiredScope }) => 
 }
 
 const loadProviders = async () => {
-  const requiredVariables = [
+  const defraVariables = [
     'DEFRA_ID_WELL_KNOWN_URL',
-    'DEFRA_ID_API_AUDIENCE',
+    'DEFRA_ID_API_AUDIENCE'
+  ]
+  const entraVariables = [
     'ENTRA_WELL_KNOWN_URL',
     'ENTRA_API_AUDIENCE',
     'ENTRA_API_SCOPE'
   ]
+  const requiredVariables = isLocalStubMode()
+    ? defraVariables
+    : [...defraVariables, ...entraVariables]
   const missing = requiredVariables.filter((name) => !process.env[name])
   if (missing.length) {
     throw new Error(`Missing live token validation configuration: ${missing.join(', ')}`)
   }
 
+  const defraProvider = loadProvider({
+    name: 'Defra ID',
+    discoveryUrl: process.env.DEFRA_ID_WELL_KNOWN_URL,
+    audience: process.env.DEFRA_ID_API_AUDIENCE
+  })
+
+  if (isLocalStubMode()) {
+    return [await defraProvider]
+  }
+
   return Promise.all([
-    loadProvider({
-      name: 'Defra ID',
-      discoveryUrl: process.env.DEFRA_ID_WELL_KNOWN_URL,
-      audience: process.env.DEFRA_ID_API_AUDIENCE
-    }),
+    defraProvider,
     loadProvider({
       name: 'Entra ID',
       discoveryUrl: process.env.ENTRA_WELL_KNOWN_URL,

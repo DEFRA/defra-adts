@@ -207,6 +207,46 @@ describe('backend OIDC authentication', () => {
     }
   })
 
+  test('loads the localhost Defra ID stub without requiring Entra configuration', async () => {
+    const restoreEnvironment = setLiveAuthEnvironment({
+      NODE_ENV: 'development',
+      AUTH_ALLOW_INSECURE_LOCAL: 'true',
+      DEFRA_ID_WELL_KNOWN_URL: 'http://localhost:3400/cdp-defra-id-stub/.well-known/openid-configuration',
+      DEFRA_ID_API_AUDIENCE: 'local-client'
+    })
+    const fetchSpy = mockDiscoveryFetch(200, {
+      issuer: 'http://localhost:3400/cdp-defra-id-stub',
+      jwks_uri: 'http://localhost:3400/cdp-defra-id-stub/.well-known/jwks.json'
+    })
+    delete process.env.ENTRA_WELL_KNOWN_URL
+    delete process.env.ENTRA_API_AUDIENCE
+    delete process.env.ENTRA_API_SCOPE
+
+    try {
+      await expect(registerAuthentication(Hapi.server())).resolves.toBeUndefined()
+      expect(fetchSpy).toHaveBeenCalledTimes(1)
+    } finally {
+      fetchSpy.mockRestore()
+      restoreEnvironment()
+    }
+  })
+
+  test('does not allow insecure non-local identity URLs in local stub mode', async () => {
+    const restoreEnvironment = setLiveAuthEnvironment({
+      NODE_ENV: 'development',
+      AUTH_ALLOW_INSECURE_LOCAL: 'true',
+      DEFRA_ID_WELL_KNOWN_URL: 'http://identity.example/.well-known/openid-configuration',
+      DEFRA_ID_API_AUDIENCE: 'local-client'
+    })
+
+    try {
+      await expect(registerAuthentication(Hapi.server()))
+        .rejects.toThrow('Defra ID OIDC discovery URL must use HTTPS')
+    } finally {
+      restoreEnvironment()
+    }
+  })
+
   test.each([
     [
       'non-HTTPS discovery URLs',

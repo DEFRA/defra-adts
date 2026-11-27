@@ -9,7 +9,7 @@
   "scripts": {
     "install:all": "npm install && npm install --prefix services/adts-ui && npm install --prefix services/adts-submissions-service && npm install --prefix services/adts-backend",
     "dev": "npm run test:db:up && npm run dev:defra-id-stub",
-    "dev:backend": "cross-env NODE_ENV=development LOCAL_DRAFT_OWNER_ID=${LOCAL_DRAFT_OWNER_ID:-user-456} ENTRA_WELL_KNOWN_URL=$ENTRA_WELL_KNOWN_URL SUBMISSIONS_SERVICE_URL=http://localhost:3100 DYNAMODB_ENDPOINT=http://localhost:8000 AWS_REGION=eu-west-2 AWS_ACCESS_KEY_ID=local AWS_SECRET_ACCESS_KEY=local PORT=3200 npm start --prefix services/adts-backend",
+    "dev:backend": "cross-env NODE_ENV=development AUTH_MODE=live AUTH_ALLOW_INSECURE_LOCAL=true DEFRA_ID_WELL_KNOWN_URL=http://localhost:3400/cdp-defra-id-stub/.well-known/openid-configuration DEFRA_ID_API_AUDIENCE=63983fc2-cfff-45bb-8ec2-959e21062b9a SUBMISSIONS_SERVICE_URL=http://localhost:3100 DYNAMODB_ENDPOINT=http://localhost:8000 AWS_REGION=eu-west-2 AWS_ACCESS_KEY_ID=local AWS_SECRET_ACCESS_KEY=local PORT=3200 npm start --prefix services/adts-backend",
     "dev:ui": "cross-env NODE_ENV=development LOCAL_DRAFT_OWNER_ID=user-456 SESSION_SECRET=local-development-session-secret-32-chars BACKEND_SERVICE_URL=http://localhost:3200 PORT=3000 npm start --prefix services/adts-ui",
     "dev:submissions": "cross-env PORT=3100 LIMS_BASE_URL=http://localhost:3300 LIMS_ALLOW_HTTP=true npm start --prefix services/adts-submissions-service",
     "dev:down": "lsof -tiTCP:3000,3100,3200,3400 -sTCP:LISTEN | xargs kill -9 2>/dev/null; npm run test:db:down",

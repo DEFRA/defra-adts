@@ -40,3 +40,13 @@ patch(
   ".filter((s) => !oidcConfig.scopesSupported.includes(s))",
   ".filter((s) => !oidcConfig.scopesSupported.includes(s))\n    // bareClientId\n    .filter((s) => !/^[0-9a-f-]{36}$/i.test(s))"
 )
+
+// Give the documented mapped demo email a stable OIDC subject; other registrations stay random.
+patch(
+  'src/server/registration/controllers/register-api-controller.js',
+  "payload.email?.toLowerCase() === 'demo.mapped@example.com'",
+  'userId = crypto.randomUUID()',
+  "userId = payload.email?.toLowerCase() === 'demo.mapped@example.com'\n" +
+    "          ? 'b198e14c-19e4-4a94-8953-72b4a1f2c835'\n" +
+    '          : crypto.randomUUID()'
+)

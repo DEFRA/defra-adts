@@ -4,7 +4,7 @@
 
 import { describe, expect, it } from '@jest/globals'
 import jestAxe from 'jest-axe'
-import { renderSubmissionSearchForm } from './helpers/nunjucks.js'
+import { renderSubmissionSearchForm } from '../component/helpers/nunjucks.js'
 
 const { axe, toHaveNoViolations } = jestAxe
 

@@ -77,7 +77,9 @@ test.describe('Interactive accessibility states', () => {
     await page.getByRole('button', { name: 'Continue' }).click()
     await expect(page).toHaveURL(/\/submission-02-animal-details$/)
 
-    await page.getByLabel('Breed (optional)').fill('Holstein')
+    const breedInput = page.locator('.govuk-form-group:has(label:has-text("Breed (optional)")) .autocomplete__input')
+    await expect(breedInput).toBeVisible()
+    await breedInput.fill('Holstein')
     await expect(page.getByRole('option', { name: 'Holstein', exact: true })).toBeVisible()
     await expect(page.locator('.autocomplete__hint')).toHaveAttribute('aria-hidden', 'true')
 

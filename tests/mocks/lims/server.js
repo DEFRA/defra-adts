@@ -82,13 +82,55 @@ const readJson = async (request) => {
   return JSON.parse(Buffer.concat(chunks).toString('utf8'))
 }
 
+// The backend derives the displayed status from status, samplesOverdue, resultsAvailable and isDigital.
+const sampleRecord = (overrides) => ({
+  draftSubmissionId: '',
+  submissionId: '',
+  status: 'Submitted',
+  submissionType: 'Test',
+  animalSpeciesId: 'CATTLE',
+  clientName: 'Example Farm',
+  clientFarm: 'North Field',
+  clinician: 'Example Vet',
+  submittedDate: '2026-11-20T09:00:00.000Z',
+  changedStatusDate: '2026-11-21T09:00:00.000Z',
+  samplesOverdue: false,
+  resultsAvailable: false,
+  isDigital: true,
+  numberSamples: 3,
+  products: [{ productId: 'PC0203', name: 'Synthetic mastitis test', productType: 'TEST' }],
+  ...overrides
+})
+
+const seedSubmissions = () => {
+  const seeded = [
+    sampleRecord({ submissionId: 'VI-26-900001', isDigital: false }), // In progress
+    sampleRecord({ submissionId: 'VI-26-900002' }), // Submitted
+    sampleRecord({ submissionId: 'VI-26-900003', status: 'Cancelled' }),
+    sampleRecord({ submissionId: 'VI-26-900004', samplesOverdue: true }),
+    sampleRecord({ submissionId: 'VI-26-900005', resultsAvailable: true }) // All tests complete
+  ]
+  for (const record of seeded) {
+    submissions.set(record.submissionId, record)
+  }
+
+  drafts.set('900', sampleRecord({
+    draftSubmissionId: '900',
+    status: 'Draft',
+    submittedDate: null
+  }))
+}
+
 const resetState = () => {
   nextDraftId = 100
   nextSubmissionId = 1
   drafts.clear()
   submissions.clear()
   requests.length = 0
+  seedSubmissions()
 }
+
+seedSubmissions()
 
 const findFailure = async (endpoint, response) => {
   if (!failureEndpoint || failureEndpoint !== endpoint || !failureMode) {

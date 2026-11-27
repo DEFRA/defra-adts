@@ -3,11 +3,14 @@ import { expect, test } from '@playwright/test'
 const limsUrl = 'http://localhost:8500'
 
 test.describe('Client lookup via LIMS', () => {
+  const clientAutocomplete = (page) => page.getByLabel('Client')
+  const animalAddressAutocomplete = (page) => page.getByLabel('Animal address')
+
   test('renders LIMS clients as options and queries LIMS server-side', async ({ page }) => {
     const response = await page.goto('/submission-01-client-details')
     const html = await response.text()
 
-    await expect(page.getByRole('combobox', { name: 'Client' })).toBeVisible()
+    await expect(clientAutocomplete(page)).toBeVisible()
     expect(html).toContain(
       '<option value="client-001">Example Farm, North Field, 1 Test Lane, Teston, Dorset, ZZ1 1ZZ, 12/345/6789</option>'
     )
@@ -41,7 +44,7 @@ test.describe('Client lookup via LIMS', () => {
 
   test('requires a client selection after returning from species', async ({ page }) => {
     await page.goto('/submission-01-client-details')
-    await page.getByRole('combobox', { name: 'Client' }).fill('Example Farm')
+    await clientAutocomplete(page).fill('Example Farm')
     await page.getByRole('option', {
       name: 'Example Farm, North Field, 1 Test Lane, Teston, Dorset, ZZ1 1ZZ, 12/345/6789',
       exact: true
@@ -52,7 +55,7 @@ test.describe('Client lookup via LIMS', () => {
 
     await page.getByRole('link', { name: 'Back', exact: true }).click()
     await expect(page).toHaveURL(/\/submission-01-client-details$/)
-    await page.getByRole('combobox', { name: 'Client' }).fill('')
+    await clientAutocomplete(page).fill('')
     await page.getByRole('button', { name: 'Continue' }).click()
 
     await expect(page).toHaveURL(/\/submission-01-client-details$/)
@@ -88,13 +91,13 @@ test.describe('Client lookup via LIMS', () => {
 
   test('does not render selected client or animal address summaries', async ({ page }) => {
     await page.goto('/submission-01-client-details')
-    await page.getByRole('combobox', { name: 'Client' }).fill('Example Farm')
+    await clientAutocomplete(page).fill('Example Farm')
     await page.getByRole('option', {
       name: 'Example Farm, North Field, 1 Test Lane, Teston, Dorset, ZZ1 1ZZ, 12/345/6789',
       exact: true
     }).click()
     await page.getByRole('radio', { name: 'No', exact: true }).check()
-    await page.getByRole('combobox', { name: 'Animal address' }).fill('Second Example Farm')
+    await animalAddressAutocomplete(page).fill('Second Example Farm')
     await page.getByRole('option', { name: 'Second Example Farm', exact: true }).click()
     await page.getByRole('button', { name: 'Continue' }).click()
     await expect(page).toHaveURL(/\/submission-02-species$/)
@@ -110,7 +113,7 @@ test.describe('Client lookup via LIMS', () => {
 
   test('keeps the edit button visible for a manually entered animal address', async ({ page }) => {
     await page.goto('/submission-01-client-details')
-    await page.getByRole('combobox', { name: 'Client' }).fill('Example Farm')
+    await clientAutocomplete(page).fill('Example Farm')
     await page.getByRole('option', {
       name: 'Example Farm, North Field, 1 Test Lane, Teston, Dorset, ZZ1 1ZZ, 12/345/6789',
       exact: true

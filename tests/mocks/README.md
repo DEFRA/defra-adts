@@ -25,3 +25,10 @@ redirected to `/auth/defra-id/start`, then to
 `http://localhost:3400/cdp-defra-id-stub/authorize?...`. Register a test user at
 `http://localhost:3400` to complete sign-in. Client ID `63983fc2-cfff-45bb-8ec2-959e21062b9a`
 and secret `test_value` are the stub's published defaults, not real credentials.
+
+The local backend uses mock authentication with `LOCAL_DRAFT_OWNER_ID=user-456`
+by default, which has a seeded LIMS mapping. To demonstrate an authenticated
+session without a mapping, start the stack with
+`LOCAL_DRAFT_OWNER_ID=demo-unmapped npm run dev`; that subject has no mapping,
+so protected pages return `403`. This changes the backend's mock subject; it
+does not change the subject issued by the OIDC stub.
